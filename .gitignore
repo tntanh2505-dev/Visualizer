@@ -1,0 +1,13 @@
+# Build output
+build/
+
+# VS Code settings
+.vscode/
+
+# Compiled objects
+*.o
+*.a
+
+# OS junk
+.DS_Store
+Thumbs.db
