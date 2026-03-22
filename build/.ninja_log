@@ -1,7 +1,5 @@
 # ninja log v7
-37	1070	7958765656353269	CMakeFiles/DSA-Visualization.dir/src/main.cpp.obj	6299c663149b118f
-18	1944	7958765515205661	CMakeFiles/DSA-Visualization.dir/src/ui/game.cpp.obj	2fc9aeb6fe21b309
-1073	1391	7958765666566890	DSA-Visualization.exe	2580af516005d007
-29	1175	7958766749376522	CMakeFiles/DSA-Visualization.dir/src/main.cpp.obj	6299c663149b118f
-36	1284	7958766749532769	CMakeFiles/DSA-Visualization.dir/src/ui/game.cpp.obj	2fc9aeb6fe21b309
-1284	1572	7958766762019651	DSA-Visualization.exe	2580af516005d007
+21	2594	7958777462437973	CMakeFiles/DSA-Visualization.dir/src/ui/button.cpp.obj	d9406465ca66347b
+15	2635	7958777462437973	CMakeFiles/DSA-Visualization.dir/src/main.cpp.obj	68c625eb587e12be
+31	3075	7958777462666332	CMakeFiles/DSA-Visualization.dir/src/ui/game.cpp.obj	3e8fa5903742f38c
+3076	3474	7958777493051602	DSA-Visualization.exe	794572ceddd01129
