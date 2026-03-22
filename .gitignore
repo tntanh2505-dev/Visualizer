@@ -1,0 +1,72 @@
+# ------------
+# 1. MacOS & System Files (The "Junk")
+# ------------
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+Desktop.ini
+
+# ------------
+# 2. C++ Compiled Files (No matter the OS)
+# ------------
+# Compiled Object files
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Libraries
+*.lib
+*.a
+*.la
+*.lo
+
+# Executables (Don't push the app itself, just the code!)
+*.exe
+*.out
+*.app
+
+# ------------
+# 3. Xcode (Your IDE)
+# ------------
+build/
+*.project
+*.user
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+*.xcuserstate
+project.xcworkspace/
+xcuserdata/
+
+# ------------
+# 4. VS Code (Very popular)
+# ------------
+.vscode/
+*.code-workspace
+
+# ------------
+# 5. Visual Studio (Windows standard)
+# ------------
+.vs/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Bb]in/
+[Oo]bj/
+*.suo
+*.user
+*.pdb
+
+# ------------
+# 6. CLion / CMake (JetBrains IDE)
+# ------------
+.idea/
+cmake-build-*/
+CMakeCache.txt
+CMakeFiles/ 
+**/Makefile
