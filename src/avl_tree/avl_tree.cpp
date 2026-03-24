@@ -129,6 +129,14 @@ AVLNode* AVLTree::balance(AVLNode* node, std::vector<AnimationStep>* steps) {
     updateHeight(node);
     int bf = balanceFactor(node);
 
+    if (steps) {
+        std::vector<std::pair<int, sf::Vector2f>> before;
+        calcPositions(root, TREE_ROOT_X, TREE_ROOT_Y, TREE_X_OFFSET, before);
+        snapshotStep(
+            "Checking balance at " + std::to_string(node->value) + " (BF = " + std::to_string(bf) + ")",
+            4, steps, before, node->value);
+    }
+
     if (bf > 1) {
         std::vector<std::pair<int, sf::Vector2f>> before;
         calcPositions(root, TREE_ROOT_X, TREE_ROOT_Y, TREE_X_OFFSET, before);

@@ -36,7 +36,7 @@ void AVLScreen::buildInsertSteps(int value) {
 }
 
 int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
-    if (!mBgTexture.loadFromFile("assets/textures/background.png"))
+    if (!mBgTexture.loadFromFile("assets/textures/avl_background.png"))
         std::cerr << "Failed to load background.png\n";
     sf::Vector2u sz = mBgTexture.getSize();
     mBgSprite.setTexture(mBgTexture);
