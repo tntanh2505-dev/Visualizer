@@ -26,20 +26,18 @@ private:
     int      height(AVLNode* node);
     void     updateHeight(AVLNode* node);
     int      balanceFactor(AVLNode* node);
-    AVLNode* rotateLeft(AVLNode* node,
-                        std::vector<AnimationStep>* steps);
-    AVLNode* rotateRight(AVLNode* node,
-                         std::vector<AnimationStep>* steps);
+    AVLNode* rotateLeft(AVLNode* node);
+    AVLNode* rotateRight(AVLNode* node);
     AVLNode* balance(AVLNode* node,
                      std::vector<AnimationStep>* steps);
 
-    // position calculator for step recording
-    void     calcPositions(AVLNode* node,
-                           float x, float y, float offsetX,
-                           std::vector<std::pair<int, sf::Vector2f>>& out);
-    void     snapshotStep(AVLNode* root,
-                          const std::string& desc,
-                          int codeLine,
-                          std::vector<AnimationStep>* steps,
-                          const std::vector<std::pair<int,sf::Vector2f>>& prevPos);
+    void calcPositions(AVLNode* node,
+                       float x, float y, float offsetX,
+                       std::vector<std::pair<int, sf::Vector2f>>& out);
+
+    void snapshotStep(const std::string& desc,
+                      int codeLine,
+                      std::vector<AnimationStep>* steps,
+                      const std::vector<std::pair<int, sf::Vector2f>>& prevPos,
+                      int highlightValue = -1);
 };

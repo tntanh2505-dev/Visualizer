@@ -11,7 +11,8 @@ AnimationController::AnimationController()
 void AnimationController::loadSteps(const std::vector<AnimationStep>& steps) {
     mSteps        = steps;
     mCurrentIndex = 0;
-    mT            = 1.f;
+    // start animating the first loaded step immediately
+    mT            = 0.f;
     mReverse      = false;
 }
 

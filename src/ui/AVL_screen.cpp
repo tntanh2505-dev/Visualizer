@@ -173,37 +173,30 @@ void AVLScreen::drawNode(sf::RenderWindow& window, const sf::Font& font,
     valText.setOrigin(vb.left + vb.width / 2.f, vb.top + vb.height / 2.f);
     valText.setPosition(pos);
     window.draw(valText);
-
-    sf::Text bfText;
-    bfText.setFont(font);
-    bfText.setString(std::to_string(ns.balanceFactor));
-    bfText.setCharacterSize(11);
-    bfText.setFillColor(sf::Color::Yellow);
-    bfText.setPosition(pos.x + NODE_RADIUS - 4.f, pos.y - NODE_RADIUS - 14.f);
-    window.draw(bfText);
 }
 
 void AVLScreen::drawEdges(sf::RenderWindow& window,
                            const std::vector<NodeState>& nodes, float t)
 {
-    // Build positions map from snapshot nodes (do not rely on live tree pointers)
+    // Build position map from the step's own node data
     std::map<int, sf::Vector2f> posMap;
     for (const auto& ns : nodes)
         posMap[ns.value] = ns.startPos + (ns.targetPos - ns.startPos) * t;
 
-    // Draw edges using recorded child values in NodeState
+    // Draw edges using leftChild/rightChild stored in each NodeState
     for (const auto& ns : nodes) {
-        if (ns.leftValue != -1 && posMap.count(ns.value) && posMap.count(ns.leftValue)) {
+        sf::Vector2f parentPos = posMap[ns.value];
+        if (ns.leftChild != -1 && posMap.count(ns.leftChild)) {
             sf::Vertex line[] = {
-                sf::Vertex(posMap[ns.value],        sf::Color(200, 200, 200)),
-                sf::Vertex(posMap[ns.leftValue],    sf::Color(200, 200, 200))
+                sf::Vertex(parentPos,              sf::Color(200, 200, 200)),
+                sf::Vertex(posMap[ns.leftChild],   sf::Color(200, 200, 200))
             };
             window.draw(line, 2, sf::Lines);
         }
-        if (ns.rightValue != -1 && posMap.count(ns.value) && posMap.count(ns.rightValue)) {
+        if (ns.rightChild != -1 && posMap.count(ns.rightChild)) {
             sf::Vertex line[] = {
-                sf::Vertex(posMap[ns.value],        sf::Color(200, 200, 200)),
-                sf::Vertex(posMap[ns.rightValue],   sf::Color(200, 200, 200))
+                sf::Vertex(parentPos,              sf::Color(200, 200, 200)),
+                sf::Vertex(posMap[ns.rightChild],  sf::Color(200, 200, 200))
             };
             window.draw(line, 2, sf::Lines);
         }

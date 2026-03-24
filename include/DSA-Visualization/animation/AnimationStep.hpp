@@ -5,15 +5,12 @@
 
 struct NodeState {
     int          value;
-    int          balanceFactor;
-    sf::Vector2f startPos;      // where it was
-    sf::Vector2f targetPos;     // where it's going
+    sf::Vector2f startPos;
+    sf::Vector2f targetPos;
     sf::Color    fillColor;
     sf::Color    outlineColor;
-    bool         hasLeft;
-    bool         hasRight;
-    int          leftValue;     // -1 if none
-    int          rightValue;    // -1 if none
+    int          leftChild;    // value of left child, -1 if none
+    int          rightChild;   // value of right child, -1 if none
 };
 
 struct AnimationStep {
