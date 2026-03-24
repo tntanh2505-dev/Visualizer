@@ -57,6 +57,23 @@ int MenuScreen::run(sf::RenderWindow& window, sf::Font& font) {
 
         window.clear();
         window.draw(mBgSprite);
+
+        // Dynamic Title Render
+        sf::Text title;
+        title.setFont(font);
+        title.setString("ALGORITHM VISUALIZER");
+        title.setCharacterSize(64);
+        title.setLetterSpacing(1.2f);
+        title.setFillColor(sf::Color::White);
+        title.setPosition(200.f, 60.f); 
+        
+        sf::Text titleShadow = title;
+        titleShadow.setFillColor(sf::Color(0, 0, 0, 180));
+        titleShadow.move(4.f, 4.f);
+        
+        window.draw(titleShadow);
+        window.draw(title);
+
         for (auto& btn : mButtons) window.draw(btn);
         window.display();
     }

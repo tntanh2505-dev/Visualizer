@@ -18,12 +18,12 @@ CodePanel::CodePanel(const sf::Font& font, sf::Vector2f position, sf::Vector2f s
 {
     mBackground.setPosition(position);
     mBackground.setSize(size);
-    mBackground.setFillColor(sf::Color(30, 30, 40));
+    mBackground.setFillColor(sf::Color(20, 22, 30, 230));
     mBackground.setOutlineThickness(1.f);
-    mBackground.setOutlineColor(sf::Color(80, 80, 100));
+    mBackground.setOutlineColor(sf::Color(60, 65, 80, 200));
 
     mHighlightBar.setSize({size.x, LINE_HEIGHT});
-    mHighlightBar.setFillColor(sf::Color(70, 130, 180, 80));
+    mHighlightBar.setFillColor(sf::Color(80, 140, 220, 60));
 }
 
 void CodePanel::setCode(const std::vector<std::string>& lines) {
@@ -34,7 +34,8 @@ void CodePanel::setCode(const std::vector<std::string>& lines) {
         text.setFont(*mFont);
         text.setString(lines[i]);
         text.setCharacterSize(FONT_SIZE);
-        text.setFillColor(sf::Color(200, 200, 210));
+        text.setFillColor(sf::Color(230, 235, 240));
+        text.setLetterSpacing(1.1f);
         text.setPosition(
             mPosition.x + PADDING,
             mPosition.y + PADDING + i * LINE_HEIGHT
@@ -55,8 +56,13 @@ void CodePanel::highlight(int lineIndex) {
 
 void CodePanel::draw(sf::RenderWindow& window) {
     window.draw(mBackground);
-    if (mHighlightedLine >= 0 && mHighlightedLine < (int)mLines.size())
+    if (mHighlightedLine >= 0 && mHighlightedLine < (int)mLines.size()) {
         window.draw(mHighlightBar);
+        sf::RectangleShape accent({4.f, mLineHeight});
+        accent.setPosition(mHighlightBar.getPosition());
+        accent.setFillColor(sf::Color(90, 160, 240));
+        window.draw(accent);
+    }
     for (auto& line : mLines)
         window.draw(line);
 }

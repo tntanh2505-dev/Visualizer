@@ -97,7 +97,7 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
     mNextBtn  .emplace("Next >",  font, sf::Vector2f(80.f,  40.f));
     mNextBtn  ->setPosition(1100.f, 285.f);
     mReturnBtn.emplace("Return",  font, sf::Vector2f(120.f, 40.f));
-    mReturnBtn->setPosition(1010.f, 660.f);
+    mReturnBtn->setPosition(1110.f, 660.f);
 
     // Speed slider track
     mSliderTrack = sf::RectangleShape({120.f, 6.f});
@@ -305,11 +305,17 @@ void AVLScreen::drawNode(sf::RenderWindow& window, const sf::Font& font,
 {
     sf::Vector2f pos = ns.startPos + (ns.targetPos - ns.startPos) * t;
 
+    sf::CircleShape shadow(NODE_RADIUS);
+    shadow.setOrigin(NODE_RADIUS, NODE_RADIUS);
+    shadow.setPosition(pos.x + 4.f, pos.y + 4.f);
+    shadow.setFillColor(sf::Color(0, 0, 0, 80));
+    window.draw(shadow);
+
     sf::CircleShape circle(NODE_RADIUS);
     circle.setOrigin(NODE_RADIUS, NODE_RADIUS);
     circle.setPosition(pos);
     circle.setFillColor(ns.fillColor);
-    circle.setOutlineThickness(2.f);
+    circle.setOutlineThickness(3.f);
     circle.setOutlineColor(ns.outlineColor);
     window.draw(circle);
 
@@ -318,6 +324,7 @@ void AVLScreen::drawNode(sf::RenderWindow& window, const sf::Font& font,
     valText.setString(std::to_string(ns.value));
     valText.setCharacterSize(16);
     valText.setFillColor(sf::Color::White);
+    valText.setLetterSpacing(1.1f);
     sf::FloatRect vb = valText.getLocalBounds();
     valText.setOrigin(vb.left + vb.width / 2.f, vb.top + vb.height / 2.f);
     valText.setPosition(pos);
@@ -327,27 +334,29 @@ void AVLScreen::drawNode(sf::RenderWindow& window, const sf::Font& font,
 void AVLScreen::drawEdges(sf::RenderWindow& window,
                            const std::vector<NodeState>& nodes, float t)
 {
-    // Build position map from the step's own node data
     std::map<int, sf::Vector2f> posMap;
     for (const auto& ns : nodes)
         posMap[ns.value] = ns.startPos + (ns.targetPos - ns.startPos) * t;
 
-    // Draw edges using leftChild/rightChild stored in each NodeState
+    auto drawThickLine = [&](sf::Vector2f p1, sf::Vector2f p2) {
+        sf::Vector2f dir = p2 - p1;
+        float len = std::sqrt(dir.x * dir.x + dir.y * dir.y);
+        if (len < 0.1f) return;
+        sf::RectangleShape line(sf::Vector2f(len, 3.f));
+        line.setOrigin(0, 1.5f);
+        line.setPosition(p1);
+        line.setFillColor(sf::Color(100, 110, 130, 200));
+        line.setRotation(std::atan2(dir.y, dir.x) * 180.f / 3.14159f);
+        window.draw(line);
+    };
+
     for (const auto& ns : nodes) {
         sf::Vector2f parentPos = posMap[ns.value];
         if (ns.leftChild != -1 && posMap.count(ns.leftChild)) {
-            sf::Vertex line[] = {
-                sf::Vertex(parentPos,              sf::Color(200, 200, 200)),
-                sf::Vertex(posMap[ns.leftChild],   sf::Color(200, 200, 200))
-            };
-            window.draw(line, 2, sf::Lines);
+            drawThickLine(parentPos, posMap[ns.leftChild]);
         }
         if (ns.rightChild != -1 && posMap.count(ns.rightChild)) {
-            sf::Vertex line[] = {
-                sf::Vertex(parentPos,              sf::Color(200, 200, 200)),
-                sf::Vertex(posMap[ns.rightChild],  sf::Color(200, 200, 200))
-            };
-            window.draw(line, 2, sf::Lines);
+            drawThickLine(parentPos, posMap[ns.rightChild]);
         }
     }
 }
@@ -377,47 +386,70 @@ void AVLScreen::drawControls(sf::RenderWindow& window, const sf::Font& font) {
 void AVLScreen::drawSpeedSlider(sf::RenderWindow& window, const sf::Font& font) {
     sf::Text label;
     label.setFont(font);
-    label.setCharacterSize(12);
-    label.setFillColor(sf::Color::White);
+    label.setCharacterSize(13);
+    label.setLetterSpacing(1.1f);
+    label.setFillColor(sf::Color(200, 210, 220));
     label.setString("Speed: " + std::to_string((int)mSpeedValue) + "x");
     label.setPosition(1010.f, 370.f);
     window.draw(label);
 
+    // Glowing track filled portion
+    sf::RectangleShape filledTrack({mSliderHandle.getPosition().x - mSliderTrack.getPosition().x, 6.f});
+    filledTrack.setPosition(mSliderTrack.getPosition());
+    filledTrack.setFillColor(sf::Color(90, 160, 240));
+
     window.draw(mSliderTrack);
+    window.draw(filledTrack);
+
+    sf::CircleShape shadow(8.f);
+    shadow.setOrigin(8.f, 8.f);
+    shadow.setPosition(mSliderHandle.getPosition() + sf::Vector2f(2.f, 2.f));
+    shadow.setFillColor(sf::Color(0, 0, 0, 100));
+
+    window.draw(shadow);
     window.draw(mSliderHandle);
 }
 
 void AVLScreen::drawInputBox(sf::RenderWindow& window, const sf::Font& font) {
-    sf::RectangleShape box({120.f, 36.f});
+    sf::RectangleShape box({140.f, 40.f});
     box.setPosition(CANVAS_X + 10.f, CANVAS_H + 10.f);
-    box.setFillColor(sf::Color(30, 30, 40));
-    box.setOutlineThickness(mInputActive ? 2.f : 1.f);
-    box.setOutlineColor(mInputActive ? sf::Color::Cyan : sf::Color(100, 100, 120));
+    box.setFillColor(sf::Color(40, 45, 55));
+    box.setOutlineThickness(2.f);
+    box.setOutlineColor(mInputActive ? sf::Color(90, 160, 240) : sf::Color(70, 75, 85));
     window.draw(box);
 
     sf::Text inputText;
     inputText.setFont(font);
     inputText.setString(mInputString.empty() ? "value..." : mInputString);
-    inputText.setCharacterSize(14);
+    inputText.setCharacterSize(15);
+    inputText.setLetterSpacing(1.1f);
     inputText.setFillColor(mInputString.empty()
         ? sf::Color(100, 100, 120) : sf::Color::White);
-    inputText.setPosition(CANVAS_X + 16.f, CANVAS_H + 16.f);
+    inputText.setPosition(CANVAS_X + 20.f, CANVAS_H + 18.f);
     window.draw(inputText);
 }
 
 void AVLScreen::drawDescription(sf::RenderWindow& window, const sf::Font& font) {
     if (!mController.hasSteps()) return;
 
-    sf::RectangleShape bar({CANVAS_W, 36.f});
-    bar.setPosition(CANVAS_X, CANVAS_H + 60.f);
-    bar.setFillColor(sf::Color(30, 30, 40, 200));
+    sf::RectangleShape shadow({CANVAS_W - 40.f, 44.f});
+    shadow.setPosition(CANVAS_X + 24.f, CANVAS_H + 64.f);
+    shadow.setFillColor(sf::Color(0, 0, 0, 80));
+    window.draw(shadow);
+
+    sf::RectangleShape bar({CANVAS_W - 40.f, 44.f});
+    bar.setPosition(CANVAS_X + 20.f, CANVAS_H + 60.f);
+    bar.setFillColor(sf::Color(25, 30, 45, 230));
+    bar.setOutlineThickness(1.f);
+    bar.setOutlineColor(sf::Color(60, 65, 80));
     window.draw(bar);
 
     sf::Text desc;
     desc.setFont(font);
     desc.setString(mController.currentStep()->description);
-    desc.setCharacterSize(14);
+    desc.setCharacterSize(16);
+    desc.setLetterSpacing(1.1f);
     desc.setFillColor(sf::Color::White);
-    desc.setPosition(CANVAS_X + 10.f, CANVAS_H + 68.f);
+    desc.setPosition(CANVAS_X + 35.f, CANVAS_H + 70.f);
     window.draw(desc);
 }
