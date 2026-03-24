@@ -19,6 +19,11 @@ static void destroyTree(AVLNode* node) {
 AVLTree::AVLTree() : root(nullptr) {}
 AVLTree::~AVLTree() { destroyTree(root); }
 
+void AVLTree::clear() {
+    destroyTree(root);
+    root = nullptr;
+}
+
 //help from Copilot
 int AVLTree::height(AVLNode* node) {
     return node ? node->height : 0;

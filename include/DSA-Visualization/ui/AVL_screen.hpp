@@ -46,5 +46,8 @@ private:
     float                 mSpeedValue;
     bool                  mSliderDragging;
 
+    std::vector<int>      mInsertionHistory;
+    int                   mHistoryIndex;
+
     static const std::vector<std::string> INSERT_CODE;
 };

@@ -14,6 +14,7 @@ class AVLTree {
 public:
     AVLTree();
     ~AVLTree();
+    void clear();
 
     void insert(int value, std::vector<AnimationStep>* steps = nullptr);
 

@@ -6,6 +6,8 @@ AnimationController::AnimationController()
 , mT(1.f)
 , mLerpSpeed(2.f)
 , mReverse(false)
+, mPauseTimer(0.f)
+, mAutoPlay(true)
 {}
 
 void AnimationController::loadSteps(const std::vector<AnimationStep>& steps) {
@@ -14,6 +16,7 @@ void AnimationController::loadSteps(const std::vector<AnimationStep>& steps) {
     // start animating the first loaded step immediately
     mT            = 0.f;
     mReverse      = false;
+    mPauseTimer   = 0.f;
 }
 
 void AnimationController::clear() {
@@ -21,6 +24,15 @@ void AnimationController::clear() {
     mCurrentIndex = 0;
     mT            = 1.f;
     mReverse      = false;
+    mPauseTimer   = 0.f;
+}
+
+void AnimationController::skipToEnd() {
+    if (mSteps.empty()) return;
+    mCurrentIndex = (int)mSteps.size() - 1;
+    mT            = 1.f;
+    mReverse      = false;
+    mPauseTimer   = 0.f;
 }
 
 void AnimationController::next() {
@@ -42,8 +54,20 @@ void AnimationController::prev() {
 }
 
 void AnimationController::update(float dt) {
-    if (mT < 1.f)
-        mT = std::min(1.f, mT + dt * mLerpSpeed);
+    if (mT < 1.f) {
+        mT += dt * mLerpSpeed;
+        if (mT >= 1.f) {
+            mT = 1.f;
+            mPauseTimer = 1.0f; // scaled by speed down below
+        }
+    } else if (mAutoPlay && !mReverse && mCurrentIndex < (int)mSteps.size() - 1) {
+        if (mPauseTimer > 0.f) {
+            mPauseTimer -= dt * mLerpSpeed;
+        } else {
+            mCurrentIndex++;
+            mT = 0.f;
+        }
+    }
 }
 
 const AnimationStep* AnimationController::currentStep() const {

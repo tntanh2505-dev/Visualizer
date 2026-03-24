@@ -26,6 +26,7 @@ AVLScreen::AVLScreen()
 , mCodePanel()
 , mSpeedValue(2.f)
 , mSliderDragging(false)
+, mHistoryIndex(0)
 {}
 
 void AVLScreen::buildInsertSteps(int value) {
@@ -110,12 +111,39 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
             }
 
             if (mInsertBtn->isClicked(event, window) && !mInputString.empty()) {
-                buildInsertSteps(std::stoi(mInputString));
+                int val = std::stoi(mInputString);
+                
+                if (mHistoryIndex < (int)mInsertionHistory.size()) {
+                    mInsertionHistory.erase(mInsertionHistory.begin() + mHistoryIndex, mInsertionHistory.end());
+                }
+                mInsertionHistory.push_back(val);
+                mHistoryIndex++;
+                
+                buildInsertSteps(val);
                 mInputString.clear();
             }
 
-            if (mPrevBtn->isClicked(event, window)) mController.prev();
-            if (mNextBtn->isClicked(event, window)) mController.next();
+            if (mPrevBtn->isClicked(event, window)) {
+                if (mHistoryIndex > 0) {
+                    mHistoryIndex--;
+                    mTree.clear();
+                    mController.clear();
+                    for(int i = 0; i < mHistoryIndex - 1; ++i) {
+                        mTree.insert(mInsertionHistory[i], nullptr);
+                    }
+                    if (mHistoryIndex > 0) {
+                        buildInsertSteps(mInsertionHistory[mHistoryIndex - 1]);
+                        mController.skipToEnd();
+                    }
+                }
+            }
+            if (mNextBtn->isClicked(event, window)) {
+                if (mHistoryIndex < (int)mInsertionHistory.size()) {
+                    int val = mInsertionHistory[mHistoryIndex];
+                    mHistoryIndex++;
+                    buildInsertSteps(val);
+                }
+            }
         }
 
         mController.update(dt);

@@ -8,6 +8,7 @@ public:
 
     void loadSteps(const std::vector<AnimationStep>& steps);
     void clear();
+    void skipToEnd();
 
     void next();
     void prev();
@@ -27,4 +28,6 @@ private:
     float                      mT;
     float                      mLerpSpeed;
     bool                       mReverse;
+    float                      mPauseTimer;
+    bool                       mAutoPlay;
 };
