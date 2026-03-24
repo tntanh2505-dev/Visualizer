@@ -1,4 +1,5 @@
 #include "DSA-Visualization/ui/AVL_Screen.hpp"
+#include "DSA-Visualization/ui/components/graphic_node.hpp"
 #include <iostream>
 #include <cmath>
 #include <map>
@@ -110,6 +111,10 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
     updateSliderHandle();
 
     sf::Clock clock;
+
+    //anti aliasing feature
+    sf::ContextSettings settings;
+    settings.antialiasingLevel = 8;
 
     while (window.isOpen()) {
         float dt = clock.restart().asSeconds();
@@ -305,30 +310,14 @@ void AVLScreen::drawNode(sf::RenderWindow& window, const sf::Font& font,
 {
     sf::Vector2f pos = ns.startPos + (ns.targetPos - ns.startPos) * t;
 
-    sf::CircleShape shadow(NODE_RADIUS);
-    shadow.setOrigin(NODE_RADIUS, NODE_RADIUS);
-    shadow.setPosition(pos.x + 4.f, pos.y + 4.f);
-    shadow.setFillColor(sf::Color(0, 0, 0, 80));
-    window.draw(shadow);
+    GraphicNode node(NODE_RADIUS, std::to_string(ns.value), font);
+    node.setPosition(pos);
+    
+    // Apply dynamic controller interpolated colors
+    node.setFillColor(ns.fillColor);
+    node.setOutlineColor(ns.outlineColor);
 
-    sf::CircleShape circle(NODE_RADIUS);
-    circle.setOrigin(NODE_RADIUS, NODE_RADIUS);
-    circle.setPosition(pos);
-    circle.setFillColor(ns.fillColor);
-    circle.setOutlineThickness(3.f);
-    circle.setOutlineColor(ns.outlineColor);
-    window.draw(circle);
-
-    sf::Text valText;
-    valText.setFont(font);
-    valText.setString(std::to_string(ns.value));
-    valText.setCharacterSize(16);
-    valText.setFillColor(sf::Color::White);
-    valText.setLetterSpacing(1.1f);
-    sf::FloatRect vb = valText.getLocalBounds();
-    valText.setOrigin(vb.left + vb.width / 2.f, vb.top + vb.height / 2.f);
-    valText.setPosition(pos);
-    window.draw(valText);
+    window.draw(node);
 }
 
 void AVLScreen::drawEdges(sf::RenderWindow& window,

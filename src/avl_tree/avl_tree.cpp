@@ -270,12 +270,13 @@ void AVLTree::insert(int value, std::vector<AnimationStep>* steps) {
         ns.startPos     = currMap.count(p.first)
                           ? currMap.at(p.first)
                           : p.second;
+        int fill_col = 150;
         ns.fillColor    = (p.first == value)
-                          ? sf::Color(39, 174,  96)
-                          : sf::Color(52, 152, 219);
+                          ? sf::Color(fill_col, fill_col,  fill_col)
+                          : sf::Color(fill_col, fill_col, fill_col);
         ns.outlineColor = (p.first == value)
-                          ? sf::Color(20, 120,  60)
-                          : sf::Color(21, 101, 192);
+                          ? sf::Color(35, 35,  35)
+                          : sf::Color(35, 35, 35);
         ns.leftChild    = -1;
         ns.rightChild   = -1;
         if (nodeMap.count(p.first)) {
