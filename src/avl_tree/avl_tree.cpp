@@ -86,11 +86,11 @@ void AVLTree::snapshotStep(const std::string& desc,
         ns.rightChild   = -1;
 
         if (ns.value == highlightValue) {
-            ns.fillColor    = sf::Color(243, 156, 18);
-            ns.outlineColor = sf::Color(180, 100,  0);
+            ns.fillColor    = sf::Color(80, 80, 80); // Hover/Highlight brightness
+            ns.outlineColor = sf::Color(255, 255, 255);  // White outline
         } else {
-            ns.fillColor    = sf::Color(52,  152, 219);
-            ns.outlineColor = sf::Color(21,  101, 192);
+            ns.fillColor    = sf::Color(45, 45, 45); // Monochrome Dark Grey
+            ns.outlineColor = sf::Color(200, 200, 200); // Standard grey outline
         }
 
         if (nodeMap.count(cp.first)) {
@@ -270,13 +270,13 @@ void AVLTree::insert(int value, std::vector<AnimationStep>* steps) {
         ns.startPos     = currMap.count(p.first)
                           ? currMap.at(p.first)
                           : p.second;
-        int fill_col = 150;
-        ns.fillColor    = (p.first == value)
-                          ? sf::Color(fill_col, fill_col,  fill_col)
-                          : sf::Color(fill_col, fill_col, fill_col);
-        ns.outlineColor = (p.first == value)
-                          ? sf::Color(35, 35,  35)
-                          : sf::Color(35, 35, 35);
+        if (p.first == value) {
+            ns.fillColor    = sf::Color(130, 130, 130); // Success Bright Grey
+            ns.outlineColor = sf::Color(255, 255, 255);
+        } else {
+            ns.fillColor    = sf::Color(45, 45, 45);
+            ns.outlineColor = sf::Color(200, 200, 200);
+        }
         ns.leftChild    = -1;
         ns.rightChild   = -1;
         if (nodeMap.count(p.first)) {

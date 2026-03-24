@@ -3,9 +3,10 @@
 #include <iostream>
 #include <vector>
 
-Game::Game()
-: mWindow(sf::VideoMode(1280, 720), "DSA Visualization")
-{
+Game::Game() {
+    sf::ContextSettings settings;
+    settings.antialiasingLevel = 8;
+    mWindow.create(sf::VideoMode(1280, 720), "DSA Visualization", sf::Style::Default, settings);
     mWindow.setFramerateLimit(60);
     if (!mFont.loadFromFile("assets/fonts/PhongChu.ttf"))
         std::cerr << "Failed to load font.ttf\n";

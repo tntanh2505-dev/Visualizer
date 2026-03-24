@@ -103,18 +103,14 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
     // Speed slider track
     mSliderTrack = sf::RectangleShape({120.f, 6.f});
     mSliderTrack.setPosition(1010.f, 355.f);
-    mSliderTrack.setFillColor(sf::Color(80, 80, 100));
+    mSliderTrack.setFillColor(sf::Color(60, 60, 60));
 
     mSliderHandle = sf::CircleShape(8.f);
     mSliderHandle.setOrigin(8.f, 8.f);
-    mSliderHandle.setFillColor(sf::Color(70, 130, 180));
+    mSliderHandle.setFillColor(sf::Color(200, 200, 200));
     updateSliderHandle();
 
     sf::Clock clock;
-
-    //anti aliasing feature
-    sf::ContextSettings settings;
-    settings.antialiasingLevel = 8;
 
     while (window.isOpen()) {
         float dt = clock.restart().asSeconds();
@@ -334,7 +330,7 @@ void AVLScreen::drawEdges(sf::RenderWindow& window,
         sf::RectangleShape line(sf::Vector2f(len, 3.f));
         line.setOrigin(0, 1.5f);
         line.setPosition(p1);
-        line.setFillColor(sf::Color(100, 110, 130, 200));
+        line.setFillColor(sf::Color(100, 100, 100, 200));
         line.setRotation(std::atan2(dir.y, dir.x) * 180.f / 3.14159f);
         window.draw(line);
     };
@@ -385,7 +381,7 @@ void AVLScreen::drawSpeedSlider(sf::RenderWindow& window, const sf::Font& font) 
     // Glowing track filled portion
     sf::RectangleShape filledTrack({mSliderHandle.getPosition().x - mSliderTrack.getPosition().x, 6.f});
     filledTrack.setPosition(mSliderTrack.getPosition());
-    filledTrack.setFillColor(sf::Color(90, 160, 240));
+    filledTrack.setFillColor(sf::Color(180, 180, 180));
 
     window.draw(mSliderTrack);
     window.draw(filledTrack);
@@ -402,9 +398,9 @@ void AVLScreen::drawSpeedSlider(sf::RenderWindow& window, const sf::Font& font) 
 void AVLScreen::drawInputBox(sf::RenderWindow& window, const sf::Font& font) {
     sf::RectangleShape box({140.f, 40.f});
     box.setPosition(CANVAS_X + 10.f, CANVAS_H + 10.f);
-    box.setFillColor(sf::Color(40, 45, 55));
+    box.setFillColor(sf::Color(35, 35, 35));
     box.setOutlineThickness(2.f);
-    box.setOutlineColor(mInputActive ? sf::Color(90, 160, 240) : sf::Color(70, 75, 85));
+    box.setOutlineColor(mInputActive ? sf::Color(255, 255, 255) : sf::Color(100, 100, 100));
     window.draw(box);
 
     sf::Text inputText;
@@ -428,9 +424,9 @@ void AVLScreen::drawDescription(sf::RenderWindow& window, const sf::Font& font) 
 
     sf::RectangleShape bar({CANVAS_W - 40.f, 44.f});
     bar.setPosition(CANVAS_X + 20.f, CANVAS_H + 60.f);
-    bar.setFillColor(sf::Color(25, 30, 45, 230));
+    bar.setFillColor(sf::Color(25, 25, 25, 230));
     bar.setOutlineThickness(1.f);
-    bar.setOutlineColor(sf::Color(60, 65, 80));
+    bar.setOutlineColor(sf::Color(60, 60, 60));
     window.draw(bar);
 
     sf::Text desc;

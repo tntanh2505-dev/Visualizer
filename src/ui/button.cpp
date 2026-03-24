@@ -5,11 +5,11 @@ ModernButton::ModernButton(const std::string& text, const sf::Font& font, sf::Ve
     : m_size(size), m_radius(radius), m_isHovered(false) // radius is kept in signature to match your .hpp, but unused visually
 {
     // 1. Setup Theme Colors
-    m_topNormal    = sf::Color(60, 64, 75);
-    m_bottomNormal = sf::Color(35, 38, 48);
-    m_topHover     = sf::Color(80, 85, 100);
-    m_bottomHover  = sf::Color(50, 55, 70);
-    m_borderColor  = sf::Color(100, 105, 120, 150);
+    m_topNormal    = sf::Color(60, 60, 60);
+    m_bottomNormal = sf::Color(30, 30, 30);
+    m_topHover     = sf::Color(80, 80, 80);
+    m_bottomHover  = sf::Color(50, 50, 50);
+    m_borderColor  = sf::Color(100, 100, 100, 150);
 
     // 2. Setup Text properties (Scaled down for smaller button)
     m_text.setFont(font);

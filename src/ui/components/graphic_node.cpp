@@ -7,12 +7,12 @@ GraphicNode::GraphicNode(float radius, const std::string& label, const sf::Font&
     float outlineThickness = 3.f;
     m_outlineShape.setRadius(radius + outlineThickness);
     m_outlineShape.setOrigin(radius + outlineThickness, radius + outlineThickness);
-    m_outlineShape.setFillColor(sf::Color(240, 240, 240)); // Off-white border
+    m_outlineShape.setFillColor(sf::Color(200, 200, 200)); // Standard grey border
 
     // 2. Setup Main Inner Shape
     m_shape.setRadius(radius);
     m_shape.setOrigin(radius, radius); 
-    m_baseColor = sf::Color(70, 130, 180); // Modern Steel Blue
+    m_baseColor = sf::Color(45, 45, 45); // Monochrome Dark Grey
     m_shape.setFillColor(m_baseColor);
     // Notice: We no longer use m_shape.setOutlineThickness()!
 
@@ -62,14 +62,14 @@ void GraphicNode::setHovered(bool hovered) {
 void GraphicNode::setSelected(bool selected) {
     m_isSelected = selected;
     if (m_isSelected) {
-        m_outlineShape.setFillColor(sf::Color(255, 215, 0)); // Gold selection
+        m_outlineShape.setFillColor(sf::Color(255, 255, 255)); // Bright white selection
         
         // Slightly enlarge the outline to make selection pop
         float newRadius = getRadius() + 5.f;
         m_outlineShape.setRadius(newRadius);
         m_outlineShape.setOrigin(newRadius, newRadius);
     } else {
-        m_outlineShape.setFillColor(sf::Color(240, 240, 240));
+        m_outlineShape.setFillColor(sf::Color(200, 200, 200));
         
         // Revert to normal outline size
         float normalRadius = getRadius() + 3.f;

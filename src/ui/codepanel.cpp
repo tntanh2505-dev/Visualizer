@@ -18,12 +18,12 @@ CodePanel::CodePanel(const sf::Font& font, sf::Vector2f position, sf::Vector2f s
 {
     mBackground.setPosition(position);
     mBackground.setSize(size);
-    mBackground.setFillColor(sf::Color(20, 22, 30, 230));
+    mBackground.setFillColor(sf::Color(22, 22, 22, 230));
     mBackground.setOutlineThickness(1.f);
-    mBackground.setOutlineColor(sf::Color(60, 65, 80, 200));
+    mBackground.setOutlineColor(sf::Color(60, 60, 60, 200));
 
     mHighlightBar.setSize({size.x, LINE_HEIGHT});
-    mHighlightBar.setFillColor(sf::Color(80, 140, 220, 60));
+    mHighlightBar.setFillColor(sf::Color(100, 100, 100, 80));
 }
 
 void CodePanel::setCode(const std::vector<std::string>& lines) {
@@ -60,7 +60,7 @@ void CodePanel::draw(sf::RenderWindow& window) {
         window.draw(mHighlightBar);
         sf::RectangleShape accent({4.f, mLineHeight});
         accent.setPosition(mHighlightBar.getPosition());
-        accent.setFillColor(sf::Color(90, 160, 240));
+        accent.setFillColor(sf::Color(200, 200, 200));
         window.draw(accent);
     }
     for (auto& line : mLines)
