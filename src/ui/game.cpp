@@ -8,7 +8,7 @@ Game::Game()
 {
     mWindow.setFramerateLimit(60);
     if (!mFont.loadFromFile("assets/fonts/PhongChu.ttf"))
-        std::cerr << "Failed to load PhongChu.ttf\n";
+        std::cerr << "Failed to load font.ttf\n";
 }
 
 void Game::run() {

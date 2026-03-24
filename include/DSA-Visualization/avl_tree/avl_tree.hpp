@@ -18,6 +18,7 @@ public:
 
     void insert(int value, std::vector<AnimationStep>* steps = nullptr);
     void remove(int value, std::vector<AnimationStep>* steps = nullptr);
+    void search(int value, std::vector<AnimationStep>* steps = nullptr);
 
     AVLNode* root;
 
@@ -26,6 +27,8 @@ private:
                     std::vector<AnimationStep>* steps);
     AVLNode* remove(AVLNode* node, int value,
                     std::vector<AnimationStep>* steps);
+    void search(AVLNode* node, int value,
+                std::vector<AnimationStep>* steps);
     AVLNode* minValueNode(AVLNode* node);
 
     int      height(AVLNode* node);

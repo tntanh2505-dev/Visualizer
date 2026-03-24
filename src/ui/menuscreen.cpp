@@ -2,7 +2,7 @@
 #include <iostream>
 
 static const sf::Vector2f BUTTON_SIZE    = {260.f, 55.f};
-static const float        BUTTON_X       = 60.f;
+static const float        BUTTON_X       = 200.f;
 static const float        BUTTON_START_Y = 180.f;
 static const float        BUTTON_GAP     = 80.f;
 

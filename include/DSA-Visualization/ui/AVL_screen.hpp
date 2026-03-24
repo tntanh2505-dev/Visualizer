@@ -8,7 +8,7 @@
 #include <string>
 #include <vector>
 
-enum class OpType { Insert, Delete };
+enum class OpType { Insert, Delete, Search, Clear };
 struct Operation {
     OpType type;
     int value;
@@ -38,6 +38,9 @@ private:
 
     std::optional<ModernButton> mInsertBtn;
     std::optional<ModernButton> mDeleteBtn;
+    std::optional<ModernButton> mSearchBtn;
+    std::optional<ModernButton> mRandomBtn;
+    std::optional<ModernButton> mClearBtn;
     std::optional<ModernButton> mPrevBtn;
     std::optional<ModernButton> mNextBtn;
     std::optional<ModernButton> mReturnBtn;
@@ -58,4 +61,5 @@ private:
 
     static const std::vector<std::string> INSERT_CODE;
     static const std::vector<std::string> DELETE_CODE;
+    static const std::vector<std::string> SEARCH_CODE;
 };

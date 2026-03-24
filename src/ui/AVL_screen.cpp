@@ -28,6 +28,14 @@ const std::vector<std::string> AVLScreen::DELETE_CODE = {
     "  return node"
 };
 
+const std::vector<std::string> AVLScreen::SEARCH_CODE = {
+    "search(value):",
+    "  if node == null: return not_found",
+    "  if value < node: go left",
+    "  if value > node: go right",
+    "  else: return found"
+};
+
 static const float NODE_RADIUS   = 28.f;
 static const float CANVAS_X      = 230.f;
 static const float CANVAS_Y      = 20.f;
@@ -47,9 +55,19 @@ void AVLScreen::buildSteps(Operation op) {
     if (op.type == OpType::Insert) {
         mCodePanel.setCode(INSERT_CODE);
         mTree.insert(op.value, &steps);
-    } else {
+    } else if (op.type == OpType::Delete) {
         mCodePanel.setCode(DELETE_CODE);
         mTree.remove(op.value, &steps);
+    } else if (op.type == OpType::Search) {
+        mCodePanel.setCode(SEARCH_CODE);
+        mTree.search(op.value, &steps);
+    } else if (op.type == OpType::Clear) {
+        mCodePanel.setCode({});
+        mTree.clear();
+        AnimationStep step;
+        step.description = "Tree cleared.";
+        step.codeLineIndex = -1;
+        steps.push_back(step);
     }
     mController.loadSteps(steps);
 }
@@ -65,19 +83,25 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
     mCodePanel.setCode(INSERT_CODE);
 
     mInsertBtn.emplace("Insert",  font, sf::Vector2f(120.f, 40.f));
-    mInsertBtn->setPosition(1010.f,  80.f);
+    mInsertBtn->setPosition(1010.f,  60.f);
     mDeleteBtn.emplace("Delete",  font, sf::Vector2f(120.f, 40.f));
-    mDeleteBtn->setPosition(1010.f, 125.f);
+    mDeleteBtn->setPosition(1010.f, 105.f);
+    mSearchBtn.emplace("Search",  font, sf::Vector2f(120.f, 40.f));
+    mSearchBtn->setPosition(1010.f, 150.f);
+    mRandomBtn.emplace("Random",  font, sf::Vector2f(120.f, 40.f));
+    mRandomBtn->setPosition(1010.f, 195.f);
+    mClearBtn .emplace("Clear",   font, sf::Vector2f(120.f, 40.f));
+    mClearBtn ->setPosition(1010.f, 240.f);
     mPrevBtn  .emplace("< Prev",  font, sf::Vector2f(80.f,  40.f));
-    mPrevBtn  ->setPosition(1010.f, 170.f);
+    mPrevBtn  ->setPosition(1010.f, 285.f);
     mNextBtn  .emplace("Next >",  font, sf::Vector2f(80.f,  40.f));
-    mNextBtn  ->setPosition(1100.f, 170.f);
+    mNextBtn  ->setPosition(1100.f, 285.f);
     mReturnBtn.emplace("Return",  font, sf::Vector2f(120.f, 40.f));
     mReturnBtn->setPosition(1010.f, 660.f);
 
     // Speed slider track
     mSliderTrack = sf::RectangleShape({120.f, 6.f});
-    mSliderTrack.setPosition(1010.f, 240.f);
+    mSliderTrack.setPosition(1010.f, 355.f);
     mSliderTrack.setFillColor(sf::Color(80, 80, 100));
 
     mSliderHandle = sf::CircleShape(8.f);
@@ -93,6 +117,9 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
 
         mInsertBtn->update(mouseRaw);
         mDeleteBtn->update(mouseRaw);
+        mSearchBtn->update(mouseRaw);
+        mRandomBtn->update(mouseRaw);
+        mClearBtn->update(mouseRaw);
         mPrevBtn->update(mouseRaw);
         mNextBtn->update(mouseRaw);
         mReturnBtn->update(mouseRaw);
@@ -138,6 +165,56 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
                     mInputString.clear();
                 }
 
+                if (mSearchBtn->isClicked(mouseRaw, true) && !mInputString.empty()) {
+                    int val = std::stoi(mInputString);
+                    if (mHistoryIndex < (int)mHistory.size())
+                        mHistory.erase(mHistory.begin() + mHistoryIndex, mHistory.end());
+                    Operation op{OpType::Search, val};
+                    mHistory.push_back(op);
+                    mHistoryIndex++;
+                    buildSteps(op);
+                    mInputString.clear();
+                }
+
+                if (mClearBtn->isClicked(mouseRaw, true)) {
+                    if (mHistoryIndex < (int)mHistory.size())
+                        mHistory.erase(mHistory.begin() + mHistoryIndex, mHistory.end());
+                    Operation op{OpType::Clear, 0};
+                    mHistory.push_back(op);
+                    mHistoryIndex++;
+                    buildSteps(op);
+                    mInputString.clear();
+                }
+
+                static bool seeded = false;
+                if (!seeded) { srand(time(NULL)); seeded = true; }
+
+                if (mRandomBtn->isClicked(mouseRaw, true)) {
+                    if (mHistoryIndex < (int)mHistory.size())
+                        mHistory.erase(mHistory.begin() + mHistoryIndex, mHistory.end());
+                    
+                    mHistory.push_back({OpType::Clear, 0});
+                    mHistoryIndex++;
+                    
+                    int count = 5 + (rand() % 6);
+                    for (int i = 0; i < count; ++i) {
+                        int val = rand() % 100;
+                        mHistory.push_back({OpType::Insert, val});
+                        mHistoryIndex++;
+                    }
+                    
+                    mTree.clear();
+                    mController.clear();
+                    for(int i = 0; i < mHistoryIndex - 1; ++i) {
+                        if (mHistory[i].type == OpType::Insert)       mTree.insert(mHistory[i].value, nullptr);
+                        else if (mHistory[i].type == OpType::Delete)  mTree.remove(mHistory[i].value, nullptr);
+                        else if (mHistory[i].type == OpType::Clear)   mTree.clear();
+                    }
+                    buildSteps(mHistory[mHistoryIndex - 1]);
+                    mController.skipToEnd();
+                    mInputString.clear();
+                }
+
                 if (mPrevBtn->isClicked(mouseRaw, true)) {
                     if (mHistoryIndex > 0) {
                         mHistoryIndex--;
@@ -146,8 +223,10 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
                         for(int i = 0; i < mHistoryIndex - 1; ++i) {
                             if (mHistory[i].type == OpType::Insert)
                                 mTree.insert(mHistory[i].value, nullptr);
-                            else
+                            else if (mHistory[i].type == OpType::Delete)
                                 mTree.remove(mHistory[i].value, nullptr);
+                            else if (mHistory[i].type == OpType::Clear)
+                                mTree.clear();
                         }
                         if (mHistoryIndex > 0) {
                             buildSteps(mHistory[mHistoryIndex - 1]);
@@ -209,7 +288,7 @@ void AVLScreen::updateSliderHandle() {
     float trackLeft  = 1010.f;
     float trackRight = 1130.f;
     float ratio = (mSpeedValue - 0.5f) / 4.5f;
-    mSliderHandle.setPosition(trackLeft + ratio * (trackRight - trackLeft), 243.f);
+    mSliderHandle.setPosition(trackLeft + ratio * (trackRight - trackLeft), 353.f);
 }
 
 void AVLScreen::drawTree(sf::RenderWindow& window, const sf::Font& font) {
@@ -276,6 +355,9 @@ void AVLScreen::drawEdges(sf::RenderWindow& window,
 void AVLScreen::drawControls(sf::RenderWindow& window, const sf::Font& font) {
     window.draw(*mInsertBtn);
     window.draw(*mDeleteBtn);
+    window.draw(*mSearchBtn);
+    window.draw(*mRandomBtn);
+    window.draw(*mClearBtn);
     window.draw(*mPrevBtn);
     window.draw(*mNextBtn);
     window.draw(*mReturnBtn);
@@ -288,7 +370,7 @@ void AVLScreen::drawControls(sf::RenderWindow& window, const sf::Font& font) {
         ? std::to_string(mController.currentIndex() + 1) + " / "
           + std::to_string(mController.totalSteps())
         : "0 / 0");
-    counter.setPosition(1010.f, 215.f);
+    counter.setPosition(1010.f, 330.f);
     window.draw(counter);
 }
 
@@ -298,7 +380,7 @@ void AVLScreen::drawSpeedSlider(sf::RenderWindow& window, const sf::Font& font) 
     label.setCharacterSize(12);
     label.setFillColor(sf::Color::White);
     label.setString("Speed: " + std::to_string((int)mSpeedValue) + "x");
-    label.setPosition(1010.f, 255.f);
+    label.setPosition(1010.f, 370.f);
     window.draw(label);
 
     window.draw(mSliderTrack);

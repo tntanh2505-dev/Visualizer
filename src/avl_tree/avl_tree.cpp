@@ -358,3 +358,41 @@ void AVLTree::remove(int value, std::vector<AnimationStep>* steps) {
     calcPositions(root, TREE_ROOT_X, TREE_ROOT_Y, TREE_X_OFFSET, curr);
     snapshotStep("Delete complete. Tree is balanced.", 9, steps, curr, -1);
 }
+
+void AVLTree::search(AVLNode* node, int value, std::vector<AnimationStep>* steps) {
+    if (steps) {
+        std::vector<std::pair<int, sf::Vector2f>> curr;
+        calcPositions(root, TREE_ROOT_X, TREE_ROOT_Y, TREE_X_OFFSET, curr);
+        if (!node) {
+            snapshotStep("Value " + std::to_string(value) + " not found", 1, steps, curr, -1);
+            return;
+        }
+        if (value < node->value) {
+            snapshotStep("Searching for " + std::to_string(value) + ": smaller, going left", 2, steps, curr, node->value);
+        } else if (value > node->value) {
+            snapshotStep("Searching for " + std::to_string(value) + ": greater, going right", 3, steps, curr, node->value);
+        } else {
+            snapshotStep("Found " + std::to_string(value) + "!", 4, steps, curr, node->value);
+        }
+    }
+
+    if (!node) return;
+
+    if (value < node->value) {
+        search(node->left, value, steps);
+    } else if (value > node->value) {
+        search(node->right, value, steps);
+    }
+}
+
+void AVLTree::search(int value, std::vector<AnimationStep>* steps) {
+    if (!steps) {
+        search(root, value, nullptr);
+        return;
+    }
+    std::vector<std::pair<int, sf::Vector2f>> initial;
+    calcPositions(root, TREE_ROOT_X, TREE_ROOT_Y, TREE_X_OFFSET, initial);
+    snapshotStep("Starting search for " + std::to_string(value), 0, steps, initial, -1);
+
+    search(root, value, steps);
+}

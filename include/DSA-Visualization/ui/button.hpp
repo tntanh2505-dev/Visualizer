@@ -2,22 +2,6 @@
 #include <SFML/Graphics.hpp>
 #include <string>
 
-class Button {
-public:
-    Button(const std::string& label, const sf::Font& font,
-           sf::Vector2f position, sf::Vector2f size);
-
-    void draw(sf::RenderWindow& window);
-    bool isClicked(const sf::Event& event, const sf::RenderWindow& window);
-    void setHighlight(bool highlight);
-    sf::FloatRect getGlobalBounds() const;
-
-private:
-    sf::RectangleShape mBox;
-    sf::Text           mText;
-};
-
-
 class ModernButton : public sf::Drawable, public sf::Transformable {
 public:
     // Constructor
@@ -45,10 +29,7 @@ private:
     // Visual Components
     sf::VertexArray m_background;
     sf::VertexArray m_border;
-    sf::RectangleShape m_divider;
     sf::Text m_text;
-    sf::ConvexShape m_arrow;
-
     // Theme Colors
     sf::Color m_topNormal;
     sf::Color m_bottomNormal;
