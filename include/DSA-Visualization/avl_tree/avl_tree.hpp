@@ -23,9 +23,9 @@ public:
     AVLNode* root;
 
 private:
-    AVLNode* insert(AVLNode* node, int value,
+    AVLNode* insert(AVLNode*& node, int value,
                     std::vector<AnimationStep>* steps);
-    AVLNode* remove(AVLNode* node, int value,
+    AVLNode* remove(AVLNode*& node, int value,
                     std::vector<AnimationStep>* steps);
     void search(AVLNode* node, int value,
                 std::vector<AnimationStep>* steps);
@@ -36,7 +36,7 @@ private:
     int      balanceFactor(AVLNode* node);
     AVLNode* rotateLeft(AVLNode* node);
     AVLNode* rotateRight(AVLNode* node);
-    AVLNode* balance(AVLNode* node,
+    AVLNode* balance(AVLNode*& node,
                      std::vector<AnimationStep>* steps, bool isDelete = false);
 
     void calcPositions(AVLNode* node,

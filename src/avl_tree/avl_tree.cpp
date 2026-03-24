@@ -60,7 +60,13 @@ void AVLTree::snapshotStep(const std::string& desc,
     calcPositions(root, TREE_ROOT_X, TREE_ROOT_Y, TREE_X_OFFSET, currPos);
 
     std::map<int, sf::Vector2f> prevMap;
-    for (auto& p : prevPos) prevMap[p.first] = p.second;
+    if (!steps->empty()) {
+        for (const auto& pastNode : steps->back().nodes) {
+            prevMap[pastNode.value] = pastNode.targetPos;
+        }
+    } else {
+        for (auto& p : prevPos) prevMap[p.first] = p.second;
+    }
 
     std::map<int, AVLNode*> nodeMap;
     std::function<void(AVLNode*)> collect = [&](AVLNode* n) {
@@ -86,7 +92,7 @@ void AVLTree::snapshotStep(const std::string& desc,
         ns.rightChild   = -1;
 
         if (ns.value == highlightValue) {
-            ns.fillColor    = sf::Color(80, 80, 80); // Hover/Highlight brightness
+            ns.fillColor    = sf::Color(160, 160, 160); // Noticeable Bright Highlight
             ns.outlineColor = sf::Color(255, 255, 255);  // White outline
         } else {
             ns.fillColor    = sf::Color(45, 45, 45); // Monochrome Dark Grey
@@ -124,7 +130,7 @@ AVLNode* AVLTree::rotateLeft(AVLNode* x) {
     return y;
 }
 
-AVLNode* AVLTree::balance(AVLNode* node, std::vector<AnimationStep>* steps, bool isDelete) {
+AVLNode* AVLTree::balance(AVLNode*& node, std::vector<AnimationStep>* steps, bool isDelete) {
     if (!node) return nullptr;
     updateHeight(node);
     int bf = balanceFactor(node);
@@ -147,28 +153,13 @@ AVLNode* AVLTree::balance(AVLNode* node, std::vector<AnimationStep>* steps, bool
             if (root == node) root = node;
         }
 
-        // Find parent of node and update pointer
-        // Instead, we rely on insert() updating root after balance returns
-        // So we temporarily set root = result for snapshot
-        AVLNode* newNode = rotateRight(node);
-
-        // Patch root temporarily for correct full-tree snapshot
-        AVLNode* oldRoot = root;
-        std::function<AVLNode*(AVLNode*, AVLNode*, AVLNode*)>
-        patchRoot = [&](AVLNode* cur, AVLNode* oldNode, AVLNode* newNode) -> AVLNode* {
-            if (!cur) return cur;
-            if (cur == oldNode) return newNode;
-            cur->left  = patchRoot(cur->left,  oldNode, newNode);
-            cur->right = patchRoot(cur->right, oldNode, newNode);
-            return cur;
-        };
-        root = patchRoot(root, node, newNode);
+        node = rotateRight(node);
 
         snapshotStep(
-            "Right rotation — rebalanced at " + std::to_string(newNode->value),
-            isDelete ? 8 : 5, steps, before, newNode->value);
+            "Right rotation — rebalanced at " + std::to_string(node->value),
+            isDelete ? 8 : 5, steps, before, node->value);
 
-        return newNode;
+        return node;
     }
 
     if (bf < -1) {
@@ -179,29 +170,19 @@ AVLNode* AVLTree::balance(AVLNode* node, std::vector<AnimationStep>* steps, bool
             node->right = rotateRight(node->right);
         }
 
-        AVLNode* newNode = rotateLeft(node);
-
-        std::function<AVLNode*(AVLNode*, AVLNode*, AVLNode*)>
-        patchRoot = [&](AVLNode* cur, AVLNode* oldNode, AVLNode* newNode) -> AVLNode* {
-            if (!cur) return cur;
-            if (cur == oldNode) return newNode;
-            cur->left  = patchRoot(cur->left,  oldNode, newNode);
-            cur->right = patchRoot(cur->right, oldNode, newNode);
-            return cur;
-        };
-        root = patchRoot(root, node, newNode);
+        node = rotateLeft(node);
 
         snapshotStep(
-            "Left rotation — rebalanced at " + std::to_string(newNode->value),
-            isDelete ? 8 : 6, steps, before, newNode->value);
+            "Left rotation — rebalanced at " + std::to_string(node->value),
+            isDelete ? 8 : 6, steps, before, node->value);
 
-        return newNode;
+        return node;
     }
 
     return node;
 }
 
-AVLNode* AVLTree::insert(AVLNode* node, int value,
+AVLNode* AVLTree::insert(AVLNode*& node, int value,
                           std::vector<AnimationStep>* steps)
 {
     if (!node)
@@ -226,7 +207,8 @@ AVLNode* AVLTree::insert(AVLNode* node, int value,
     else
         return node;
 
-    return balance(node, steps);
+    node = balance(node, steps);
+    return node;
 }
 
 void AVLTree::insert(int value, std::vector<AnimationStep>* steps) {
@@ -296,7 +278,7 @@ AVLNode* AVLTree::minValueNode(AVLNode* node) {
     return current;
 }
 
-AVLNode* AVLTree::remove(AVLNode* node, int value, std::vector<AnimationStep>* steps) {
+AVLNode* AVLTree::remove(AVLNode*& node, int value, std::vector<AnimationStep>* steps) {
     if (!node) return node;
 
     if (steps) {
@@ -333,14 +315,21 @@ AVLNode* AVLTree::remove(AVLNode* node, int value, std::vector<AnimationStep>* s
                 snapshotStep("Two children: finding min node of right subtree", 6, steps, curr, node->value);
             }
             AVLNode* temp = minValueNode(node->right);
-            node->value = temp->value;
-            node->right = remove(node->right, temp->value, steps);
+            int successorVal = temp->value;
+            
+            // Removing the successor physically BEFORE swapping its value string, 
+            // completely circumventing value duplication crashes in the visual mapping hashes tracking during structural traversal.
+            node->right = remove(node->right, successorVal, steps);
+            
+            // Securely adopt the new value seamlessly
+            node->value = successorVal;
         }
     }
 
     if (!node) return node;
 
-    return balance(node, steps, true);
+    node = balance(node, steps, true);
+    return node;
 }
 
 void AVLTree::remove(int value, std::vector<AnimationStep>* steps) {
