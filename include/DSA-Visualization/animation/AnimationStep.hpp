@@ -12,6 +12,8 @@ struct NodeState {
     sf::Color    outlineColor;
     bool         hasLeft;
     bool         hasRight;
+    int          leftValue;     // -1 if none
+    int          rightValue;    // -1 if none
 };
 
 struct AnimationStep {

@@ -186,30 +186,28 @@ void AVLScreen::drawNode(sf::RenderWindow& window, const sf::Font& font,
 void AVLScreen::drawEdges(sf::RenderWindow& window,
                            const std::vector<NodeState>& nodes, float t)
 {
+    // Build positions map from snapshot nodes (do not rely on live tree pointers)
     std::map<int, sf::Vector2f> posMap;
     for (const auto& ns : nodes)
         posMap[ns.value] = ns.startPos + (ns.targetPos - ns.startPos) * t;
 
-    std::function<void(AVLNode*)> draw = [&](AVLNode* node) {
-        if (!node) return;
-        if (node->left && posMap.count(node->value) && posMap.count(node->left->value)) {
+    // Draw edges using recorded child values in NodeState
+    for (const auto& ns : nodes) {
+        if (ns.leftValue != -1 && posMap.count(ns.value) && posMap.count(ns.leftValue)) {
             sf::Vertex line[] = {
-                sf::Vertex(posMap[node->value],      sf::Color(200, 200, 200)),
-                sf::Vertex(posMap[node->left->value], sf::Color(200, 200, 200))
+                sf::Vertex(posMap[ns.value],        sf::Color(200, 200, 200)),
+                sf::Vertex(posMap[ns.leftValue],    sf::Color(200, 200, 200))
             };
             window.draw(line, 2, sf::Lines);
         }
-        if (node->right && posMap.count(node->value) && posMap.count(node->right->value)) {
+        if (ns.rightValue != -1 && posMap.count(ns.value) && posMap.count(ns.rightValue)) {
             sf::Vertex line[] = {
-                sf::Vertex(posMap[node->value],       sf::Color(200, 200, 200)),
-                sf::Vertex(posMap[node->right->value], sf::Color(200, 200, 200))
+                sf::Vertex(posMap[ns.value],        sf::Color(200, 200, 200)),
+                sf::Vertex(posMap[ns.rightValue],   sf::Color(200, 200, 200))
             };
             window.draw(line, 2, sf::Lines);
         }
-        draw(node->left);
-        draw(node->right);
-    };
-    draw(mTree.root);
+    }
 }
 
 void AVLScreen::drawControls(sf::RenderWindow& window, const sf::Font& font) {

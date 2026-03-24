@@ -74,6 +74,8 @@ void AVLTree::snapshotStep(AVLNode* root,
         ns.balanceFactor = 0; // updated below
         ns.hasLeft       = false;
         ns.hasRight      = false;
+        ns.leftValue     = -1;
+        ns.rightValue    = -1;
         step.nodes.push_back(ns);
     }
 
@@ -85,6 +87,8 @@ void AVLTree::snapshotStep(AVLNode* root,
                 ns.balanceFactor = balanceFactor(node);
                 ns.hasLeft       = node->left  != nullptr;
                 ns.hasRight      = node->right != nullptr;
+                ns.leftValue     = node->left  ? node->left->value  : -1;
+                ns.rightValue    = node->right ? node->right->value : -1;
             }
         }
         fillInfo(node->left);
@@ -243,6 +247,8 @@ void AVLTree::insert(int value, std::vector<AnimationStep>* steps) {
             ns.balanceFactor = 0;
             ns.hasLeft       = false;
             ns.hasRight      = false;
+            ns.leftValue     = -1;
+            ns.rightValue    = -1;
             step.nodes.push_back(ns);
         }
         steps->push_back(step);

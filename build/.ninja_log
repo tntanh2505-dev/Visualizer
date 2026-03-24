@@ -30,3 +30,5 @@
 43	3171	7960256534408222	CMakeFiles/DSA-Visualization.dir/src/ui/game.cpp.obj	2fc9aeb6fe21b309
 31	4225	7960256534281566	CMakeFiles/DSA-Visualization.dir/src/ui/AVL_screen.cpp.obj	914688d8861cf6c1
 51	479	7960256643564251	DSA-Visualization.exe	ace1eb77da6d317b
+44	2785	7960260609623581	CMakeFiles/DSA-Visualization.dir/src/avl_tree/avl_tree.cpp.obj	ed56cffcb57e3266
+2786	3325	7960260637043881	DSA-Visualization.exe	ace1eb77da6d317b
