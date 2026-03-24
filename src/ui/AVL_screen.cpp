@@ -45,10 +45,14 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
     mCodePanel = CodePanel(font, sf::Vector2f(16.f, 16.f), sf::Vector2f(200.f, 220.f));
     mCodePanel.setCode(INSERT_CODE);
 
-    mInsertBtn.emplace("Insert",  font, sf::Vector2f(1010.f,  80.f), sf::Vector2f(120.f, 40.f));
-    mPrevBtn  .emplace("< Prev",  font, sf::Vector2f(1010.f, 140.f), sf::Vector2f(55.f,  40.f));
-    mNextBtn  .emplace("Next >",  font, sf::Vector2f(1075.f, 140.f), sf::Vector2f(55.f,  40.f));
-    mReturnBtn.emplace("Return",  font, sf::Vector2f(1010.f, 660.f), sf::Vector2f(120.f, 40.f));
+    mInsertBtn.emplace("Insert",  font, sf::Vector2f(120.f, 40.f));
+    mInsertBtn->setPosition(1010.f,  80.f);
+    mPrevBtn  .emplace("< Prev",  font, sf::Vector2f(80.f,  40.f));
+    mPrevBtn  ->setPosition(1010.f, 140.f);
+    mNextBtn  .emplace("Next >",  font, sf::Vector2f(80.f,  40.f));
+    mNextBtn  ->setPosition(1100.f, 140.f);
+    mReturnBtn.emplace("Return",  font, sf::Vector2f(120.f, 40.f));
+    mReturnBtn->setPosition(1010.f, 660.f);
 
     // Speed slider track
     mSliderTrack = sf::RectangleShape({120.f, 6.f});
@@ -64,6 +68,12 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
 
     while (window.isOpen()) {
         float dt = clock.restart().asSeconds();
+        sf::Vector2f mouseRaw = window.mapPixelToCoords(sf::Mouse::getPosition(window));
+
+        mInsertBtn->update(mouseRaw);
+        mPrevBtn->update(mouseRaw);
+        mNextBtn->update(mouseRaw);
+        mReturnBtn->update(mouseRaw);
 
         sf::Event event;
         while (window.pollEvent(event)) {
@@ -72,21 +82,50 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
                 return -1;
             }
 
-            if (mReturnBtn->isClicked(event, window)) return 0;
-
-            // Input box click
-            if (event.type == sf::Event::MouseButtonPressed) {
-                sf::Vector2f mouse = window.mapPixelToCoords(
-                    sf::Vector2i(event.mouseButton.x, event.mouseButton.y));
+            bool leftPressed = (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left);
+            if (leftPressed) {
+                if (mReturnBtn->isClicked(mouseRaw, true)) return 0;
 
                 sf::FloatRect inputBox(CANVAS_X + 10.f, CANVAS_H + 10.f, 120.f, 36.f);
-                mInputActive = inputBox.contains(mouse);
+                mInputActive = inputBox.contains(mouseRaw);
 
-                // Slider drag start
-                if (mSliderHandle.getGlobalBounds().contains(mouse))
+                if (mSliderHandle.getGlobalBounds().contains(mouseRaw))
                     mSliderDragging = true;
-            }
 
+                if (mInsertBtn->isClicked(mouseRaw, true) && !mInputString.empty()) {
+                    int val = std::stoi(mInputString);
+                    if (mHistoryIndex < (int)mInsertionHistory.size()) {
+                        mInsertionHistory.erase(mInsertionHistory.begin() + mHistoryIndex, mInsertionHistory.end());
+                    }
+                    mInsertionHistory.push_back(val);
+                    mHistoryIndex++;
+                    buildInsertSteps(val);
+                    mInputString.clear();
+                }
+
+                if (mPrevBtn->isClicked(mouseRaw, true)) {
+                    if (mHistoryIndex > 0) {
+                        mHistoryIndex--;
+                        mTree.clear();
+                        mController.clear();
+                        for(int i = 0; i < mHistoryIndex - 1; ++i) {
+                            mTree.insert(mInsertionHistory[i], nullptr);
+                        }
+                        if (mHistoryIndex > 0) {
+                            buildInsertSteps(mInsertionHistory[mHistoryIndex - 1]);
+                            mController.skipToEnd();
+                        }
+                    }
+                }
+                if (mNextBtn->isClicked(mouseRaw, true)) {
+                    if (mHistoryIndex < (int)mInsertionHistory.size()) {
+                        int val = mInsertionHistory[mHistoryIndex];
+                        mHistoryIndex++;
+                        buildInsertSteps(val);
+                    }
+                }
+            }
+            
             if (event.type == sf::Event::MouseButtonReleased)
                 mSliderDragging = false;
 
@@ -108,41 +147,6 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
                 else if (event.text.unicode >= '0' && event.text.unicode <= '9'
                          && mInputString.size() < 4)
                     mInputString += static_cast<char>(event.text.unicode);
-            }
-
-            if (mInsertBtn->isClicked(event, window) && !mInputString.empty()) {
-                int val = std::stoi(mInputString);
-                
-                if (mHistoryIndex < (int)mInsertionHistory.size()) {
-                    mInsertionHistory.erase(mInsertionHistory.begin() + mHistoryIndex, mInsertionHistory.end());
-                }
-                mInsertionHistory.push_back(val);
-                mHistoryIndex++;
-                
-                buildInsertSteps(val);
-                mInputString.clear();
-            }
-
-            if (mPrevBtn->isClicked(event, window)) {
-                if (mHistoryIndex > 0) {
-                    mHistoryIndex--;
-                    mTree.clear();
-                    mController.clear();
-                    for(int i = 0; i < mHistoryIndex - 1; ++i) {
-                        mTree.insert(mInsertionHistory[i], nullptr);
-                    }
-                    if (mHistoryIndex > 0) {
-                        buildInsertSteps(mInsertionHistory[mHistoryIndex - 1]);
-                        mController.skipToEnd();
-                    }
-                }
-            }
-            if (mNextBtn->isClicked(event, window)) {
-                if (mHistoryIndex < (int)mInsertionHistory.size()) {
-                    int val = mInsertionHistory[mHistoryIndex];
-                    mHistoryIndex++;
-                    buildInsertSteps(val);
-                }
             }
         }
 
@@ -232,10 +236,10 @@ void AVLScreen::drawEdges(sf::RenderWindow& window,
 }
 
 void AVLScreen::drawControls(sf::RenderWindow& window, const sf::Font& font) {
-    mInsertBtn->draw(window);
-    mPrevBtn->draw(window);
-    mNextBtn->draw(window);
-    mReturnBtn->draw(window);
+    window.draw(*mInsertBtn);
+    window.draw(*mPrevBtn);
+    window.draw(*mNextBtn);
+    window.draw(*mReturnBtn);
 
     sf::Text counter;
     counter.setFont(font);

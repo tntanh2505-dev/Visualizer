@@ -11,7 +11,7 @@ public:
 private:
     sf::Texture           mBgTexture;
     sf::Sprite            mBgSprite;
-    std::vector<Button>   mButtons;
+    std::vector<ModernButton>   mButtons;
 
     void buildButtons(const sf::Font& font);
 };

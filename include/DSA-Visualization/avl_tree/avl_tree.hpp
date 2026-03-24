@@ -17,12 +17,16 @@ public:
     void clear();
 
     void insert(int value, std::vector<AnimationStep>* steps = nullptr);
+    void remove(int value, std::vector<AnimationStep>* steps = nullptr);
 
     AVLNode* root;
 
 private:
     AVLNode* insert(AVLNode* node, int value,
                     std::vector<AnimationStep>* steps);
+    AVLNode* remove(AVLNode* node, int value,
+                    std::vector<AnimationStep>* steps);
+    AVLNode* minValueNode(AVLNode* node);
 
     int      height(AVLNode* node);
     void     updateHeight(AVLNode* node);
@@ -30,7 +34,7 @@ private:
     AVLNode* rotateLeft(AVLNode* node);
     AVLNode* rotateRight(AVLNode* node);
     AVLNode* balance(AVLNode* node,
-                     std::vector<AnimationStep>* steps);
+                     std::vector<AnimationStep>* steps, bool isDelete = false);
 
     void calcPositions(AVLNode* node,
                        float x, float y, float offsetX,

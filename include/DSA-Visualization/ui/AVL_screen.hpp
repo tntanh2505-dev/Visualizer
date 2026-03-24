@@ -8,13 +8,19 @@
 #include <string>
 #include <vector>
 
+enum class OpType { Insert, Delete };
+struct Operation {
+    OpType type;
+    int value;
+};
+
 class AVLScreen : public Screen {
 public:
     AVLScreen();
     int run(sf::RenderWindow& window, sf::Font& font) override;
 
 private:
-    void buildInsertSteps(int value);
+    void buildSteps(Operation op);
     void drawTree(sf::RenderWindow& window, const sf::Font& font);
     void drawNode(sf::RenderWindow& window, const sf::Font& font,
                   const NodeState& ns, float t);
@@ -30,10 +36,11 @@ private:
     AnimationController mController;
     CodePanel           mCodePanel;
 
-    std::optional<Button> mInsertBtn;
-    std::optional<Button> mPrevBtn;
-    std::optional<Button> mNextBtn;
-    std::optional<Button> mReturnBtn;
+    std::optional<ModernButton> mInsertBtn;
+    std::optional<ModernButton> mDeleteBtn;
+    std::optional<ModernButton> mPrevBtn;
+    std::optional<ModernButton> mNextBtn;
+    std::optional<ModernButton> mReturnBtn;
 
     std::string           mInputString;
     bool                  mInputActive;
@@ -46,8 +53,9 @@ private:
     float                 mSpeedValue;
     bool                  mSliderDragging;
 
-    std::vector<int>      mInsertionHistory;
-    int                   mHistoryIndex;
+    std::vector<Operation> mHistory;
+    int                    mHistoryIndex;
 
     static const std::vector<std::string> INSERT_CODE;
+    static const std::vector<std::string> DELETE_CODE;
 };

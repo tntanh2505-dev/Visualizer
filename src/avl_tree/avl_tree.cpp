@@ -124,7 +124,7 @@ AVLNode* AVLTree::rotateLeft(AVLNode* x) {
     return y;
 }
 
-AVLNode* AVLTree::balance(AVLNode* node, std::vector<AnimationStep>* steps) {
+AVLNode* AVLTree::balance(AVLNode* node, std::vector<AnimationStep>* steps, bool isDelete) {
     if (!node) return nullptr;
     updateHeight(node);
     int bf = balanceFactor(node);
@@ -134,7 +134,7 @@ AVLNode* AVLTree::balance(AVLNode* node, std::vector<AnimationStep>* steps) {
         calcPositions(root, TREE_ROOT_X, TREE_ROOT_Y, TREE_X_OFFSET, before);
         snapshotStep(
             "Checking balance at " + std::to_string(node->value) + " (BF = " + std::to_string(bf) + ")",
-            4, steps, before, node->value);
+            isDelete ? 7 : 4, steps, before, node->value);
     }
 
     if (bf > 1) {
@@ -166,7 +166,7 @@ AVLNode* AVLTree::balance(AVLNode* node, std::vector<AnimationStep>* steps) {
 
         snapshotStep(
             "Right rotation — rebalanced at " + std::to_string(newNode->value),
-            5, steps, before, newNode->value);
+            isDelete ? 8 : 5, steps, before, newNode->value);
 
         return newNode;
     }
@@ -193,7 +193,7 @@ AVLNode* AVLTree::balance(AVLNode* node, std::vector<AnimationStep>* steps) {
 
         snapshotStep(
             "Left rotation — rebalanced at " + std::to_string(newNode->value),
-            6, steps, before, newNode->value);
+            isDelete ? 8 : 6, steps, before, newNode->value);
 
         return newNode;
     }
@@ -286,4 +286,75 @@ void AVLTree::insert(int value, std::vector<AnimationStep>* steps) {
         finalStep.nodes.push_back(ns);
     }
     steps->push_back(finalStep);
+}
+
+AVLNode* AVLTree::minValueNode(AVLNode* node) {
+    AVLNode* current = node;
+    while (current && current->left != nullptr)
+        current = current->left;
+    return current;
+}
+
+AVLNode* AVLTree::remove(AVLNode* node, int value, std::vector<AnimationStep>* steps) {
+    if (!node) return node;
+
+    if (steps) {
+        std::vector<std::pair<int, sf::Vector2f>> curr;
+        calcPositions(root, TREE_ROOT_X, TREE_ROOT_Y, TREE_X_OFFSET, curr);
+        if (value < node->value) {
+            snapshotStep("Going left from " + std::to_string(node->value), 2, steps, curr, node->value);
+        } else if (value > node->value) {
+            snapshotStep("Going right from " + std::to_string(node->value), 3, steps, curr, node->value);
+        } else {
+            snapshotStep("Found " + std::to_string(node->value) + " to delete", 4, steps, curr, node->value);
+        }
+    }
+
+    if (value < node->value) {
+        node->left = remove(node->left, value, steps);
+    } else if (value > node->value) {
+        node->right = remove(node->right, value, steps);
+    } else {
+        if ((node->left == nullptr) || (node->right == nullptr)) {
+            if (steps) {
+                std::vector<std::pair<int, sf::Vector2f>> curr;
+                calcPositions(root, TREE_ROOT_X, TREE_ROOT_Y, TREE_X_OFFSET, curr);
+                snapshotStep("Replacing node with its child (or removing leaf)", 5, steps, curr, node->value);
+            }
+            AVLNode* temp = node->left ? node->left : node->right;
+            AVLNode* toDelete = node;
+            node = temp;
+            delete toDelete;
+        } else {
+            if (steps) {
+                std::vector<std::pair<int, sf::Vector2f>> curr;
+                calcPositions(root, TREE_ROOT_X, TREE_ROOT_Y, TREE_X_OFFSET, curr);
+                snapshotStep("Two children: finding min node of right subtree", 6, steps, curr, node->value);
+            }
+            AVLNode* temp = minValueNode(node->right);
+            node->value = temp->value;
+            node->right = remove(node->right, temp->value, steps);
+        }
+    }
+
+    if (!node) return node;
+
+    return balance(node, steps, true);
+}
+
+void AVLTree::remove(int value, std::vector<AnimationStep>* steps) {
+    if (!steps) {
+        root = remove(root, value, nullptr);
+        return;
+    }
+
+    std::vector<std::pair<int, sf::Vector2f>> initial;
+    calcPositions(root, TREE_ROOT_X, TREE_ROOT_Y, TREE_X_OFFSET, initial);
+    snapshotStep("Starting delete of " + std::to_string(value), 0, steps, initial, -1);
+
+    root = remove(root, value, steps);
+
+    std::vector<std::pair<int, sf::Vector2f>> curr;
+    calcPositions(root, TREE_ROOT_X, TREE_ROOT_Y, TREE_X_OFFSET, curr);
+    snapshotStep("Delete complete. Tree is balanced.", 9, steps, curr, -1);
 }
