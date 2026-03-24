@@ -15,6 +15,19 @@ const std::vector<std::string> AVLScreen::INSERT_CODE = {
     "  return node"
 };
 
+const std::vector<std::string> AVLScreen::DELETE_CODE = {
+    "void remove(value):",
+    "  if (node == null): return node",
+    "  if value < node: go left",
+    "  if value > node: go right",
+    "  else (found node):",
+    "    if (child_cnt <= 1) replace child",
+    "    if (2 child) swap min,delete",
+    "  updateHeight(node)",
+    "  if balance > 1 or < -1: rotate",
+    "  return node"
+};
+
 static const float NODE_RADIUS   = 28.f;
 static const float CANVAS_X      = 230.f;
 static const float CANVAS_Y      = 20.f;
@@ -29,9 +42,15 @@ AVLScreen::AVLScreen()
 , mHistoryIndex(0)
 {}
 
-void AVLScreen::buildInsertSteps(int value) {
+void AVLScreen::buildSteps(Operation op) {
     std::vector<AnimationStep> steps;
-    mTree.insert(value, &steps);
+    if (op.type == OpType::Insert) {
+        mCodePanel.setCode(INSERT_CODE);
+        mTree.insert(op.value, &steps);
+    } else {
+        mCodePanel.setCode(DELETE_CODE);
+        mTree.remove(op.value, &steps);
+    }
     mController.loadSteps(steps);
 }
 
@@ -42,21 +61,23 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
     mBgSprite.setTexture(mBgTexture);
     mBgSprite.setScale(1280.f / sz.x, 720.f / sz.y);
 
-    mCodePanel = CodePanel(font, sf::Vector2f(16.f, 16.f), sf::Vector2f(200.f, 220.f));
+    mCodePanel = CodePanel(font, sf::Vector2f(8.f, 16.f), sf::Vector2f(215.f, 280.f));
     mCodePanel.setCode(INSERT_CODE);
 
     mInsertBtn.emplace("Insert",  font, sf::Vector2f(120.f, 40.f));
     mInsertBtn->setPosition(1010.f,  80.f);
+    mDeleteBtn.emplace("Delete",  font, sf::Vector2f(120.f, 40.f));
+    mDeleteBtn->setPosition(1010.f, 125.f);
     mPrevBtn  .emplace("< Prev",  font, sf::Vector2f(80.f,  40.f));
-    mPrevBtn  ->setPosition(1010.f, 140.f);
+    mPrevBtn  ->setPosition(1010.f, 170.f);
     mNextBtn  .emplace("Next >",  font, sf::Vector2f(80.f,  40.f));
-    mNextBtn  ->setPosition(1100.f, 140.f);
+    mNextBtn  ->setPosition(1100.f, 170.f);
     mReturnBtn.emplace("Return",  font, sf::Vector2f(120.f, 40.f));
     mReturnBtn->setPosition(1010.f, 660.f);
 
     // Speed slider track
     mSliderTrack = sf::RectangleShape({120.f, 6.f});
-    mSliderTrack.setPosition(1010.f, 220.f);
+    mSliderTrack.setPosition(1010.f, 240.f);
     mSliderTrack.setFillColor(sf::Color(80, 80, 100));
 
     mSliderHandle = sf::CircleShape(8.f);
@@ -71,6 +92,7 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
         sf::Vector2f mouseRaw = window.mapPixelToCoords(sf::Mouse::getPosition(window));
 
         mInsertBtn->update(mouseRaw);
+        mDeleteBtn->update(mouseRaw);
         mPrevBtn->update(mouseRaw);
         mNextBtn->update(mouseRaw);
         mReturnBtn->update(mouseRaw);
@@ -94,12 +116,25 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
 
                 if (mInsertBtn->isClicked(mouseRaw, true) && !mInputString.empty()) {
                     int val = std::stoi(mInputString);
-                    if (mHistoryIndex < (int)mInsertionHistory.size()) {
-                        mInsertionHistory.erase(mInsertionHistory.begin() + mHistoryIndex, mInsertionHistory.end());
+                    if (mHistoryIndex < (int)mHistory.size()) {
+                        mHistory.erase(mHistory.begin() + mHistoryIndex, mHistory.end());
                     }
-                    mInsertionHistory.push_back(val);
+                    Operation op{OpType::Insert, val};
+                    mHistory.push_back(op);
                     mHistoryIndex++;
-                    buildInsertSteps(val);
+                    buildSteps(op);
+                    mInputString.clear();
+                }
+
+                if (mDeleteBtn->isClicked(mouseRaw, true) && !mInputString.empty()) {
+                    int val = std::stoi(mInputString);
+                    if (mHistoryIndex < (int)mHistory.size()) {
+                        mHistory.erase(mHistory.begin() + mHistoryIndex, mHistory.end());
+                    }
+                    Operation op{OpType::Delete, val};
+                    mHistory.push_back(op);
+                    mHistoryIndex++;
+                    buildSteps(op);
                     mInputString.clear();
                 }
 
@@ -109,19 +144,22 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
                         mTree.clear();
                         mController.clear();
                         for(int i = 0; i < mHistoryIndex - 1; ++i) {
-                            mTree.insert(mInsertionHistory[i], nullptr);
+                            if (mHistory[i].type == OpType::Insert)
+                                mTree.insert(mHistory[i].value, nullptr);
+                            else
+                                mTree.remove(mHistory[i].value, nullptr);
                         }
                         if (mHistoryIndex > 0) {
-                            buildInsertSteps(mInsertionHistory[mHistoryIndex - 1]);
+                            buildSteps(mHistory[mHistoryIndex - 1]);
                             mController.skipToEnd();
                         }
                     }
                 }
                 if (mNextBtn->isClicked(mouseRaw, true)) {
-                    if (mHistoryIndex < (int)mInsertionHistory.size()) {
-                        int val = mInsertionHistory[mHistoryIndex];
+                    if (mHistoryIndex < (int)mHistory.size()) {
+                        Operation op = mHistory[mHistoryIndex];
                         mHistoryIndex++;
-                        buildInsertSteps(val);
+                        buildSteps(op);
                     }
                 }
             }
@@ -171,7 +209,7 @@ void AVLScreen::updateSliderHandle() {
     float trackLeft  = 1010.f;
     float trackRight = 1130.f;
     float ratio = (mSpeedValue - 0.5f) / 4.5f;
-    mSliderHandle.setPosition(trackLeft + ratio * (trackRight - trackLeft), 223.f);
+    mSliderHandle.setPosition(trackLeft + ratio * (trackRight - trackLeft), 243.f);
 }
 
 void AVLScreen::drawTree(sf::RenderWindow& window, const sf::Font& font) {
@@ -237,6 +275,7 @@ void AVLScreen::drawEdges(sf::RenderWindow& window,
 
 void AVLScreen::drawControls(sf::RenderWindow& window, const sf::Font& font) {
     window.draw(*mInsertBtn);
+    window.draw(*mDeleteBtn);
     window.draw(*mPrevBtn);
     window.draw(*mNextBtn);
     window.draw(*mReturnBtn);
@@ -249,7 +288,7 @@ void AVLScreen::drawControls(sf::RenderWindow& window, const sf::Font& font) {
         ? std::to_string(mController.currentIndex() + 1) + " / "
           + std::to_string(mController.totalSteps())
         : "0 / 0");
-    counter.setPosition(1010.f, 192.f);
+    counter.setPosition(1010.f, 215.f);
     window.draw(counter);
 }
 
@@ -259,7 +298,7 @@ void AVLScreen::drawSpeedSlider(sf::RenderWindow& window, const sf::Font& font) 
     label.setCharacterSize(12);
     label.setFillColor(sf::Color::White);
     label.setString("Speed: " + std::to_string((int)mSpeedValue) + "x");
-    label.setPosition(1010.f, 235.f);
+    label.setPosition(1010.f, 255.f);
     window.draw(label);
 
     window.draw(mSliderTrack);
