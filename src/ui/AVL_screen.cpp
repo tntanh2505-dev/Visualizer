@@ -418,12 +418,12 @@ void AVLScreen::drawInputBox(sf::RenderWindow& window, const sf::Font& font) {
 void AVLScreen::drawDescription(sf::RenderWindow& window, const sf::Font& font) {
     if (!mController.hasSteps()) return;
 
-    sf::RectangleShape shadow({CANVAS_W - 40.f, 44.f});
+    sf::RectangleShape shadow({CANVAS_W - 20.f, 50.f});
     shadow.setPosition(CANVAS_X + 24.f, CANVAS_H + 64.f);
     shadow.setFillColor(sf::Color(0, 0, 0, 80));
     window.draw(shadow);
 
-    sf::RectangleShape bar({CANVAS_W - 40.f, 44.f});
+    sf::RectangleShape bar({CANVAS_W - 20.f, 50.f});
     bar.setPosition(CANVAS_X + 20.f, CANVAS_H + 60.f);
     bar.setFillColor(sf::Color(25, 25, 25, 230));
     bar.setOutlineThickness(1.f);
