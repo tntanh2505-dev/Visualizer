@@ -433,7 +433,7 @@ void AVLScreen::drawDescription(sf::RenderWindow& window, const sf::Font& font) 
     sf::Text desc;
     desc.setFont(font);
     desc.setString(mController.currentStep()->description);
-    desc.setCharacterSize(16);
+    desc.setCharacterSize(18);
     desc.setLetterSpacing(1.1f);
     desc.setFillColor(sf::Color::White);
     desc.setPosition(CANVAS_X + 35.f, CANVAS_H + 60.f);
