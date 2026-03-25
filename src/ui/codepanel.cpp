@@ -2,7 +2,7 @@
 
 static const float PADDING     = 12.f;
 static const float LINE_HEIGHT = 22.f;
-static const int   FONT_SIZE   = 13;
+static const int   FONT_SIZE   = 12;
 
 CodePanel::CodePanel()
 : mFont(nullptr)
@@ -23,7 +23,7 @@ CodePanel::CodePanel(const sf::Font& font, sf::Vector2f position, sf::Vector2f s
     mBackground.setOutlineColor(sf::Color(60, 60, 60, 200));
 
     mHighlightBar.setSize({size.x, LINE_HEIGHT});
-    mHighlightBar.setFillColor(sf::Color(100, 100, 100, 80));
+    mHighlightBar.setFillColor(sf::Color(200, 200, 200, 30));
 }
 
 void CodePanel::setCode(const std::vector<std::string>& lines) {
@@ -60,7 +60,7 @@ void CodePanel::draw(sf::RenderWindow& window) {
         window.draw(mHighlightBar);
         sf::RectangleShape accent({4.f, mLineHeight});
         accent.setPosition(mHighlightBar.getPosition());
-        accent.setFillColor(sf::Color(200, 200, 200));
+        accent.setFillColor(sf::Color(36, 250, 248));
         window.draw(accent);
     }
     for (auto& line : mLines)

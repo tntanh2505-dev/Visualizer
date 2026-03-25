@@ -7,12 +7,6 @@
 },
 {
   "directory": "C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/build",
-  "command": "C:\\msys64\\mingw64\\bin\\g++.exe -I\"C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/include\" -isystem \"C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/lib/include\" -g -std=gnu++17 -o CMakeFiles\\DSA-Visualization.dir\\src\\animation\\animationstep.cpp.obj -c \"C:\\Users\\PeaceBringer\\Desktop\\First SFML project\\Visualizer\\src\\animation\\animationstep.cpp\"",
-  "file": "C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/src/animation/animationstep.cpp",
-  "output": "C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/build/CMakeFiles/DSA-Visualization.dir/src/animation/animationstep.cpp.obj"
-},
-{
-  "directory": "C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/build",
   "command": "C:\\msys64\\mingw64\\bin\\g++.exe -I\"C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/include\" -isystem \"C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/lib/include\" -g -std=gnu++17 -o CMakeFiles\\DSA-Visualization.dir\\src\\avl_tree\\avl_tree.cpp.obj -c \"C:\\Users\\PeaceBringer\\Desktop\\First SFML project\\Visualizer\\src\\avl_tree\\avl_tree.cpp\"",
   "file": "C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/src/avl_tree/avl_tree.cpp",
   "output": "C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/build/CMakeFiles/DSA-Visualization.dir/src/avl_tree/avl_tree.cpp.obj"

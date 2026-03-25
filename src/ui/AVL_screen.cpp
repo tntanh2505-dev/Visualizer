@@ -80,25 +80,26 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
     mBgSprite.setTexture(mBgTexture);
     mBgSprite.setScale(1280.f / sz.x, 720.f / sz.y);
 
-    mCodePanel = CodePanel(font, sf::Vector2f(8.f, 16.f), sf::Vector2f(215.f, 280.f));
+    mCodePanel = CodePanel(font, sf::Vector2f(8.f, 16.f), sf::Vector2f(230.f, 280.f));
     mCodePanel.setCode(INSERT_CODE);
-
+    
+    float ver_align = 1110.f;
     mInsertBtn.emplace("Insert",  font, sf::Vector2f(120.f, 40.f));
-    mInsertBtn->setPosition(1010.f,  60.f);
+    mInsertBtn->setPosition(ver_align,  60.f);
     mDeleteBtn.emplace("Delete",  font, sf::Vector2f(120.f, 40.f));
-    mDeleteBtn->setPosition(1010.f, 105.f);
+    mDeleteBtn->setPosition(ver_align, 105.f);
     mSearchBtn.emplace("Search",  font, sf::Vector2f(120.f, 40.f));
-    mSearchBtn->setPosition(1010.f, 150.f);
+    mSearchBtn->setPosition(ver_align, 150.f);
     mRandomBtn.emplace("Random",  font, sf::Vector2f(120.f, 40.f));
-    mRandomBtn->setPosition(1010.f, 195.f);
+    mRandomBtn->setPosition(ver_align, 195.f);
     mClearBtn .emplace("Clear",   font, sf::Vector2f(120.f, 40.f));
-    mClearBtn ->setPosition(1010.f, 240.f);
+    mClearBtn ->setPosition(ver_align, 240.f);
     mPrevBtn  .emplace("< Prev",  font, sf::Vector2f(80.f,  40.f));
-    mPrevBtn  ->setPosition(1010.f, 285.f);
+    mPrevBtn  ->setPosition(1070.f, 285.f);
     mNextBtn  .emplace("Next >",  font, sf::Vector2f(80.f,  40.f));
-    mNextBtn  ->setPosition(1100.f, 285.f);
+    mNextBtn  ->setPosition(1170.f, 285.f);
     mReturnBtn.emplace("Return",  font, sf::Vector2f(120.f, 40.f));
-    mReturnBtn->setPosition(1110.f, 660.f);
+    mReturnBtn->setPosition(ver_align, 660.f);
 
     // Speed slider track
     mSliderTrack = sf::RectangleShape({120.f, 6.f});

@@ -1,5 +1,6 @@
 #include "DSA-Visualization/ui/Game.hpp"
 #include "DSA-Visualization/ui/AVL_Screen.hpp"
+#include "DSA-Visualization/ui/SLL_Screen.hpp"
 #include <iostream>
 #include <vector>
 
@@ -8,18 +9,19 @@ Game::Game() {
     settings.antialiasingLevel = 8;
     mWindow.create(sf::VideoMode(1280, 720), "DSA Visualization", sf::Style::Default, settings);
     mWindow.setFramerateLimit(60);
-    if (!mFont.loadFromFile("assets/fonts/PhongChu.ttf"))
+    if (!mFont.loadFromFile("assets/fonts/Lexi.ttf"))
         std::cerr << "Failed to load font.ttf\n";
 }
 
 void Game::run() {
     MenuScreen menu;
+   // SLLScreen  sll;
     AVLScreen  avl;
     
 
     std::vector<Screen*> screens = {
         &menu,   // 0
-        nullptr, // 1 LinkedList (later)
+        nullptr,    // 1 LinkedList
         nullptr, // 2 Heap (later)
         nullptr, // 3 Dijkstra (later)
         &avl,    // 4
