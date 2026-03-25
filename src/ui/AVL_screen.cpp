@@ -398,7 +398,7 @@ void AVLScreen::drawSpeedSlider(sf::RenderWindow& window, const sf::Font& font) 
 
 void AVLScreen::drawInputBox(sf::RenderWindow& window, const sf::Font& font) {
     sf::RectangleShape box({140.f, 40.f});
-    box.setPosition(CANVAS_X + 10.f, CANVAS_H + 10.f);
+    box.setPosition(CANVAS_X + 10.f, CANVAS_H);
     box.setFillColor(sf::Color(35, 35, 35));
     box.setOutlineThickness(2.f);
     box.setOutlineColor(mInputActive ? sf::Color(255, 255, 255) : sf::Color(100, 100, 100));
@@ -411,7 +411,7 @@ void AVLScreen::drawInputBox(sf::RenderWindow& window, const sf::Font& font) {
     inputText.setLetterSpacing(1.1f);
     inputText.setFillColor(mInputString.empty()
         ? sf::Color(100, 100, 120) : sf::Color::White);
-    inputText.setPosition(CANVAS_X + 20.f, CANVAS_H + 18.f);
+    inputText.setPosition(CANVAS_X + 20.f, CANVAS_H + 8.f);
     window.draw(inputText);
 }
 
@@ -419,12 +419,12 @@ void AVLScreen::drawDescription(sf::RenderWindow& window, const sf::Font& font) 
     if (!mController.hasSteps()) return;
 
     sf::RectangleShape shadow({CANVAS_W - 20.f, 50.f});
-    shadow.setPosition(CANVAS_X + 24.f, CANVAS_H + 64.f);
+    shadow.setPosition(CANVAS_X + 24.f, CANVAS_H + 54.f);
     shadow.setFillColor(sf::Color(0, 0, 0, 80));
     window.draw(shadow);
 
     sf::RectangleShape bar({CANVAS_W - 20.f, 50.f});
-    bar.setPosition(CANVAS_X + 20.f, CANVAS_H + 60.f);
+    bar.setPosition(CANVAS_X + 20.f, CANVAS_H + 50.f);
     bar.setFillColor(sf::Color(25, 25, 25, 230));
     bar.setOutlineThickness(1.f);
     bar.setOutlineColor(sf::Color(60, 60, 60));
@@ -436,6 +436,6 @@ void AVLScreen::drawDescription(sf::RenderWindow& window, const sf::Font& font) 
     desc.setCharacterSize(16);
     desc.setLetterSpacing(1.1f);
     desc.setFillColor(sf::Color::White);
-    desc.setPosition(CANVAS_X + 35.f, CANVAS_H + 70.f);
+    desc.setPosition(CANVAS_X + 35.f, CANVAS_H + 60.f);
     window.draw(desc);
 }
