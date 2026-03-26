@@ -18,10 +18,17 @@ int MaxHeap::getChildRight(int i) {
 void MaxHeap::MaxHeapify(int i) {
     while (true) {
         int l = 2*i+1, r =2*i+2, largest = i;
-        if (l < nums.size() && nums[largest] < nums[l]) largest = l;
-        if (r < nums.size() && nums[largest] < nums[r]) largest = r;
+        if (l < nums.size()) {
+            actionQueue.push_back({ActionType::COMPARE, l, i});
+            if (nums[largest] < nums[l]) largest = l;
+        }
+        if (r < nums.size()) {
+            actionQueue.push_back({ActionType::COMPARE, r, i});
+            if (nums[largest] < nums[r]) largest = r;
+        }
         //Stop if node i-th violates or has no children
         if (largest == i) break;
+        actionQueue.push_back({ActionType::SWAP, i, largest});
         int temp = nums[i];
         nums[i] = nums[largest];
         nums[largest] = temp;
@@ -36,9 +43,12 @@ void MaxHeap::BuildHeap(const std::vector<int>& input_array) {
 
 void MaxHeap::Increase(int i,int k) {
     if (nums[i]>k) return;
+    actionQueue.push_back({ActionType::HIGHLIGHT, i, -1});
     nums[i]=k;
     //Bubble up if violates
     while (i > 0 && nums[i] > nums[(i-1)/2]) {
+        actionQueue.push_back({ActionType::COMPARE, i, (i-1)/2});
+        actionQueue.push_back({ActionType::SWAP, i, (i-1)/2});
         int temp = nums[i];
         nums[i] = nums[(i-1)/2];
         nums[(i-1)/2] = temp;
@@ -48,28 +58,31 @@ void MaxHeap::Increase(int i,int k) {
 
 void MaxHeap::Decrease(int i,int k) {
     if (nums[i]<k) return;
+    actionQueue.push_back({ActionType::HIGHLIGHT, i, -1});
     nums[i]=k;
     //Sink down if violates
     MaxHeapify(i);
 }
 
 void MaxHeap::Insert(int k) {
+    actionQueue.push_back({ActionType::INSERT, nums.size(), k});
     nums.push_back(INT_MIN);
     int i = nums.size()-1;
-    Increase(nums.size()-1,k);
+    Increase(i,k);
 }
 
 void MaxHeap::Delete(int i) {
     if (i>=nums.size()) return;
+    actionQueue.push_back({ActionType::SWAP, i, (int)nums.size()-1});
     nums[i] = nums.back();
     nums.pop_back();
     //Fix if violates
     if (i<nums.size()) {
         //Bubble up first (if needed)
-        Increase(i,nums[i]); 
+        Increase(i,nums[i]);
         //Then sink down (if needed)
-        MaxHeapify(i); 
-    } 
+        MaxHeapify(i);
+    }
 }
 
 int MaxHeap::GetMax() {
