@@ -1,7 +1,9 @@
 #pragma once
 #include "DSA-Visualization/ui/Screen.hpp"
 #include "DSA-Visualization/ui/Button.hpp"
+#include <cmath>
 #include <vector>
+#include <random>
 
 class MenuScreen : public Screen {
 public:
@@ -14,4 +16,16 @@ private:
     std::vector<ModernButton>   mButtons;
 
     void buildButtons(const sf::Font& font);
+};
+
+struct SwarmNode {
+    sf::Vector2f pos;
+    sf::Vector2f vel;
+    sf::CircleShape shape;
+
+    SwarmNode(float x, float y, sf::Vector2f velocity) : pos(x, y), vel(velocity) {
+        shape.setRadius(1.5f);
+        shape.setOrigin(1.5f, 1.5f);
+        shape.setFillColor(sf::Color(255, 255, 255, 180));
+    }
 };

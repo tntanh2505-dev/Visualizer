@@ -20,6 +20,7 @@ public:
     int run(sf::RenderWindow& window, sf::Font& font) override;
 
 private:
+
     void buildSteps(Operation op);
     void drawTree(sf::RenderWindow& window, const sf::Font& font);
     void drawNode(sf::RenderWindow& window, const sf::Font& font,
