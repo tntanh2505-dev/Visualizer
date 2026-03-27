@@ -33,6 +33,7 @@ sf::Text makeText(const sf::Font& font,
                   unsigned int size,
                   sf::Color color,
                   sf::Vector2f position) {
+    // Small helper so the constructor can define UI text elements compactly.
     sf::Text text;
     text.setFont(font);
     text.setString(value);
@@ -76,6 +77,7 @@ HeapVisualizer::HeapVisualizer(const sf::Font& font)
     setStatus("Ready. Insert a value or build from a sequence.");
 }
 
+// Routes mouse and keyboard input to the correct heap action or text field update.
 void HeapVisualizer::handleEvent(const sf::Event& event, const sf::RenderWindow& window) {
     if (event.type == sf::Event::MouseButtonReleased && event.mouseButton.button == sf::Mouse::Left) {
         const sf::Vector2f mouse = window.mapPixelToCoords({event.mouseButton.x, event.mouseButton.y});
@@ -122,6 +124,7 @@ void HeapVisualizer::handleEvent(const sf::Event& event, const sf::RenderWindow&
     }
 }
 
+// Refreshes hover states, visible text, and advances the animation timer when autoplay is enabled.
 void HeapVisualizer::update(float deltaTime, const sf::RenderWindow& window) {
     const sf::Vector2f mouse = window.mapPixelToCoords(sf::Mouse::getPosition(window));
     mInsertButton.setHighlight(mInsertButton.getGlobalBounds().contains(mouse));
@@ -146,6 +149,7 @@ void HeapVisualizer::update(float deltaTime, const sf::RenderWindow& window) {
     }
 }
 
+// Draws the heap screen in layers so the panel, controls, and visualization stay separated.
 void HeapVisualizer::render(sf::RenderWindow& window) const {
     drawPanel(window);
     drawInputArea(window);
@@ -155,6 +159,7 @@ void HeapVisualizer::render(sf::RenderWindow& window) const {
     drawLegend(window);
 }
 
+// Clears temporary UI state when the user leaves and re-enters the heap screen.
 void HeapVisualizer::reset() {
     mInputFocused = false;
     mPendingActions.clear();
@@ -162,6 +167,7 @@ void HeapVisualizer::reset() {
     mActionTimer = 0.f;
 }
 
+// Inserts a single value into the current heap and converts the heap's action log into animation steps.
 void HeapVisualizer::runInsert() {
     int value = 0;
     if (!tryParseSingleValue(value)) {
@@ -182,6 +188,7 @@ void HeapVisualizer::runInsert() {
     setStatus("Inserted " + std::to_string(value) + ".");
 }
 
+// Removes the root element, which matches the main delete operation exposed by the visualizer UI.
 void HeapVisualizer::runDeleteRoot() {
     const std::vector<int> startArray = mPendingActions.empty() ? mDisplayArray : mHeap.getArray();
     if (startArray.empty()) {
@@ -197,6 +204,7 @@ void HeapVisualizer::runDeleteRoot() {
     setStatus("Deleted root " + std::to_string(rootValue) + ".");
 }
 
+// Builds a heap from a typed sequence and keeps the original order on screen so heapify can animate into place.
 void HeapVisualizer::runBuildHeap() {
     bool ok = false;
     std::vector<int> values = parseSequence(ok);
@@ -226,6 +234,7 @@ void HeapVisualizer::runBuildHeap() {
     }
 }
 
+// Resets both the heap model and the visual state to an empty screen.
 void HeapVisualizer::runClear() {
     mHeap.BuildHeap({});
     mHeap.flushActions();
@@ -237,17 +246,20 @@ void HeapVisualizer::runClear() {
     setStatus("Heap cleared.");
 }
 
+// Switches between automatic playback and manual stepping.
 void HeapVisualizer::togglePlayback() {
     mIsPlaying = !mIsPlaying;
     setStatus(mIsPlaying ? "Animation resumed." : "Animation paused.");
 }
 
+// Starts a new animation by resetting the displayed heap to its pre-operation state.
 void HeapVisualizer::queueOperation(const std::vector<int>& startArray) {
     mDisplayArray = startArray;
     mPendingActions.clear();
     mHighlight = {};
     mActionTimer = 0.f;
 
+    // The heap model records actions while mutating; the UI replays that log against mDisplayArray.
     const std::vector<Action> actions = mHeap.flushActions();
     for (const Action& action : actions) {
         mPendingActions.push_back(action);
@@ -260,6 +272,7 @@ void HeapVisualizer::queueOperation(const std::vector<int>& startArray) {
     }
 }
 
+// Applies one recorded heap action to the currently displayed array and updates highlight colors.
 void HeapVisualizer::processNextAction() {
     if (mPendingActions.empty()) {
         mDisplayArray = mHeap.getArray();
@@ -307,10 +320,12 @@ void HeapVisualizer::processNextAction() {
     }
 
     if (mPendingActions.empty()) {
+        // Snap to the model's final state so removals and final positions are always correct.
         mDisplayArray = mHeap.getArray();
     }
 }
 
+// Draws the full-screen translucent backdrop and the status texts pinned to it.
 void HeapVisualizer::drawPanel(sf::RenderWindow& window) const {
     window.draw(mPanel);
     window.draw(mTitleText);
@@ -319,6 +334,7 @@ void HeapVisualizer::drawPanel(sf::RenderWindow& window) const {
     window.draw(mRootText);
 }
 
+// Draws the input label, box, current text, and usage hint.
 void HeapVisualizer::drawInputArea(sf::RenderWindow& window) const {
     window.draw(mInputLabel);
     window.draw(mInputBox);
@@ -326,6 +342,7 @@ void HeapVisualizer::drawInputArea(sf::RenderWindow& window) const {
     window.draw(mHintText);
 }
 
+// Draws the button cluster used to control heap operations and animation playback.
 void HeapVisualizer::drawButtons(sf::RenderWindow& window) const {
     mInsertButton.draw(window);
     mDeleteButton.draw(window);
@@ -335,6 +352,7 @@ void HeapVisualizer::drawButtons(sf::RenderWindow& window) const {
     mStepButton.draw(window);
 }
 
+// Draws the array representation under the tree, shrinking cells when many nodes are present.
 void HeapVisualizer::drawArray(sf::RenderWindow& window) const {
     const std::size_t visibleNodes = std::min(mDisplayArray.size(), MAX_RENDERED_NODES);
     if (visibleNodes == 0) return;
@@ -366,6 +384,7 @@ void HeapVisualizer::drawArray(sf::RenderWindow& window) const {
     }
 }
 
+// Draws the node-link tree representation using heap indices to derive parent-child edges.
 void HeapVisualizer::drawTree(sf::RenderWindow& window) const {
     const std::size_t visibleNodes = std::min(mDisplayArray.size(), MAX_RENDERED_NODES);
     for (std::size_t i = 1; i < visibleNodes; ++i) {
@@ -396,6 +415,7 @@ void HeapVisualizer::drawTree(sf::RenderWindow& window) const {
     }
 }
 
+// Draws the animation status and the color legend for compare, swap, and focus states.
 void HeapVisualizer::drawLegend(sf::RenderWindow& window) const {
     const float legendY = 600.f; 
 
@@ -426,36 +446,42 @@ void HeapVisualizer::drawLegend(sf::RenderWindow& window) const {
     window.draw(makeText(mFont, "Focused node", 15, sf::Color(225, 232, 242), {1040.f, legendY}));
 }
 
+// Adds a character to the input buffer while keeping the field length bounded.
 void HeapVisualizer::appendDigit(char digit) {
     if (mInputBuffer.size() < 60) {
         mInputBuffer.push_back(digit);
     }
 }
 
+// Only accepts characters that make sense for integer and integer-list input.
 void HeapVisualizer::appendCharacter(char character) {
     if ((character >= '0' && character <= '9') || character == '-' || character == ',' || character == ' ') {
         appendDigit(character);
     }
 }
 
+// Removes the last typed character from the input field.
 void HeapVisualizer::backspaceInput() {
     if (!mInputBuffer.empty()) {
         mInputBuffer.pop_back();
     }
 }
 
+// Updates the status line and rebuilds the play/pause button label to match the current mode.
 void HeapVisualizer::setStatus(const std::string& status) {
     mStatusMessage = status;
     mStatusText.setString(status);
     mPlayPauseButton = Button(mIsPlaying ? "Pause" : "Play", mFont, {644.f, 185.f}, {BUTTON_WIDTH, BUTTON_HEIGHT});
 }
 
+// Parses the input as exactly one integer, used by the Insert action.
 bool HeapVisualizer::tryParseSingleValue(int& value) const {
     std::stringstream stream(mInputBuffer);
     stream >> value;
     return !stream.fail() && stream.eof();
 }
 
+// Parses a list of integers for heap construction, accepting both spaces and commas as separators.
 std::vector<int> HeapVisualizer::parseSequence(bool& ok) const {
     std::vector<int> values;
     ok = true;
@@ -476,6 +502,7 @@ std::vector<int> HeapVisualizer::parseSequence(bool& ok) const {
     return values;
 }
 
+// Converts an array index into a tree position by grouping nodes by heap level.
 sf::Vector2f HeapVisualizer::nodePosition(std::size_t index) const {
     const int level = static_cast<int>(std::floor(std::log2(static_cast<float>(index + 1))));
     const std::size_t firstIndexInLevel = (1u << level) - 1u;
@@ -487,6 +514,7 @@ sf::Vector2f HeapVisualizer::nodePosition(std::size_t index) const {
     return {x, y};
 }
 
+// Resolves the outline color for a node based on the active animation highlight state.
 sf::Color HeapVisualizer::nodeColor(std::size_t index) const {
     if (static_cast<int>(index) == mHighlight.first) {
         return mHighlight.firstColor;

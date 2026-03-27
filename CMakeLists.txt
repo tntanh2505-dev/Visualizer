@@ -1,6 +1,14 @@
 cmake_minimum_required(VERSION 3.16)
 project(DSA-Visualization)
 
+
+# Instructions to build:
+# mkdir temp
+# cd temp
+# cmake .. -G "MinGW Makefiles"
+# cmake --build .
+
+
 # set C++ standard
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
