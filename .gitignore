@@ -24,6 +24,10 @@ Desktop.ini
 *.la
 *.lo
 
+# EXCEPTION: Do not ignore the SFML libraries we need for the project!
+!lib/lib/**/*.a
+!lib/lib/**/*.lib
+
 # Executables (Don't push the app itself, just the code!)
 *.exe
 *.out
