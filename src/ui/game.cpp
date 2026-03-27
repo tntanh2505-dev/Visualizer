@@ -113,8 +113,8 @@ void Game::renderLinkedList() {
 }
 
 void Game::renderHeap() {
-    mReturnButton.draw(mWindow);
     mHeapVisualizer.render(mWindow);
+    mReturnButton.draw(mWindow);
 }
 
 void Game::renderGraph() {

@@ -5,21 +5,26 @@
 #include <sstream>
 
 namespace {
-constexpr float PANEL_X = 286.f;
-constexpr float PANEL_Y = 22.f;
-constexpr float PANEL_WIDTH = 974.f;
-constexpr float PANEL_HEIGHT = 676.f;
-constexpr float INPUT_X = 322.f;
-constexpr float INPUT_Y = 146.f;
+
+constexpr float PANEL_X = 0.f;
+constexpr float PANEL_Y = 0.f;
+constexpr float PANEL_WIDTH = 1280.f;
+constexpr float PANEL_HEIGHT = 720.f;
+
+constexpr float INPUT_X = 40.f;
+constexpr float INPUT_Y = 135.f;
 constexpr float INPUT_WIDTH = 422.f;
 constexpr float INPUT_HEIGHT = 44.f;
+
 constexpr float BUTTON_WIDTH = 154.f;
 constexpr float BUTTON_HEIGHT = 44.f;
 constexpr float NODE_RADIUS = 24.f;
-constexpr float TREE_TOP_Y = 312.f;
-constexpr float TREE_LEFT_X = 320.f;
-constexpr float TREE_WIDTH = 900.f;
-constexpr float ARRAY_Y = 594.f;
+
+constexpr float TREE_LEFT_X = 40.f;
+constexpr float TREE_WIDTH = 1200.f;
+constexpr float TREE_TOP_Y = 280.f; 
+
+constexpr float ARRAY_Y = 655.f;
 constexpr float ARRAY_CELL = 52.f;
 constexpr std::size_t MAX_RENDERED_NODES = 31;
 
@@ -40,25 +45,27 @@ sf::Text makeText(const sf::Font& font,
 
 HeapVisualizer::HeapVisualizer(const sf::Font& font)
     : mFont(font)
-    , mTitleText(makeText(font, "Heap Visualizer", 34, sf::Color(241, 246, 255), {320.f, 44.f}))
-    , mSubtitleText(makeText(font, "Build, insert, delete, and inspect a max heap with animated steps.", 16, sf::Color(210, 220, 236), {322.f, 96.f}))
-    , mInputLabel(makeText(font, "Input", 18, sf::Color(241, 246, 255), {322.f, 118.f}))
-    , mInputText(makeText(font, "", 22, sf::Color(26, 32, 44), {336.f, 154.f}))
-    , mHintText(makeText(font, "Insert: one integer. Build Heap: space- or comma-separated integers.", 14, sf::Color(189, 198, 214), {322.f, 204.f}))
-    , mStatusText(makeText(font, "", 16, sf::Color(251, 209, 101), {322.f, 234.f}))
-    , mRootText(makeText(font, "Root: --", 18, sf::Color(241, 246, 255), {322.f, 258.f}))
-    , mLegendText(makeText(font, "Compare    Swap    Focused node", 15, sf::Color(225, 232, 242), {1020.f, 650.f}))
-    , mInsertButton("Insert", font, {774.f, 146.f}, {BUTTON_WIDTH, BUTTON_HEIGHT})
-    , mDeleteButton("Delete Root", font, {938.f, 146.f}, {BUTTON_WIDTH, BUTTON_HEIGHT})
-    , mBuildButton("Build Heap", font, {1102.f, 146.f}, {BUTTON_WIDTH, BUTTON_HEIGHT})
-    , mClearButton("Clear", font, {774.f, 202.f}, {BUTTON_WIDTH, BUTTON_HEIGHT})
-    , mPlayPauseButton("Pause", font, {938.f, 202.f}, {BUTTON_WIDTH, BUTTON_HEIGHT})
-    , mStepButton("Step", font, {1102.f, 202.f}, {BUTTON_WIDTH, BUTTON_HEIGHT}) {
+
+    , mTitleText(makeText(font, "Heap Visualizer", 34, sf::Color(241, 246, 255), {250.f, 20.f}))
+    , mSubtitleText(makeText(font, "Build, insert, delete, and inspect a max heap with animated steps.", 16, sf::Color(210, 220, 236), {250.f, 65.f}))
+    
+    , mInputLabel(makeText(font, "Input", 18, sf::Color(241, 246, 255), {40.f, 110.f}))
+    , mInputText(makeText(font, "", 22, sf::Color(26, 32, 44), {54.f, 143.f}))
+    , mHintText(makeText(font, "Insert: one integer. Build Heap: space- or comma-separated integers.", 14, sf::Color(189, 198, 214), {40.f, 185.f}))
+    , mStatusText(makeText(font, "", 16, sf::Color(251, 209, 101), {40.f, 215.f}))
+    , mRootText(makeText(font, "Root: --", 18, sf::Color(241, 246, 255), {40.f, 240.f}))
+    
+    , mInsertButton("Insert", font, {480.f, 135.f}, {BUTTON_WIDTH, BUTTON_HEIGHT})
+    , mDeleteButton("Delete Root", font, {644.f, 135.f}, {BUTTON_WIDTH, BUTTON_HEIGHT})
+    , mBuildButton("Build Heap", font, {808.f, 135.f}, {BUTTON_WIDTH, BUTTON_HEIGHT})
+    , mClearButton("Clear", font, {480.f, 185.f}, {BUTTON_WIDTH, BUTTON_HEIGHT})
+    , mPlayPauseButton("Pause", font, {644.f, 185.f}, {BUTTON_WIDTH, BUTTON_HEIGHT})
+    , mStepButton("Step", font, {808.f, 185.f}, {BUTTON_WIDTH, BUTTON_HEIGHT}) 
+{
     mPanel.setPosition({PANEL_X, PANEL_Y});
     mPanel.setSize({PANEL_WIDTH, PANEL_HEIGHT});
-    mPanel.setFillColor(sf::Color(9, 16, 29, 222));
-    mPanel.setOutlineThickness(2.f);
-    mPanel.setOutlineColor(sf::Color(72, 98, 138));
+    mPanel.setFillColor(sf::Color(9, 16, 29, 210));
+    mPanel.setOutlineThickness(0.f);
 
     mInputBox.setPosition({INPUT_X, INPUT_Y});
     mInputBox.setSize({INPUT_WIDTH, INPUT_HEIGHT});
@@ -330,21 +337,31 @@ void HeapVisualizer::drawButtons(sf::RenderWindow& window) const {
 
 void HeapVisualizer::drawArray(sf::RenderWindow& window) const {
     const std::size_t visibleNodes = std::min(mDisplayArray.size(), MAX_RENDERED_NODES);
+    if (visibleNodes == 0) return;
+
+    const float maxTotalWidth = 1200.f;
+    const float gap = 4.f;
+    const float cellWidth = std::min(48.f, (maxTotalWidth - (visibleNodes * gap)) / visibleNodes);
+    
     for (std::size_t i = 0; i < visibleNodes; ++i) {
-        sf::RectangleShape cell({ARRAY_CELL, ARRAY_CELL});
-        cell.setPosition({322.f + i * (ARRAY_CELL + 8.f), ARRAY_Y});
+        sf::RectangleShape cell({cellWidth, cellWidth});
+        cell.setPosition({40.f + i * (cellWidth + gap), ARRAY_Y});
         cell.setFillColor(sf::Color(247, 250, 255, 230));
         cell.setOutlineThickness(2.f);
         cell.setOutlineColor(nodeColor(i));
         window.draw(cell);
 
-        sf::Text valueText = makeText(mFont, std::to_string(mDisplayArray[i]), 18, sf::Color(20, 28, 40), {0.f, 0.f});
+        unsigned int fontSize = cellWidth < 35.f ? 12 : 18;
+        sf::Text valueText = makeText(mFont, std::to_string(mDisplayArray[i]), fontSize, sf::Color(20, 28, 40), {0.f, 0.f});
         sf::FloatRect bounds = valueText.getLocalBounds();
         valueText.setOrigin(bounds.left + bounds.width / 2.f, bounds.top + bounds.height / 2.f);
-        valueText.setPosition({cell.getPosition().x + ARRAY_CELL / 2.f, cell.getPosition().y + ARRAY_CELL / 2.f - 2.f});
+        valueText.setPosition({cell.getPosition().x + cellWidth / 2.f, cell.getPosition().y + cellWidth / 2.f - 2.f});
         window.draw(valueText);
 
-        sf::Text indexText = makeText(mFont, std::to_string(i), 14, sf::Color(189, 198, 214), {cell.getPosition().x + 18.f, cell.getPosition().y + 58.f});
+        sf::Text indexText = makeText(mFont, std::to_string(i), 12, sf::Color(189, 198, 214), {0.f, 0.f});
+        sf::FloatRect idxBounds = indexText.getLocalBounds();
+        indexText.setOrigin(idxBounds.left + idxBounds.width / 2.f, 0.f);
+        indexText.setPosition({cell.getPosition().x + cellWidth / 2.f, cell.getPosition().y + cellWidth + 4.f});
         window.draw(indexText);
     }
 }
@@ -380,36 +397,33 @@ void HeapVisualizer::drawTree(sf::RenderWindow& window) const {
 }
 
 void HeapVisualizer::drawLegend(sf::RenderWindow& window) const {
-    // 1. Compare Dot & Text
-    sf::CircleShape compare(8.f);
-    compare.setFillColor(sf::Color(87, 190, 255));
-    compare.setPosition({950.f, 652.f});
-    window.draw(compare);
-    window.draw(makeText(mFont, "Compare", 15, sf::Color(225, 232, 242), {970.f, 648.f}));
+    const float legendY = 600.f; 
 
-    // 2. Swap Dot & Text
-    sf::CircleShape swap(8.f);
-    swap.setFillColor(sf::Color(255, 124, 124));
-    swap.setPosition({1038.f, 652.f});
-    window.draw(swap);
-    window.draw(makeText(mFont, "Swap", 15, sf::Color(225, 232, 242), {1058.f, 648.f}));
-
-    // 3. Focus Dot & Text
-    sf::CircleShape focus(8.f);
-    focus.setFillColor(sf::Color(248, 196, 76));
-    focus.setPosition({1122.f, 652.f});
-    window.draw(focus);
-    window.draw(makeText(mFont, "Focused node", 15, sf::Color(225, 232, 242), {1142.f, 648.f}));
-
-    // 4. Step Text (Moved down to Y=674 to avoid the array indices)
     if (!mHighlight.label.empty()) {
-        sf::Text stepText = makeText(mFont, "Step: " + mHighlight.label, 16, sf::Color(251, 209, 101), {322.f, 674.f});
+        sf::Text stepText = makeText(mFont, "Step: " + mHighlight.label, 16, sf::Color(251, 209, 101), {40.f, legendY});
         window.draw(stepText);
     }
 
-    // 5. Play Status (Moved right to X=550 to avoid hitting the Step text)
-    sf::Text playText = makeText(mFont, mIsPlaying ? "Animation: auto" : "Animation: paused", 16, sf::Color(189, 198, 214), {550.f, 674.f});
+    sf::Text playText = makeText(mFont, mIsPlaying ? "Animation: auto" : "Animation: paused", 16, sf::Color(189, 198, 214), {300.f, legendY});
     window.draw(playText);
+
+    sf::CircleShape compare(8.f);
+    compare.setFillColor(sf::Color(87, 190, 255));
+    compare.setPosition({820.f, legendY + 4.f});
+    window.draw(compare);
+    window.draw(makeText(mFont, "Compare", 15, sf::Color(225, 232, 242), {840.f, legendY}));
+
+    sf::CircleShape swap(8.f);
+    swap.setFillColor(sf::Color(255, 124, 124));
+    swap.setPosition({930.f, legendY + 4.f});
+    window.draw(swap);
+    window.draw(makeText(mFont, "Swap", 15, sf::Color(225, 232, 242), {950.f, legendY}));
+
+    sf::CircleShape focus(8.f);
+    focus.setFillColor(sf::Color(248, 196, 76));
+    focus.setPosition({1020.f, legendY + 4.f});
+    window.draw(focus);
+    window.draw(makeText(mFont, "Focused node", 15, sf::Color(225, 232, 242), {1040.f, legendY}));
 }
 
 void HeapVisualizer::appendDigit(char digit) {
@@ -433,7 +447,7 @@ void HeapVisualizer::backspaceInput() {
 void HeapVisualizer::setStatus(const std::string& status) {
     mStatusMessage = status;
     mStatusText.setString(status);
-    mPlayPauseButton = Button(mIsPlaying ? "Pause" : "Play", mFont, {938.f, 202.f}, {BUTTON_WIDTH, BUTTON_HEIGHT});
+    mPlayPauseButton = Button(mIsPlaying ? "Pause" : "Play", mFont, {644.f, 185.f}, {BUTTON_WIDTH, BUTTON_HEIGHT});
 }
 
 bool HeapVisualizer::tryParseSingleValue(int& value) const {
@@ -469,7 +483,7 @@ sf::Vector2f HeapVisualizer::nodePosition(std::size_t index) const {
     const std::size_t nodesInLevel = 1u << level;
     const float horizontalGap = TREE_WIDTH / static_cast<float>(nodesInLevel);
     const float x = TREE_LEFT_X + horizontalGap * (static_cast<float>(positionInLevel) + 0.5f);
-    const float y = TREE_TOP_Y + level * 78.f;
+    const float y = TREE_TOP_Y + level * 60.f;
     return {x, y};
 }
 
