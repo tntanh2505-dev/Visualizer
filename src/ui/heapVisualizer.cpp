@@ -349,3 +349,130 @@ void HeapVisualizer::drawArray(sf::RenderWindow& window) const {
     }
 }
 
+void HeapVisualizer::drawTree(sf::RenderWindow& window) const {
+    const std::size_t visibleNodes = std::min(mDisplayArray.size(), MAX_RENDERED_NODES);
+    for (std::size_t i = 1; i < visibleNodes; ++i) {
+        const std::size_t parent = (i - 1) / 2;
+        const sf::Vector2f start = nodePosition(parent);
+        const sf::Vector2f end = nodePosition(i);
+        sf::Vertex line[] = {
+            sf::Vertex(start, sf::Color(136, 155, 184)),
+            sf::Vertex(end, sf::Color(136, 155, 184))
+        };
+        window.draw(line, 2, sf::Lines);
+    }
+
+    for (std::size_t i = 0; i < visibleNodes; ++i) {
+        sf::CircleShape node(NODE_RADIUS);
+        node.setOrigin({NODE_RADIUS, NODE_RADIUS});
+        node.setPosition(nodePosition(i));
+        node.setFillColor(sf::Color(245, 249, 255));
+        node.setOutlineThickness(4.f);
+        node.setOutlineColor(nodeColor(i));
+        window.draw(node);
+
+        sf::Text valueText = makeText(mFont, std::to_string(mDisplayArray[i]), 18, sf::Color(20, 28, 40), {0.f, 0.f});
+        sf::FloatRect bounds = valueText.getLocalBounds();
+        valueText.setOrigin(bounds.left + bounds.width / 2.f, bounds.top + bounds.height / 2.f);
+        valueText.setPosition({node.getPosition().x, node.getPosition().y - 1.f});
+        window.draw(valueText);
+    }
+}
+
+void HeapVisualizer::drawLegend(sf::RenderWindow& window) const {
+    sf::CircleShape compare(8.f);
+    compare.setFillColor(sf::Color(87, 190, 255));
+    compare.setPosition({950.f, 652.f});
+    window.draw(compare);
+
+    sf::CircleShape swap(8.f);
+    swap.setFillColor(sf::Color(255, 124, 124));
+    swap.setPosition({1038.f, 652.f});
+    window.draw(swap);
+
+    sf::CircleShape focus(8.f);
+    focus.setFillColor(sf::Color(248, 196, 76));
+    focus.setPosition({1122.f, 652.f});
+    window.draw(focus);
+
+    window.draw(mLegendText);
+
+    if (!mHighlight.label.empty()) {
+        sf::Text stepText = makeText(mFont, "Step: " + mHighlight.label, 16, sf::Color(251, 209, 101), {322.f, 650.f});
+        window.draw(stepText);
+    }
+
+    sf::Text playText = makeText(mFont, mIsPlaying ? "Animation: auto" : "Animation: paused", 16, sf::Color(189, 198, 214), {322.f, 674.f});
+    window.draw(playText);
+}
+
+void HeapVisualizer::appendDigit(char digit) {
+    if (mInputBuffer.size() < 60) {
+        mInputBuffer.push_back(digit);
+    }
+}
+
+void HeapVisualizer::appendCharacter(char character) {
+    if ((character >= '0' && character <= '9') || character == '-' || character == ',' || character == ' ') {
+        appendDigit(character);
+    }
+}
+
+void HeapVisualizer::backspaceInput() {
+    if (!mInputBuffer.empty()) {
+        mInputBuffer.pop_back();
+    }
+}
+
+void HeapVisualizer::setStatus(const std::string& status) {
+    mStatusMessage = status;
+    mStatusText.setString(status);
+    mPlayPauseButton = Button(mIsPlaying ? "Pause" : "Play", mFont, {938.f, 202.f}, {BUTTON_WIDTH, BUTTON_HEIGHT});
+}
+
+bool HeapVisualizer::tryParseSingleValue(int& value) const {
+    std::stringstream stream(mInputBuffer);
+    stream >> value;
+    return !stream.fail() && stream.eof();
+}
+
+std::vector<int> HeapVisualizer::parseSequence(bool& ok) const {
+    std::vector<int> values;
+    ok = true;
+
+    std::string normalized = mInputBuffer;
+    std::replace(normalized.begin(), normalized.end(), ',', ' ');
+
+    std::stringstream stream(normalized);
+    int value = 0;
+    while (stream >> value) {
+        values.push_back(value);
+    }
+
+    if (!stream.eof()) {
+        ok = false;
+    }
+
+    return values;
+}
+
+sf::Vector2f HeapVisualizer::nodePosition(std::size_t index) const {
+    const int level = static_cast<int>(std::floor(std::log2(static_cast<float>(index + 1))));
+    const std::size_t firstIndexInLevel = (1u << level) - 1u;
+    const std::size_t positionInLevel = index - firstIndexInLevel;
+    const std::size_t nodesInLevel = 1u << level;
+    const float horizontalGap = TREE_WIDTH / static_cast<float>(nodesInLevel);
+    const float x = TREE_LEFT_X + horizontalGap * (static_cast<float>(positionInLevel) + 0.5f);
+    const float y = TREE_TOP_Y + level * 78.f;
+    return {x, y};
+}
+
+sf::Color HeapVisualizer::nodeColor(std::size_t index) const {
+    if (static_cast<int>(index) == mHighlight.first) {
+        return mHighlight.firstColor;
+    }
+    if (static_cast<int>(index) == mHighlight.second) {
+        return mHighlight.secondColor;
+    }
+    return sf::Color(106, 133, 176);
+}
