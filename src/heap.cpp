@@ -65,7 +65,7 @@ void MaxHeap::Decrease(int i,int k) {
 }
 
 void MaxHeap::Insert(int k) {
-    actionQueue.push_back({ActionType::INSERT, nums.size(), k});
+    actionQueue.push_back({ActionType::INSERT, (int)nums.size(), k});
     nums.push_back(INT_MIN);
     int i = nums.size()-1;
     Increase(i,k);
