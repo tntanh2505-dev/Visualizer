@@ -7,7 +7,7 @@ public:
     Button(const std::string& label, const sf::Font& font,
            sf::Vector2f position, sf::Vector2f size);
 
-    void draw(sf::RenderWindow& window);
+    void draw(sf::RenderWindow& window) const;
     bool isClicked(const sf::Event& event, const sf::RenderWindow& window);
     void setHighlight(bool highlight);
     sf::FloatRect getGlobalBounds() const;

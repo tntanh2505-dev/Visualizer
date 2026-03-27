@@ -1,6 +1,7 @@
 #pragma once
 #include <SFML/Graphics.hpp>
-#include "DSA-Visualization/ui/Button.hpp"
+#include "DSA-Visualization/ui/button.hpp"
+#include "DSA-Visualization/ui/heapVisualizer.hpp"
 #include <vector>
 
 enum class AppState {
@@ -18,7 +19,7 @@ public:
 
 private:
     void processEvents();
-    void update();
+    void update(float deltaTime);
     void render();
 
     void processMenuEvents(const sf::Event& event);
@@ -36,4 +37,5 @@ private:
 
     std::vector<Button> mMenuButtons;
     Button              mReturnButton;
+    HeapVisualizer      mHeapVisualizer;
 };
