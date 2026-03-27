@@ -108,7 +108,7 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
 
     mSliderHandle = sf::CircleShape(8.f);
     mSliderHandle.setOrigin(8.f, 8.f);
-    mSliderHandle.setFillColor(sf::Color(200, 200, 200));
+    mSliderHandle.setFillColor(sf::Color(60, 60, 60));
     updateSliderHandle();
 
     sf::Clock clock;
@@ -348,6 +348,46 @@ void AVLScreen::drawEdges(sf::RenderWindow& window,
 }
 
 void AVLScreen::drawControls(sf::RenderWindow& window, const sf::Font& font) {
+    // --- Unified Control Panel Background ---
+    sf::ConvexShape bgBox(40); 
+    
+    // A smooth, relaxed dark-glass panel that unifies all controls
+    bgBox.setFillColor(sf::Color(25, 30, 40, 70)); 
+    bgBox.setOutlineThickness(1.5f);
+    bgBox.setOutlineColor(sf::Color(255, 255, 255, 30)); // Very soft whitish highlight
+
+    // Generous dimensions to encompass all buttons, timeline, and slider comfortably
+    float boxX = 985.f;  // Pulled left to include the counter and slider text
+    float boxY = 35.f;   // Starts nicely above 'Insert'
+    float boxW = 260.f;  // Wide enough to give 'Next >' room to breathe
+    float boxH = 370.f;  // Extends all the way down past the Speed slider
+    float radius = 16.f; // Smooth, modern, softer corners
+    // ----------------------------------------
+
+    const float pi = 3.141592654f;
+    for (int i = 0; i < 10; ++i) {
+        float step = i * (pi / 2.f) / 9.f;
+        // Top-Right
+        bgBox.setPoint(i, sf::Vector2f(
+            boxX + boxW - radius + radius * std::cos(step), 
+            boxY + radius - radius * std::sin(step)));
+        // Top-Left
+        bgBox.setPoint(10 + i, sf::Vector2f(
+            boxX + radius + radius * std::cos(step + pi / 2.f), 
+            boxY + radius - radius * std::sin(step + pi / 2.f)));
+        // Bottom-Left
+        bgBox.setPoint(20 + i, sf::Vector2f(
+            boxX + radius + radius * std::cos(step + pi), 
+            boxY + boxH - radius - radius * std::sin(step + pi)));
+        // Bottom-Right
+        bgBox.setPoint(30 + i, sf::Vector2f(
+            boxX + boxW - radius + radius * std::cos(step + 3.f * pi / 2.f), 
+            boxY + boxH - radius - radius * std::sin(step + 3.f * pi / 2.f)));
+    }
+    
+    window.draw(bgBox);
+    // ----------------------------------------
+
     window.draw(*mInsertBtn);
     window.draw(*mDeleteBtn);
     window.draw(*mSearchBtn);
@@ -374,7 +414,7 @@ void AVLScreen::drawSpeedSlider(sf::RenderWindow& window, const sf::Font& font) 
     label.setFont(font);
     label.setCharacterSize(13);
     label.setLetterSpacing(1.1f);
-    label.setFillColor(sf::Color(200, 210, 220));
+    label.setFillColor(sf::Color(0,0,0));
     label.setString("Speed: " + std::to_string((int)mSpeedValue) + "x");
     label.setPosition(1010.f, 370.f);
     window.draw(label);
@@ -382,7 +422,7 @@ void AVLScreen::drawSpeedSlider(sf::RenderWindow& window, const sf::Font& font) 
     // Glowing track filled portion
     sf::RectangleShape filledTrack({mSliderHandle.getPosition().x - mSliderTrack.getPosition().x, 6.f});
     filledTrack.setPosition(mSliderTrack.getPosition());
-    filledTrack.setFillColor(sf::Color(180, 180, 180));
+    filledTrack.setFillColor(sf::Color(0,180,200));
 
     window.draw(mSliderTrack);
     window.draw(filledTrack);
