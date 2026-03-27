@@ -16,7 +16,7 @@ constexpr float INPUT_HEIGHT = 44.f;
 constexpr float BUTTON_WIDTH = 154.f;
 constexpr float BUTTON_HEIGHT = 44.f;
 constexpr float NODE_RADIUS = 24.f;
-constexpr float TREE_TOP_Y = 272.f;
+constexpr float TREE_TOP_Y = 312.f;
 constexpr float TREE_LEFT_X = 320.f;
 constexpr float TREE_WIDTH = 900.f;
 constexpr float ARRAY_Y = 594.f;
@@ -380,29 +380,35 @@ void HeapVisualizer::drawTree(sf::RenderWindow& window) const {
 }
 
 void HeapVisualizer::drawLegend(sf::RenderWindow& window) const {
+    // 1. Compare Dot & Text
     sf::CircleShape compare(8.f);
     compare.setFillColor(sf::Color(87, 190, 255));
     compare.setPosition({950.f, 652.f});
     window.draw(compare);
+    window.draw(makeText(mFont, "Compare", 15, sf::Color(225, 232, 242), {970.f, 648.f}));
 
+    // 2. Swap Dot & Text
     sf::CircleShape swap(8.f);
     swap.setFillColor(sf::Color(255, 124, 124));
     swap.setPosition({1038.f, 652.f});
     window.draw(swap);
+    window.draw(makeText(mFont, "Swap", 15, sf::Color(225, 232, 242), {1058.f, 648.f}));
 
+    // 3. Focus Dot & Text
     sf::CircleShape focus(8.f);
     focus.setFillColor(sf::Color(248, 196, 76));
     focus.setPosition({1122.f, 652.f});
     window.draw(focus);
+    window.draw(makeText(mFont, "Focused node", 15, sf::Color(225, 232, 242), {1142.f, 648.f}));
 
-    window.draw(mLegendText);
-
+    // 4. Step Text (Moved down to Y=674 to avoid the array indices)
     if (!mHighlight.label.empty()) {
-        sf::Text stepText = makeText(mFont, "Step: " + mHighlight.label, 16, sf::Color(251, 209, 101), {322.f, 650.f});
+        sf::Text stepText = makeText(mFont, "Step: " + mHighlight.label, 16, sf::Color(251, 209, 101), {322.f, 674.f});
         window.draw(stepText);
     }
 
-    sf::Text playText = makeText(mFont, mIsPlaying ? "Animation: auto" : "Animation: paused", 16, sf::Color(189, 198, 214), {322.f, 674.f});
+    // 5. Play Status (Moved right to X=550 to avoid hitting the Step text)
+    sf::Text playText = makeText(mFont, mIsPlaying ? "Animation: auto" : "Animation: paused", 16, sf::Color(189, 198, 214), {550.f, 674.f});
     window.draw(playText);
 }
 

@@ -6,18 +6,14 @@ static const float        BUTTON_X       = 60.f;
 static const float        BUTTON_START_Y = 180.f;
 static const float        BUTTON_GAP     = 80.f;
 
-Game::Game()
+Game::Game(const sf::Font& font)
 : mWindow(sf::VideoMode(1280, 720), "DSA Visualization")
 , mState(AppState::MENU)
+, mFont(font)
 , mReturnButton("Return to Menu", mFont, {20.f, 20.f}, {200.f, 45.f})
 , mHeapVisualizer(mFont)
 {
     mWindow.setFramerateLimit(60);
-
-    if (!mFont.loadFromFile("assets/fonts/PhongChu.ttf"))
-        std::cerr << "Failed to load PhongChu.ttf\n";
-
-    mReturnButton = Button("Return to Menu", mFont, {20.f, 20.f}, {200.f, 45.f});
 
     if (!mBgTexture.loadFromFile("assets/textures/background.png"))
         std::cerr << "Failed to load background.png\n";

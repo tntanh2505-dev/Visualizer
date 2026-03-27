@@ -14,6 +14,7 @@ enum class AppState {
 
 class Game {
 public:
+    Game(const sf::Font& font);
     Game();
     void run();
 
