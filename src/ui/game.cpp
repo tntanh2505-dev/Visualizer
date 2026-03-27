@@ -1,4 +1,4 @@
-#include "DSA-Visualization/ui/Game.hpp"
+#include "DSA-Visualization/ui/game.hpp"
 #include <iostream>
 
 static const sf::Vector2f BUTTON_SIZE    = {260.f, 55.f};
@@ -10,8 +10,14 @@ Game::Game()
 : mWindow(sf::VideoMode(1280, 720), "DSA Visualization")
 , mState(AppState::MENU)
 , mReturnButton("Return to Menu", mFont, {20.f, 20.f}, {200.f, 45.f})
+, mHeapVisualizer(mFont)
 {
     mWindow.setFramerateLimit(60);
+
+    if (!mFont.loadFromFile("assets/fonts/PhongChu.ttf"))
+        std::cerr << "Failed to load PhongChu.ttf\n";
+
+    mReturnButton = Button("Return to Menu", mFont, {20.f, 20.f}, {200.f, 45.f});
 
     if (!mBgTexture.loadFromFile("assets/textures/background.png"))
         std::cerr << "Failed to load background.png\n";
@@ -19,9 +25,6 @@ Game::Game()
     sf::Vector2u size = mBgTexture.getSize();
     mBgSprite.setTexture(mBgTexture);
     mBgSprite.setScale(1280.f / size.x, 720.f / size.y);
-
-    if (!mFont.loadFromFile("assets/fonts/PhongChu.ttf"))
-        std::cerr << "Failed to load PhongChu.ttf\n";
 
     std::vector<std::string> labels = {
         "Singly Linked List",
@@ -41,9 +44,11 @@ Game::Game()
 }
 
 void Game::run() {
+    sf::Clock clock;
     while (mWindow.isOpen()) {
+        const float deltaTime = clock.restart().asSeconds();
         processEvents();
-        update();
+        update(deltaTime);
         render();
     }
 }
@@ -57,8 +62,14 @@ void Game::processEvents() {
         if (mState == AppState::MENU) {
             processMenuEvents(event);
         } else {
-            if (mReturnButton.isClicked(event, mWindow))
+            if (mReturnButton.isClicked(event, mWindow)) {
                 mState = AppState::MENU;
+                mHeapVisualizer.reset();
+            }
+
+            if (mState == AppState::HEAP) {
+                mHeapVisualizer.handleEvent(event, mWindow);
+            }
         }
     }
 }
@@ -71,11 +82,13 @@ void Game::processMenuEvents(const sf::Event& event) {
     if (mMenuButtons[4].isClicked(event, mWindow)) mWindow.close();
 }
 
-void Game::update() {
+void Game::update(float deltaTime) {
     if (mState == AppState::MENU) {
         sf::Vector2f mouse = mWindow.mapPixelToCoords(sf::Mouse::getPosition(mWindow));
         for (auto& btn : mMenuButtons)
             btn.setHighlight(btn.getGlobalBounds().contains(mouse));
+    } else if (mState == AppState::HEAP) {
+        mHeapVisualizer.update(deltaTime, mWindow);
     }
 }
 
@@ -105,6 +118,7 @@ void Game::renderLinkedList() {
 
 void Game::renderHeap() {
     mReturnButton.draw(mWindow);
+    mHeapVisualizer.render(mWindow);
 }
 
 void Game::renderGraph() {

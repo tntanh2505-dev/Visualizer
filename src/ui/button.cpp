@@ -1,4 +1,4 @@
-#include "DSA-Visualization/ui/Button.hpp"
+#include "DSA-Visualization/ui/button.hpp"
 
 Button::Button(const std::string& label, const sf::Font& font,
                sf::Vector2f position, sf::Vector2f size)
@@ -14,11 +14,15 @@ Button::Button(const std::string& label, const sf::Font& font,
     mText.setCharacterSize(22);
     mText.setFillColor(sf::Color::White);
 
+    while (mText.getLocalBounds().width > size.x - 24.f && mText.getCharacterSize() > 14) {
+        mText.setCharacterSize(mText.getCharacterSize() - 1);
+    }
+
     sf::FloatRect textBounds = mText.getLocalBounds();
     mText.setOrigin(textBounds.left + textBounds.width  / 2.f,
                     textBounds.top  + textBounds.height / 2.f);
     mText.setPosition(position.x + size.x / 2.f,
-                      position.y + size.y / 2.f);
+                      position.y + size.y / 2.f - 2.f);
 }
 
 void Button::setHighlight(bool highlight) {
@@ -40,7 +44,7 @@ sf::FloatRect Button::getGlobalBounds() const {
     return mBox.getGlobalBounds();
 }
 
-void Button::draw(sf::RenderWindow& window) {
+void Button::draw(sf::RenderWindow& window) const {
     window.draw(mBox);
     window.draw(mText);
 }
