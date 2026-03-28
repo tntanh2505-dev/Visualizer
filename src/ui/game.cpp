@@ -1,6 +1,7 @@
 #include "DSA-Visualization/ui/Game.hpp"
 #include "DSA-Visualization/ui/AVL_Screen.hpp"
 #include "DSA-Visualization/ui/SLL_Screen.hpp"
+#include "DSA-Visualization/ui/heap_screen.hpp"
 #include <iostream>
 #include <vector>
 
@@ -17,12 +18,12 @@ void Game::run() {
     MenuScreen menu;
    // SLLScreen  sll;
     AVLScreen  avl;
-    
+    HeapVisualizer heap(mFont);
 
     std::vector<Screen*> screens = {
         &menu,   // 0
         nullptr,    // 1 LinkedList
-        nullptr, // 2 Heap (later)
+        &heap, // 2 Heap (later)
         nullptr, // 3 Dijkstra (later)
         &avl,    // 4
     };

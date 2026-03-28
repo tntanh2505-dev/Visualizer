@@ -1,4 +1,5 @@
-#include "DSA-Visualization/ui/heapVisualizer.hpp"
+#include<DSA-Visualization/ui/heap_screen.hpp>
+#include <iostream>
 
 #include <algorithm>
 #include <cmath>
@@ -523,4 +524,22 @@ sf::Color HeapVisualizer::nodeColor(std::size_t index) const {
         return mHighlight.secondColor;
     }
     return sf::Color(106, 133, 176);
+}
+
+int HeapVisualizer::run(sf::RenderWindow& window, sf::Font& font) {
+    if (!mBgTexture.loadFromFile("assets/textures/avl_background.png"))
+        std::cerr << "Failed to load background.png\n";
+
+    while (window.isOpen()){
+        
+        
+
+        window.clear();
+        window.draw(mBgSprite);
+        drawButtons(window);
+
+        window.display();
+    }
+
+    return -1;
 }

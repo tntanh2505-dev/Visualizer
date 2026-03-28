@@ -1,15 +1,19 @@
 #pragma once
 
 #include <SFML/Graphics.hpp>
+#include "DSA-Visualization/ui/Screen.hpp"
 #include <deque>
 #include <string>
 #include <vector>
 
 #include "DSA-Visualization/ui/button.hpp"
-#include "heap.hpp"
+#include "DSA-Visualization/heap/heap.hpp"
 
-class HeapVisualizer {
+class HeapVisualizer : public Screen{
 public:
+    HeapVisualizer();
+    int run(sf::RenderWindow& window, sf::Font& font) override;
+
     explicit HeapVisualizer(const sf::Font& font);
 
     void handleEvent(const sf::Event& event, const sf::RenderWindow& window);
@@ -73,6 +77,9 @@ private:
     Button mClearButton;
     Button mPlayPauseButton;
     Button mStepButton;
+
+    sf::Texture           mBgTexture;
+    sf::Sprite            mBgSprite;
 
     std::string mInputBuffer;
     std::string mStatusMessage;

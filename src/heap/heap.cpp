@@ -1,6 +1,7 @@
 #include <vector>
 #include <climits>
-#include "heap.hpp"
+#include "DSA-Visualization/heap/heap.hpp"
+#include "DSA-Visualization/ui/heap_screen.hpp"
 using namespace std;
 
 int MaxHeap::getParent(int i) {
