@@ -67,6 +67,15 @@ build CMakeFiles/DSA-Visualization.dir/src/avl_tree/avl_tree.cpp.obj: CXX_COMPIL
   OBJECT_FILE_DIR = CMakeFiles\DSA-Visualization.dir\src\avl_tree
   TARGET_SUPPORT_DIR = CMakeFiles\DSA-Visualization.dir
 
+build CMakeFiles/DSA-Visualization.dir/src/heap/heap.cpp.obj: CXX_COMPILER__DSA-Visualization_unscanned_Debug C$:/Users/PeaceBringer/Desktop/First$ SFML$ project/Visualizer/src/heap/heap.cpp || cmake_object_order_depends_target_DSA-Visualization
+  CONFIG = Debug
+  DEP_FILE = CMakeFiles\DSA-Visualization.dir\src\heap\heap.cpp.obj.d
+  FLAGS = -g -std=gnu++17
+  INCLUDES = -I"C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/include" -isystem "C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/lib/include"
+  OBJECT_DIR = CMakeFiles\DSA-Visualization.dir
+  OBJECT_FILE_DIR = CMakeFiles\DSA-Visualization.dir\src\heap
+  TARGET_SUPPORT_DIR = CMakeFiles\DSA-Visualization.dir
+
 build CMakeFiles/DSA-Visualization.dir/src/main.cpp.obj: CXX_COMPILER__DSA-Visualization_unscanned_Debug C$:/Users/PeaceBringer/Desktop/First$ SFML$ project/Visualizer/src/main.cpp || cmake_object_order_depends_target_DSA-Visualization
   CONFIG = Debug
   DEP_FILE = CMakeFiles\DSA-Visualization.dir\src\main.cpp.obj.d
@@ -121,6 +130,15 @@ build CMakeFiles/DSA-Visualization.dir/src/ui/game.cpp.obj: CXX_COMPILER__DSA-Vi
   OBJECT_FILE_DIR = CMakeFiles\DSA-Visualization.dir\src\ui
   TARGET_SUPPORT_DIR = CMakeFiles\DSA-Visualization.dir
 
+build CMakeFiles/DSA-Visualization.dir/src/ui/heap_screen.cpp.obj: CXX_COMPILER__DSA-Visualization_unscanned_Debug C$:/Users/PeaceBringer/Desktop/First$ SFML$ project/Visualizer/src/ui/heap_screen.cpp || cmake_object_order_depends_target_DSA-Visualization
+  CONFIG = Debug
+  DEP_FILE = CMakeFiles\DSA-Visualization.dir\src\ui\heap_screen.cpp.obj.d
+  FLAGS = -g -std=gnu++17
+  INCLUDES = -I"C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/include" -isystem "C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/lib/include"
+  OBJECT_DIR = CMakeFiles\DSA-Visualization.dir
+  OBJECT_FILE_DIR = CMakeFiles\DSA-Visualization.dir\src\ui
+  TARGET_SUPPORT_DIR = CMakeFiles\DSA-Visualization.dir
+
 build CMakeFiles/DSA-Visualization.dir/src/ui/menuscreen.cpp.obj: CXX_COMPILER__DSA-Visualization_unscanned_Debug C$:/Users/PeaceBringer/Desktop/First$ SFML$ project/Visualizer/src/ui/menuscreen.cpp || cmake_object_order_depends_target_DSA-Visualization
   CONFIG = Debug
   DEP_FILE = CMakeFiles\DSA-Visualization.dir\src\ui\menuscreen.cpp.obj.d
@@ -138,7 +156,7 @@ build CMakeFiles/DSA-Visualization.dir/src/ui/menuscreen.cpp.obj: CXX_COMPILER__
 #############################################
 # Link the executable DSA-Visualization.exe
 
-build DSA-Visualization.exe: CXX_EXECUTABLE_LINKER__DSA-Visualization_Debug CMakeFiles/DSA-Visualization.dir/src/animation/AnimationController.cpp.obj CMakeFiles/DSA-Visualization.dir/src/avl_tree/avl_tree.cpp.obj CMakeFiles/DSA-Visualization.dir/src/main.cpp.obj CMakeFiles/DSA-Visualization.dir/src/ui/AVL_screen.cpp.obj CMakeFiles/DSA-Visualization.dir/src/ui/button.cpp.obj CMakeFiles/DSA-Visualization.dir/src/ui/codepanel.cpp.obj CMakeFiles/DSA-Visualization.dir/src/ui/components/graphic_node.cpp.obj CMakeFiles/DSA-Visualization.dir/src/ui/game.cpp.obj CMakeFiles/DSA-Visualization.dir/src/ui/menuscreen.cpp.obj | C$:/Users/PeaceBringer/Desktop/First$ SFML$ project/Visualizer/lib/lib/libsfml-graphics-d.a C$:/Users/PeaceBringer/Desktop/First$ SFML$ project/Visualizer/lib/lib/libsfml-window-d.a C$:/Users/PeaceBringer/Desktop/First$ SFML$ project/Visualizer/lib/lib/libsfml-system-d.a
+build DSA-Visualization.exe: CXX_EXECUTABLE_LINKER__DSA-Visualization_Debug CMakeFiles/DSA-Visualization.dir/src/animation/AnimationController.cpp.obj CMakeFiles/DSA-Visualization.dir/src/avl_tree/avl_tree.cpp.obj CMakeFiles/DSA-Visualization.dir/src/heap/heap.cpp.obj CMakeFiles/DSA-Visualization.dir/src/main.cpp.obj CMakeFiles/DSA-Visualization.dir/src/ui/AVL_screen.cpp.obj CMakeFiles/DSA-Visualization.dir/src/ui/button.cpp.obj CMakeFiles/DSA-Visualization.dir/src/ui/codepanel.cpp.obj CMakeFiles/DSA-Visualization.dir/src/ui/components/graphic_node.cpp.obj CMakeFiles/DSA-Visualization.dir/src/ui/game.cpp.obj CMakeFiles/DSA-Visualization.dir/src/ui/heap_screen.cpp.obj CMakeFiles/DSA-Visualization.dir/src/ui/menuscreen.cpp.obj | C$:/Users/PeaceBringer/Desktop/First$ SFML$ project/Visualizer/lib/lib/libsfml-graphics-d.a C$:/Users/PeaceBringer/Desktop/First$ SFML$ project/Visualizer/lib/lib/libsfml-window-d.a C$:/Users/PeaceBringer/Desktop/First$ SFML$ project/Visualizer/lib/lib/libsfml-system-d.a
   CONFIG = Debug
   FLAGS = -g
   LINK_LIBRARIES = "C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/lib/lib/libsfml-graphics-d.a"  "C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/lib/lib/libsfml-window-d.a"  "C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/lib/lib/libsfml-system-d.a"  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
