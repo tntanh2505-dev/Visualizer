@@ -529,14 +529,34 @@ sf::Color HeapVisualizer::nodeColor(std::size_t index) const {
 int HeapVisualizer::run(sf::RenderWindow& window, sf::Font& font) {
     if (!mBgTexture.loadFromFile("assets/textures/avl_background.png"))
         std::cerr << "Failed to load background.png\n";
+    mBgSprite.setTexture(mBgTexture);
+
+    Button backButton("Back", font, {40.f, 20.f}, {100.f, 40.f});
+    sf::Clock clock;
 
     while (window.isOpen()){
-        
-        
+        sf::Event event;
+        while (window.pollEvent(event)) {
+            if (event.type == sf::Event::Closed) {
+                window.close();
+                return -1;
+            }
+            if (backButton.isClicked(event, window)) {
+                return 0; // Return to Menu screen (index 0)
+            }
+            handleEvent(event, window);
+        }
+
+        const sf::Vector2f mouse = window.mapPixelToCoords(sf::Mouse::getPosition(window));
+        backButton.setHighlight(backButton.getGlobalBounds().contains(mouse));
+
+        float deltaTime = clock.restart().asSeconds();
+        update(deltaTime, window);
 
         window.clear();
         window.draw(mBgSprite);
-        drawButtons(window);
+        render(window);
+        backButton.draw(window);
 
         window.display();
     }
