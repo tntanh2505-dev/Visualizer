@@ -4,6 +4,7 @@
 #include <cmath>
 #include <map>
 #include <functional>
+#include <sstream>
 
 const std::vector<std::string> AVLScreen::INSERT_CODE = {
     "insert(value):",
@@ -144,38 +145,87 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
                     mSliderDragging = true;
 
                 if (mInsertBtn->isClicked(mouseRaw, true) && !mInputString.empty()) {
-                    int val = std::stoi(mInputString);
-                    if (mHistoryIndex < (int)mHistory.size()) {
-                        mHistory.erase(mHistory.begin() + mHistoryIndex, mHistory.end());
+                    std::stringstream ss(mInputString);
+                    std::string item;
+                    std::vector<int> vals;
+                    while (std::getline(ss, item, ',')) {
+                        if (!item.empty() && item != " ") {
+                            try { vals.push_back(std::stoi(item)); } catch (...) {}
+                        }
                     }
-                    Operation op{OpType::Insert, val};
-                    mHistory.push_back(op);
-                    mHistoryIndex++;
-                    buildSteps(op);
-                    mInputString.clear();
+
+                    if (!vals.empty()) {
+                        if (mHistoryIndex < (int)mHistory.size()) {
+                            mHistory.erase(mHistory.begin() + mHistoryIndex, mHistory.end());
+                        }
+                        for (size_t i = 0; i < vals.size(); ++i) {
+                            Operation op{OpType::Insert, vals[i]};
+                            mHistory.push_back(op);
+                            mHistoryIndex++;
+                            if (i == vals.size() - 1) {
+                                buildSteps(op);
+                            } else {
+                                mTree.insert(vals[i], nullptr);
+                            }
+                        }
+                        mInputString.clear();
+                    }
                 }
 
                 if (mDeleteBtn->isClicked(mouseRaw, true) && !mInputString.empty()) {
-                    int val = std::stoi(mInputString);
-                    if (mHistoryIndex < (int)mHistory.size()) {
-                        mHistory.erase(mHistory.begin() + mHistoryIndex, mHistory.end());
+                    std::stringstream ss(mInputString);
+                    std::string item;
+                    std::vector<int> vals;
+                    while (std::getline(ss, item, ',')) {
+                        if (!item.empty() && item != " ") {
+                            try { vals.push_back(std::stoi(item)); } catch (...) {}
+                        }
                     }
-                    Operation op{OpType::Delete, val};
-                    mHistory.push_back(op);
-                    mHistoryIndex++;
-                    buildSteps(op);
-                    mInputString.clear();
+
+                    if (!vals.empty()) {
+                        if (mHistoryIndex < (int)mHistory.size()) {
+                            mHistory.erase(mHistory.begin() + mHistoryIndex, mHistory.end());
+                        }
+                        for (size_t i = 0; i < vals.size(); ++i) {
+                            Operation op{OpType::Delete, vals[i]};
+                            mHistory.push_back(op);
+                            mHistoryIndex++;
+                            if (i == vals.size() - 1) {
+                                buildSteps(op);
+                            } else {
+                                mTree.remove(vals[i], nullptr);
+                            }
+                        }
+                        mInputString.clear();
+                    }
                 }
 
                 if (mSearchBtn->isClicked(mouseRaw, true) && !mInputString.empty()) {
-                    int val = std::stoi(mInputString);
-                    if (mHistoryIndex < (int)mHistory.size())
-                        mHistory.erase(mHistory.begin() + mHistoryIndex, mHistory.end());
-                    Operation op{OpType::Search, val};
-                    mHistory.push_back(op);
-                    mHistoryIndex++;
-                    buildSteps(op);
-                    mInputString.clear();
+                    std::stringstream ss(mInputString);
+                    std::string item;
+                    std::vector<int> vals;
+                    while (std::getline(ss, item, ',')) {
+                        if (!item.empty() && item != " ") {
+                            try { vals.push_back(std::stoi(item)); } catch (...) {}
+                        }
+                    }
+
+                    if (!vals.empty()) {
+                        if (mHistoryIndex < (int)mHistory.size()) {
+                            mHistory.erase(mHistory.begin() + mHistoryIndex, mHistory.end());
+                        }
+                        for (size_t i = 0; i < vals.size(); ++i) {
+                            Operation op{OpType::Search, vals[i]};
+                            mHistory.push_back(op);
+                            mHistoryIndex++;
+                            if (i == vals.size() - 1) {
+                                buildSteps(op);
+                            } else {
+                                mTree.search(vals[i], nullptr);
+                            }
+                        }
+                        mInputString.clear();
+                    }
                 }
 
                 if (mClearBtn->isClicked(mouseRaw, true)) {
@@ -263,8 +313,10 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
             if (mInputActive && event.type == sf::Event::TextEntered) {
                 if (event.text.unicode == 8 && !mInputString.empty())
                     mInputString.pop_back();
-                else if (event.text.unicode >= '0' && event.text.unicode <= '9'
-                         && mInputString.size() < 4)
+                else if (((event.text.unicode >= '0' && event.text.unicode <= '9') || 
+                           event.text.unicode == ',' || 
+                           event.text.unicode == ' ')
+                         && mInputString.size() < 40)
                     mInputString += static_cast<char>(event.text.unicode);
             }
         }

@@ -2,7 +2,7 @@
 44	4064	7963923923681651	CMakeFiles/DSA-Visualization.dir/src/ui/button.cpp.obj	4905b1c81dea75cb
 30	3996	7963923923533990	CMakeFiles/DSA-Visualization.dir/src/main.cpp.obj	6299c663149b118f
 85	3557	7963934892592670	CMakeFiles/DSA-Visualization.dir/src/ui/game.cpp.obj	2fc9aeb6fe21b309
-4853	5508	7963934940333336	DSA-Visualization.exe	33fd1d74b78e8ff1
+6456	7397	7963938499491177	DSA-Visualization.exe	33fd1d74b78e8ff1
 3997	6896	7963923963075010	CMakeFiles/DSA-Visualization.dir/src/ui/menuscreen.cpp.obj	70289c1271282010
 50	4920	7963917217870908	CMakeFiles/DSA-Visualization.dir/src/animation/AnimationController.cpp.obj	483833cbaf412ea3
 59	6563	7963917217899770	CMakeFiles/DSA-Visualization.dir/src/avl_tree/avl_tree.cpp.obj	ed56cffcb57e3266
@@ -11,6 +11,6 @@
 13	69	7960542656818682	clean	4b7a9ec6ee23bafa
 74	2998	7963917443483662	CMakeFiles/DSA-Visualization.dir/src/ui/components/graphic_node.cpp.obj	b24273cf82e203cd
 35	3227	7963932577093424	CMakeFiles/DSA-Visualization.dir/src/heap/heap.cpp.obj	cd714cf24d7a5739
-103	4852	7963934892842190	CMakeFiles/DSA-Visualization.dir/src/ui/heap_screen.cpp.obj	193de13319467638
 49	6455	7963938435374004	CMakeFiles/DSA-Visualization.dir/src/ui/heap_screen.cpp.obj	193de13319467638
-6456	7397	7963938499491177	DSA-Visualization.exe	33fd1d74b78e8ff1
+36	3872	7965362191398257	CMakeFiles/DSA-Visualization.dir/src/ui/AVL_screen.cpp.obj	914688d8861cf6c1
+3873	4929	7965362229762755	DSA-Visualization.exe	33fd1d74b78e8ff1
