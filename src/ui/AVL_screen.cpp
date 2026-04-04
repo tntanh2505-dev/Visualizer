@@ -1,5 +1,6 @@
 #include "DSA-Visualization/ui/AVL_Screen.hpp"
 #include "DSA-Visualization/ui/components/graphic_node.hpp"
+#include "DSA-Visualization/ui/components/SwarmEffect.hpp"
 #include <iostream>
 #include <cmath>
 #include <map>
@@ -102,7 +103,7 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
     mReturnBtn->setPosition(ver_align, 660.f);
 
     // Speed slider track
-    mSliderTrack = sf::RectangleShape({120.f, 6.f});
+    mSliderTrack = sf::RectangleShape({180.f, 6.f});
     mSliderTrack.setPosition(1010.f, 355.f);
     mSliderTrack.setFillColor(sf::Color(60, 60, 60));
 
@@ -110,6 +111,9 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
     mSliderHandle.setOrigin(8.f, 8.f);
     mSliderHandle.setFillColor(sf::Color(60, 60, 60));
     updateSliderHandle();
+    
+    // 1. Initialize the effect (80 nodes for sparse look, 1280x720 matching screen size)
+    ui::SwarmEffect backgroundSwarm(80, sf::Vector2f(1280.0f, 720.0f));
 
     sf::Clock clock;
 
@@ -188,9 +192,6 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
                     mInputString.clear();
                 }
 
-                static bool seeded = false;
-                if (!seeded) { srand(time(NULL)); seeded = true; }
-
                 if (mRandomBtn->isClicked(mouseRaw, true)) {
                     if (mHistoryIndex < (int)mHistory.size())
                         mHistory.erase(mHistory.begin() + mHistoryIndex, mHistory.end());
@@ -252,10 +253,10 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
                 sf::Vector2f mouse = window.mapPixelToCoords(
                     sf::Vector2i(event.mouseMove.x, event.mouseMove.y));
                 float trackLeft  = 1010.f;
-                float trackRight = 1130.f;
+                float trackRight = 1190.f;
                 float ratio = (mouse.x - trackLeft) / (trackRight - trackLeft);
                 ratio = std::max(0.f, std::min(1.f, ratio));
-                mSpeedValue = 0.5f + ratio * 4.5f; // range 0.5x to 5x
+                mSpeedValue = 0.5f + ratio * 7.5f; // range 0.5x to 5x
                 mController.setSpeed(mSpeedValue);
                 updateSliderHandle();
             }
@@ -269,10 +270,19 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
             }
         }
 
+        // 2. Update the swarm logic (Pass in mouseRaw!)
+        backgroundSwarm.update(dt, mouseRaw);
+        
         mController.update(dt);
 
-        window.clear();
-        window.draw(mBgSprite);
+        // 3. Render everything in the correct order
+        window.clear(sf::Color(15, 15, 20)); 
+
+        window.draw(mBgSprite); 
+
+        // Draw swarm over the background, but behind the UI/Tree
+        window.draw(backgroundSwarm); 
+
         mCodePanel.highlight(mController.hasSteps()
             ? mController.currentStep()->codeLineIndex : -1);
         mCodePanel.draw(window);
@@ -281,6 +291,7 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
         drawInputBox(window, font);
         drawDescription(window, font);
         drawSpeedSlider(window, font);
+        
         window.display();
     }
     return -1;
@@ -288,8 +299,8 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
 
 void AVLScreen::updateSliderHandle() {
     float trackLeft  = 1010.f;
-    float trackRight = 1130.f;
-    float ratio = (mSpeedValue - 0.5f) / 4.5f;
+    float trackRight = 1190.f;
+    float ratio = (mSpeedValue - 0.5f) / 7.5f;
     mSliderHandle.setPosition(trackLeft + ratio * (trackRight - trackLeft), 353.f);
 }
 
@@ -351,42 +362,34 @@ void AVLScreen::drawControls(sf::RenderWindow& window, const sf::Font& font) {
     // --- Unified Control Panel Background ---
     sf::ConvexShape bgBox(40); 
     
-    // A smooth, relaxed dark-glass panel that unifies all controls
     bgBox.setFillColor(sf::Color(25, 30, 40, 70)); 
     bgBox.setOutlineThickness(1.5f);
-    bgBox.setOutlineColor(sf::Color(255, 255, 255, 30)); // Very soft whitish highlight
+    bgBox.setOutlineColor(sf::Color(255, 255, 255, 30));
 
-    // Generous dimensions to encompass all buttons, timeline, and slider comfortably
-    float boxX = 985.f;  // Pulled left to include the counter and slider text
-    float boxY = 35.f;   // Starts nicely above 'Insert'
-    float boxW = 260.f;  // Wide enough to give 'Next >' room to breathe
-    float boxH = 370.f;  // Extends all the way down past the Speed slider
-    float radius = 16.f; // Smooth, modern, softer corners
-    // ----------------------------------------
+    float boxX = 985.f;  
+    float boxY = 35.f;   
+    float boxW = 260.f;  
+    float boxH = 370.f;  
+    float radius = 16.f; 
 
     const float pi = 3.141592654f;
     for (int i = 0; i < 10; ++i) {
         float step = i * (pi / 2.f) / 9.f;
-        // Top-Right
         bgBox.setPoint(i, sf::Vector2f(
             boxX + boxW - radius + radius * std::cos(step), 
             boxY + radius - radius * std::sin(step)));
-        // Top-Left
         bgBox.setPoint(10 + i, sf::Vector2f(
             boxX + radius + radius * std::cos(step + pi / 2.f), 
             boxY + radius - radius * std::sin(step + pi / 2.f)));
-        // Bottom-Left
         bgBox.setPoint(20 + i, sf::Vector2f(
             boxX + radius + radius * std::cos(step + pi), 
             boxY + boxH - radius - radius * std::sin(step + pi)));
-        // Bottom-Right
         bgBox.setPoint(30 + i, sf::Vector2f(
             boxX + boxW - radius + radius * std::cos(step + 3.f * pi / 2.f), 
             boxY + boxH - radius - radius * std::sin(step + 3.f * pi / 2.f)));
     }
     
     window.draw(bgBox);
-    // ----------------------------------------
 
     window.draw(*mInsertBtn);
     window.draw(*mDeleteBtn);
@@ -414,12 +417,11 @@ void AVLScreen::drawSpeedSlider(sf::RenderWindow& window, const sf::Font& font) 
     label.setFont(font);
     label.setCharacterSize(13);
     label.setLetterSpacing(1.1f);
-    label.setFillColor(sf::Color(0,0,0));
+    label.setFillColor(sf::Color(255,255,255));
     label.setString("Speed: " + std::to_string((int)mSpeedValue) + "x");
     label.setPosition(1010.f, 370.f);
     window.draw(label);
 
-    // Glowing track filled portion
     sf::RectangleShape filledTrack({mSliderHandle.getPosition().x - mSliderTrack.getPosition().x, 6.f});
     filledTrack.setPosition(mSliderTrack.getPosition());
     filledTrack.setFillColor(sf::Color(0,180,200));
