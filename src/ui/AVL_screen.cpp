@@ -1,6 +1,5 @@
 #include "DSA-Visualization/ui/AVL_Screen.hpp"
 #include "DSA-Visualization/ui/components/graphic_node.hpp"
-#include "DSA-Visualization/ui/components/SwarmEffect.hpp"
 #include <iostream>
 #include <cmath>
 #include <map>
@@ -80,40 +79,48 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
     sf::Vector2u sz = mBgTexture.getSize();
     mBgSprite.setTexture(mBgTexture);
     mBgSprite.setScale(1280.f / sz.x, 720.f / sz.y);
+    mBgSprite.setColor(sf::Color(255, 255, 255, 20)); // ultra-dimmed for the clean look
 
     mCodePanel = CodePanel(font, sf::Vector2f(8.f, 16.f), sf::Vector2f(230.f, 280.f));
     mCodePanel.setCode(INSERT_CODE);
     
-    float ver_align = 1110.f;
+    float ver_align = 1115.f; // Centered in the control panel
     mInsertBtn.emplace("Insert",  font, sf::Vector2f(120.f, 40.f));
-    mInsertBtn->setPosition(ver_align,  60.f);
+    mInsertBtn->setPosition(ver_align,  70.f);
     mDeleteBtn.emplace("Delete",  font, sf::Vector2f(120.f, 40.f));
-    mDeleteBtn->setPosition(ver_align, 105.f);
+    mDeleteBtn->setPosition(ver_align, 120.f);
     mSearchBtn.emplace("Search",  font, sf::Vector2f(120.f, 40.f));
-    mSearchBtn->setPosition(ver_align, 150.f);
+    mSearchBtn->setPosition(ver_align, 170.f);
     mRandomBtn.emplace("Random",  font, sf::Vector2f(120.f, 40.f));
-    mRandomBtn->setPosition(ver_align, 195.f);
+    mRandomBtn->setPosition(ver_align, 220.f);
     mClearBtn .emplace("Clear",   font, sf::Vector2f(120.f, 40.f));
-    mClearBtn ->setPosition(ver_align, 240.f);
+    mClearBtn ->setPosition(ver_align, 270.f);
     mPrevBtn  .emplace("< Prev",  font, sf::Vector2f(80.f,  40.f));
-    mPrevBtn  ->setPosition(1070.f, 285.f);
+    mPrevBtn  ->setPosition(1070.f, 320.f);
     mNextBtn  .emplace("Next >",  font, sf::Vector2f(80.f,  40.f));
-    mNextBtn  ->setPosition(1170.f, 285.f);
+    mNextBtn  ->setPosition(1160.f, 320.f);
     mReturnBtn.emplace("Return",  font, sf::Vector2f(120.f, 40.f));
     mReturnBtn->setPosition(ver_align, 660.f);
 
     // Speed slider track
-    mSliderTrack = sf::RectangleShape({180.f, 6.f});
-    mSliderTrack.setPosition(1010.f, 355.f);
-    mSliderTrack.setFillColor(sf::Color(60, 60, 60));
+    mSliderTrack = sf::RectangleShape({180.f, 8.f});
+    mSliderTrack.setPosition(1025.f, 385.f);
+    mSliderTrack.setFillColor(sf::Color(30, 25, 40));
+    mSliderTrack.setOutlineThickness(1.f);
+    mSliderTrack.setOutlineColor(sf::Color(181, 58, 199, 50));
 
-    mSliderHandle = sf::CircleShape(8.f);
-    mSliderHandle.setOrigin(8.f, 8.f);
-    mSliderHandle.setFillColor(sf::Color(60, 60, 60));
+    mSliderHandle = sf::CircleShape(10.f);
+    mSliderHandle.setOrigin(10.f, 10.f);
+    mSliderHandle.setFillColor(sf::Color::White); // Sleek white handle
     updateSliderHandle();
-    
-    // 1. Initialize the effect (80 nodes for sparse look, 1280x720 matching screen size)
-    ui::SwarmEffect backgroundSwarm(80, sf::Vector2f(1280.0f, 720.0f));
+
+    // 1. Initialize dot grid VertexArray for clean background
+    sf::VertexArray dotGrid(sf::Points);
+    for (int x = 0; x <= 1280; x += 30) {
+        for (int y = 0; y <= 720; y += 30) {
+            dotGrid.append(sf::Vertex(sf::Vector2f(x, y), sf::Color(181, 58, 199, 30)));
+        }
+    }
 
     sf::Clock clock;
 
@@ -141,7 +148,7 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
             if (leftPressed) {
                 if (mReturnBtn->isClicked(mouseRaw, true)) return 0;
 
-                sf::FloatRect inputBox(CANVAS_X + 10.f, CANVAS_H + 10.f, 120.f, 36.f);
+                sf::FloatRect inputBox(CANVAS_X + 10.f, CANVAS_H + 10.f, 150.f, 42.f);
                 mInputActive = inputBox.contains(mouseRaw);
 
                 if (mSliderHandle.getGlobalBounds().contains(mouseRaw))
@@ -252,8 +259,8 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
             if (mSliderDragging && event.type == sf::Event::MouseMoved) {
                 sf::Vector2f mouse = window.mapPixelToCoords(
                     sf::Vector2i(event.mouseMove.x, event.mouseMove.y));
-                float trackLeft  = 1010.f;
-                float trackRight = 1190.f;
+                float trackLeft  = 1025.f;
+                float trackRight = 1205.f;
                 float ratio = (mouse.x - trackLeft) / (trackRight - trackLeft);
                 ratio = std::max(0.f, std::min(1.f, ratio));
                 mSpeedValue = 0.5f + ratio * 7.5f; // range 0.5x to 5x
@@ -270,18 +277,13 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
             }
         }
 
-        // 2. Update the swarm logic (Pass in mouseRaw!)
-        backgroundSwarm.update(dt, mouseRaw);
-        
         mController.update(dt);
 
         // 3. Render everything in the correct order
-        window.clear(sf::Color(15, 15, 20)); 
+        window.clear(sf::Color(13, 11, 15)); // Charcoal
 
         window.draw(mBgSprite); 
-
-        // Draw swarm over the background, but behind the UI/Tree
-        window.draw(backgroundSwarm); 
+        window.draw(dotGrid); 
 
         mCodePanel.highlight(mController.hasSteps()
             ? mController.currentStep()->codeLineIndex : -1);
@@ -298,10 +300,10 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
 }
 
 void AVLScreen::updateSliderHandle() {
-    float trackLeft  = 1010.f;
-    float trackRight = 1190.f;
+    float trackLeft  = 1025.f;
+    float trackRight = 1205.f;
     float ratio = (mSpeedValue - 0.5f) / 7.5f;
-    mSliderHandle.setPosition(trackLeft + ratio * (trackRight - trackLeft), 353.f);
+    mSliderHandle.setPosition(trackLeft + ratio * (trackRight - trackLeft), 389.f);
 }
 
 void AVLScreen::drawTree(sf::RenderWindow& window, const sf::Font& font) {
@@ -339,11 +341,22 @@ void AVLScreen::drawEdges(sf::RenderWindow& window,
         sf::Vector2f dir = p2 - p1;
         float len = std::sqrt(dir.x * dir.x + dir.y * dir.y);
         if (len < 0.1f) return;
-        sf::RectangleShape line(sf::Vector2f(len, 3.f));
-        line.setOrigin(0, 1.5f);
+        float angle = std::atan2(dir.y, dir.x) * 180.f / 3.14159f;
+
+        // Glow Line
+        sf::RectangleShape glow(sf::Vector2f(len, 7.f));
+        glow.setOrigin(0, 3.5f);
+        glow.setPosition(p1);
+        glow.setFillColor(sf::Color(181, 58, 199, 30));
+        glow.setRotation(angle);
+        window.draw(glow);
+
+        // Core Line
+        sf::RectangleShape line(sf::Vector2f(len, 2.5f));
+        line.setOrigin(0, 1.25f);
         line.setPosition(p1);
-        line.setFillColor(sf::Color(100, 100, 100, 200));
-        line.setRotation(std::atan2(dir.y, dir.x) * 180.f / 3.14159f);
+        line.setFillColor(sf::Color(218, 112, 214, 200));
+        line.setRotation(angle);
         window.draw(line);
     };
 
@@ -362,15 +375,15 @@ void AVLScreen::drawControls(sf::RenderWindow& window, const sf::Font& font) {
     // --- Unified Control Panel Background ---
     sf::ConvexShape bgBox(40); 
     
-    bgBox.setFillColor(sf::Color(25, 30, 40, 70)); 
+    bgBox.setFillColor(sf::Color(22, 18, 28, 230));  // Dark glass plum
     bgBox.setOutlineThickness(1.5f);
-    bgBox.setOutlineColor(sf::Color(255, 255, 255, 30));
+    bgBox.setOutlineColor(sf::Color(181, 58, 199, 40));
 
-    float boxX = 985.f;  
+    float boxX = 990.f;  
     float boxY = 35.f;   
-    float boxW = 260.f;  
-    float boxH = 370.f;  
-    float radius = 16.f; 
+    float boxW = 250.f;  
+    float boxH = 430.f;  
+    float radius = 18.f; 
 
     const float pi = 3.141592654f;
     for (int i = 0; i < 10; ++i) {
@@ -403,12 +416,12 @@ void AVLScreen::drawControls(sf::RenderWindow& window, const sf::Font& font) {
     sf::Text counter;
     counter.setFont(font);
     counter.setCharacterSize(13);
-    counter.setFillColor(sf::Color::White);
+    counter.setFillColor(sf::Color(180, 190, 200));
     counter.setString(mController.hasSteps()
         ? std::to_string(mController.currentIndex() + 1) + " / "
           + std::to_string(mController.totalSteps())
         : "0 / 0");
-    counter.setPosition(1010.f, 330.f);
+    counter.setPosition(1025.f, 355.f);
     window.draw(counter);
 }
 
@@ -417,67 +430,83 @@ void AVLScreen::drawSpeedSlider(sf::RenderWindow& window, const sf::Font& font) 
     label.setFont(font);
     label.setCharacterSize(13);
     label.setLetterSpacing(1.1f);
-    label.setFillColor(sf::Color(255,255,255));
+    label.setFillColor(sf::Color(200, 210, 220));
     label.setString("Speed: " + std::to_string((int)mSpeedValue) + "x");
-    label.setPosition(1010.f, 370.f);
+    label.setPosition(1025.f, 405.f);
     window.draw(label);
 
-    sf::RectangleShape filledTrack({mSliderHandle.getPosition().x - mSliderTrack.getPosition().x, 6.f});
+    sf::RectangleShape filledTrack({mSliderHandle.getPosition().x - mSliderTrack.getPosition().x, 8.f});
     filledTrack.setPosition(mSliderTrack.getPosition());
-    filledTrack.setFillColor(sf::Color(0,180,200));
+    filledTrack.setFillColor(sf::Color(218, 112, 214));
 
     window.draw(mSliderTrack);
     window.draw(filledTrack);
 
-    sf::CircleShape shadow(8.f);
-    shadow.setOrigin(8.f, 8.f);
-    shadow.setPosition(mSliderHandle.getPosition() + sf::Vector2f(2.f, 2.f));
-    shadow.setFillColor(sf::Color(0, 0, 0, 100));
+    sf::CircleShape shadow(10.f);
+    shadow.setOrigin(10.f, 10.f);
+    shadow.setPosition(mSliderHandle.getPosition() + sf::Vector2f(2.f, 3.f));
+    shadow.setFillColor(sf::Color(0, 0, 0, 120));
 
     window.draw(shadow);
     window.draw(mSliderHandle);
 }
 
 void AVLScreen::drawInputBox(sf::RenderWindow& window, const sf::Font& font) {
-    sf::RectangleShape box({140.f, 40.f});
-    box.setPosition(CANVAS_X + 10.f, CANVAS_H);
-    box.setFillColor(sf::Color(35, 35, 35));
-    box.setOutlineThickness(2.f);
-    box.setOutlineColor(mInputActive ? sf::Color(255, 255, 255) : sf::Color(100, 100, 100));
+    sf::RectangleShape box({150.f, 42.f});
+    box.setPosition(CANVAS_X + 10.f, CANVAS_H + 10.f);
+    box.setFillColor(sf::Color(22, 18, 28, 230));
+    box.setOutlineThickness(1.5f);
+    box.setOutlineColor(mInputActive ? sf::Color(218, 112, 214) : sf::Color(80, 60, 90));
     window.draw(box);
+
+    // Subtle glow if active
+    if (mInputActive) {
+        sf::RectangleShape glowBox({150.f, 42.f});
+        glowBox.setPosition(CANVAS_X + 10.f, CANVAS_H + 10.f);
+        glowBox.setFillColor(sf::Color::Transparent);
+        glowBox.setOutlineThickness(4.f);
+        glowBox.setOutlineColor(sf::Color(218, 112, 214, 40));
+        window.draw(glowBox);
+    }
 
     sf::Text inputText;
     inputText.setFont(font);
     inputText.setString(mInputString.empty() ? "value..." : mInputString);
-    inputText.setCharacterSize(15);
-    inputText.setLetterSpacing(1.1f);
+    inputText.setCharacterSize(16);
+    inputText.setLetterSpacing(1.2f);
     inputText.setFillColor(mInputString.empty()
-        ? sf::Color(100, 100, 120) : sf::Color::White);
-    inputText.setPosition(CANVAS_X + 20.f, CANVAS_H + 8.f);
+        ? sf::Color(100, 110, 130) : sf::Color::White);
+    inputText.setPosition(CANVAS_X + 24.f, CANVAS_H + 20.f);
     window.draw(inputText);
 }
 
 void AVLScreen::drawDescription(sf::RenderWindow& window, const sf::Font& font) {
     if (!mController.hasSteps()) return;
 
-    sf::RectangleShape shadow({CANVAS_W - 20.f, 50.f});
-    shadow.setPosition(CANVAS_X + 24.f, CANVAS_H + 54.f);
-    shadow.setFillColor(sf::Color(0, 0, 0, 80));
+    sf::RectangleShape shadow({CANVAS_W - 30.f, 54.f});
+    shadow.setPosition(CANVAS_X + 24.f, CANVAS_H + 68.f);
+    shadow.setFillColor(sf::Color(0, 0, 0, 90));
     window.draw(shadow);
 
-    sf::RectangleShape bar({CANVAS_W - 20.f, 50.f});
-    bar.setPosition(CANVAS_X + 20.f, CANVAS_H + 50.f);
-    bar.setFillColor(sf::Color(25, 25, 25, 230));
-    bar.setOutlineThickness(1.f);
-    bar.setOutlineColor(sf::Color(60, 60, 60));
+    sf::RectangleShape bar({CANVAS_W - 30.f, 54.f});
+    bar.setPosition(CANVAS_X + 20.f, CANVAS_H + 64.f);
+    bar.setFillColor(sf::Color(22, 18, 28, 240));
+    bar.setOutlineThickness(1.5f);
+    bar.setOutlineColor(sf::Color(181, 58, 199, 60));
     window.draw(bar);
+
+    // Accent line
+    sf::RectangleShape accent({4.f, 54.f});
+    accent.setPosition(CANVAS_X + 20.f, CANVAS_H + 64.f);
+    accent.setFillColor(sf::Color(218, 112, 214));
+    window.draw(accent);
 
     sf::Text desc;
     desc.setFont(font);
     desc.setString(mController.currentStep()->description);
     desc.setCharacterSize(18);
     desc.setLetterSpacing(1.1f);
-    desc.setFillColor(sf::Color::White);
-    desc.setPosition(CANVAS_X + 35.f, CANVAS_H + 60.f);
+    desc.setFillColor(sf::Color(240, 245, 255));
+    desc.setPosition(CANVAS_X + 38.f, CANVAS_H + 79.f);
     window.draw(desc);
 }

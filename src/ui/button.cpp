@@ -4,12 +4,12 @@
 ModernButton::ModernButton(const std::string& text, const sf::Font& font, sf::Vector2f size, float radius)
     : m_size(size), m_radius(radius), m_isHovered(false) // radius is kept in signature to match your .hpp, but unused visually
 {
-    // 1. Setup Theme Colors
-    m_topNormal    = sf::Color(60, 60, 60);
-    m_bottomNormal = sf::Color(30, 30, 30);
-    m_topHover     = sf::Color(80, 80, 80);
-    m_bottomHover  = sf::Color(50, 50, 50);
-    m_borderColor  = sf::Color(100, 100, 100, 150);
+    // 1. Setup Theme Colors (Amethyst Dark Mode)
+    m_topNormal    = sf::Color(32, 26, 43);     // Deep plum
+    m_bottomNormal = sf::Color(20, 16, 27);     // Darker plum
+    m_topHover     = sf::Color(53, 38, 77);     // Vibrant amethyst hover
+    m_bottomHover  = sf::Color(37, 24, 56);     // Darker amethyst
+    m_borderColor  = sf::Color(181, 58, 199, 120); // Neon purple outline
 
     // 2. Setup Text properties (Scaled down for smaller button)
     m_text.setFont(font);
