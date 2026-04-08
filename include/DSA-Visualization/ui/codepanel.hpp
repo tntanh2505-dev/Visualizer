@@ -13,11 +13,21 @@ public:
     void draw(sf::RenderWindow& window);
 
 private:
-    sf::RectangleShape    mBackground;
+    void generateSyntaxHighlighting(const std::string& rawLine, int lineIndex, float yPos);
+
+    sf::ConvexShape       mBackground;
+    sf::ConvexShape       mTitleBar;
+    sf::CircleShape       mMacButtons[3];
     sf::RectangleShape    mHighlightBar;
-    std::vector<sf::Text> mLines;
+    sf::RectangleShape    mDropShadow;
+
+    // Line components
+    std::vector<sf::Text> mLineNumbers;
+    std::vector<std::vector<sf::Text>> mSyntaxLines; // multiple colored words per line
+
     int                   mHighlightedLine;
     sf::Vector2f          mPosition;
+    sf::Vector2f          mSize;
     float                 mLineHeight;
     const sf::Font*       mFont;
 };

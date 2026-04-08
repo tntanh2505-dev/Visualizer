@@ -81,7 +81,7 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
     mBgSprite.setScale(1280.f / sz.x, 720.f / sz.y);
     mBgSprite.setColor(sf::Color(255, 255, 255, 20)); // ultra-dimmed for the clean look
 
-    mCodePanel = CodePanel(font, sf::Vector2f(8.f, 16.f), sf::Vector2f(230.f, 280.f));
+    mCodePanel = CodePanel(font, sf::Vector2f(8.f, 16.f), sf::Vector2f(240.f, 280.f));
     mCodePanel.setCode(INSERT_CODE);
     
     float ver_align = 1115.f; // Centered in the control panel

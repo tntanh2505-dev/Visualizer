@@ -4,65 +4,183 @@ static const float PADDING     = 12.f;
 static const float LINE_HEIGHT = 22.f;
 static const int   FONT_SIZE   = 12;
 
+#include <cmath>
+#include <sstream>
+
 CodePanel::CodePanel()
 : mFont(nullptr)
 , mHighlightedLine(-1)
 , mLineHeight(LINE_HEIGHT)
 {}
 
+static void buildRoundedRect(sf::ConvexShape& shape, sf::Vector2f size, float radius) {
+    shape.setPointCount(40);
+    const float pi = 3.141592654f;
+    for (int i = 0; i < 10; ++i) {
+        float step = i * (pi / 2.f) / 9.f;
+        shape.setPoint(i, sf::Vector2f(size.x - radius + radius * std::cos(step), radius - radius * std::sin(step)));
+        shape.setPoint(10 + i, sf::Vector2f(radius + radius * std::cos(step + pi / 2.f), radius - radius * std::sin(step + pi / 2.f)));
+        shape.setPoint(20 + i, sf::Vector2f(radius + radius * std::cos(step + pi), size.y - radius - radius * std::sin(step + pi)));
+        shape.setPoint(30 + i, sf::Vector2f(size.x - radius + radius * std::cos(step + 3.f * pi / 2.f), size.y - radius - radius * std::sin(step + 3.f * pi / 2.f)));
+    }
+}
+
+static void buildTopRoundedRect(sf::ConvexShape& shape, sf::Vector2f size, float radius) {
+    shape.setPointCount(22);
+    const float pi = 3.141592654f;
+    for (int i = 0; i < 10; ++i) {
+        float step = i * (pi / 2.f) / 9.f;
+        shape.setPoint(i, sf::Vector2f(size.x - radius + radius * std::cos(step), radius - radius * std::sin(step)));
+        shape.setPoint(10 + i, sf::Vector2f(radius + radius * std::cos(step + pi / 2.f), radius - radius * std::sin(step + pi / 2.f)));
+    }
+    shape.setPoint(20, sf::Vector2f(0.f, size.y));
+    shape.setPoint(21, sf::Vector2f(size.x, size.y));
+}
+
 CodePanel::CodePanel(const sf::Font& font, sf::Vector2f position, sf::Vector2f size)
 : mFont(&font)
 , mPosition(position)
+, mSize(size)
 , mHighlightedLine(-1)
 , mLineHeight(LINE_HEIGHT)
 {
+    float radius = 10.f;
+
+    // Drop Shadow
+    mDropShadow.setSize(size);
+    mDropShadow.setPosition(position + sf::Vector2f(6.f, 8.f));
+    mDropShadow.setFillColor(sf::Color(0, 0, 0, 100));
+
+    // Main background
+    buildRoundedRect(mBackground, size, radius);
     mBackground.setPosition(position);
-    mBackground.setSize(size);
     mBackground.setFillColor(sf::Color(16, 13, 20, 240));
     mBackground.setOutlineThickness(1.5f);
-    mBackground.setOutlineColor(sf::Color(181, 58, 199, 60));
+    mBackground.setOutlineColor(sf::Color(40, 30, 50, 180));
 
+    // Title Bar
+    float titleHeight = 24.f;
+    buildTopRoundedRect(mTitleBar, sf::Vector2f(size.x, titleHeight), radius);
+    mTitleBar.setPosition(position);
+    mTitleBar.setFillColor(sf::Color(30, 25, 38, 255));
+
+    // Mac Buttons
+    sf::Color macColors[3] = { sf::Color(255, 95, 86), sf::Color(255, 189, 46), sf::Color(39, 201, 63) };
+    for (int i = 0; i < 3; ++i) {
+        mMacButtons[i].setRadius(5.f);
+        mMacButtons[i].setFillColor(macColors[i]);
+        mMacButtons[i].setPosition(position.x + 12.f + i * 16.f, position.y + 7.f);
+    }
+
+    // Highlight track
     mHighlightBar.setSize({size.x, LINE_HEIGHT});
-    mHighlightBar.setFillColor(sf::Color(181, 58, 199, 30));
+    mHighlightBar.setFillColor(sf::Color(181, 58, 199, 40));
+}
+
+void CodePanel::generateSyntaxHighlighting(const std::string& rawLine, int lineIndex, float yPos) {
+    // Simple tokenizer by space
+    std::string token;
+    std::stringstream ss(rawLine);
+    
+    float currentX = mPosition.x + PADDING + 30.f; // 30.f offset for line numbers
+    
+    // Check initial indent for spacing
+    int indentSpaces = 0;
+    while(indentSpaces < (int)rawLine.size() && rawLine[indentSpaces] == ' ') {
+        indentSpaces++;
+    }
+    
+    std::vector<sf::Text> parsedLine;
+    
+    sf::Text indentText;
+    indentText.setFont(*mFont);
+    indentText.setCharacterSize(FONT_SIZE);
+    indentText.setString(std::string(indentSpaces, ' '));
+    indentText.setPosition(currentX, yPos);
+    currentX += indentText.getLocalBounds().width;
+
+    std::stringstream tokenStream(rawLine.substr(indentSpaces));
+    while (tokenStream >> token) {
+        sf::Color color = sf::Color(230, 235, 240); // default
+        
+        // Basic keywords
+        if (token == "if" || token == "else" || token == "return" || token == "else:" || token == "void") {
+            color = sf::Color(218, 112, 214); // Pinkish string/keyword
+        } else if (token == "node" || token == "null" || token == "null:" || token == "left" || token == "right") {
+            color = sf::Color(110, 247, 242); // bright Cyan
+        } else if (token.find("(") != std::string::npos || token.find(")") != std::string::npos) {
+            color = sf::Color(255, 189, 46); // Yellow for functions
+        }
+
+        sf::Text word;
+        word.setFont(*mFont);
+        word.setString(token + " ");
+        word.setCharacterSize(FONT_SIZE);
+        word.setFillColor(color);
+        word.setLetterSpacing(1.1f);
+        word.setPosition(currentX, yPos);
+        
+        currentX += word.getLocalBounds().width;
+        parsedLine.push_back(word);
+    }
+    
+    mSyntaxLines.push_back(parsedLine);
 }
 
 void CodePanel::setCode(const std::vector<std::string>& lines) {
     if (!mFont) return;
-    mLines.clear();
+    
+    mLineNumbers.clear();
+    mSyntaxLines.clear();
+
+    float topMargin = PADDING + 24.f; // below title bar
+
     for (int i = 0; i < (int)lines.size(); i++) {
-        sf::Text text;
-        text.setFont(*mFont);
-        text.setString(lines[i]);
-        text.setCharacterSize(FONT_SIZE);
-        text.setFillColor(sf::Color(230, 235, 240));
-        text.setLetterSpacing(1.1f);
-        text.setPosition(
-            mPosition.x + PADDING,
-            mPosition.y + PADDING + i * LINE_HEIGHT
-        );
-        mLines.push_back(text);
+        float yPos = mPosition.y + topMargin + i * LINE_HEIGHT;
+        
+        // Line number
+        sf::Text numText;
+        numText.setFont(*mFont);
+        numText.setString(std::to_string(i + 1));
+        numText.setCharacterSize(FONT_SIZE - 1);
+        numText.setFillColor(sf::Color(100, 90, 120));
+        numText.setPosition(mPosition.x + 10.f, yPos);
+        mLineNumbers.push_back(numText);
+
+        generateSyntaxHighlighting(lines[i], i, yPos);
     }
 }
 
 void CodePanel::highlight(int lineIndex) {
     mHighlightedLine = lineIndex;
-    if (lineIndex >= 0 && lineIndex < (int)mLines.size()) {
+    if (lineIndex >= 0 && lineIndex < (int)mLineNumbers.size()) {
+        float topMargin = PADDING + 24.f;
         mHighlightBar.setPosition(
             mPosition.x,
-            mPosition.y + PADDING + lineIndex * LINE_HEIGHT - 2.f
+            mPosition.y + topMargin + lineIndex * LINE_HEIGHT - 2.f
         );
     }
 }
 
 void CodePanel::draw(sf::RenderWindow& window) {
+    window.draw(mDropShadow);
     window.draw(mBackground);
-    if (mHighlightedLine >= 0 && mHighlightedLine < (int)mLines.size()) {
+    window.draw(mTitleBar);
+    for (int i = 0; i < 3; ++i) window.draw(mMacButtons[i]);
+
+    if (mHighlightedLine >= 0 && mHighlightedLine < (int)mLineNumbers.size()) {
         window.draw(mHighlightBar);
         sf::RectangleShape accent({4.f, mLineHeight});
         accent.setPosition(mHighlightBar.getPosition());
         accent.setFillColor(sf::Color(33, 238, 252));
         window.draw(accent);
     }
-    for (auto& line : mLines)
-        window.draw(line);
+
+    for (const auto& num : mLineNumbers) window.draw(num);
+
+    for (const auto& lineStruct : mSyntaxLines) {
+        for (const auto& word : lineStruct) {
+            window.draw(word);
+        }
+    }
 }
