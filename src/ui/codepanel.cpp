@@ -60,7 +60,7 @@ void CodePanel::draw(sf::RenderWindow& window) {
         window.draw(mHighlightBar);
         sf::RectangleShape accent({4.f, mLineHeight});
         accent.setPosition(mHighlightBar.getPosition());
-        accent.setFillColor(sf::Color(218, 112, 214));
+        accent.setFillColor(sf::Color(33, 238, 252));
         window.draw(accent);
     }
     for (auto& line : mLines)

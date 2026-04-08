@@ -21,3 +21,7 @@
 47	2611	7973243989475759	CMakeFiles/DSA-Visualization.dir/src/ui/button.cpp.obj	4905b1c81dea75cb
 36	3985	7973243989388902	CMakeFiles/DSA-Visualization.dir/src/ui/AVL_screen.cpp.obj	914688d8861cf6c1
 3986	4562	7973244028840145	DSA-Visualization.exe	c35b5be37a92903a
+24	3001	7973246656228918	CMakeFiles/DSA-Visualization.dir/src/ui/AVL_screen.cpp.obj	914688d8861cf6c1
+3003	3550	7973246685980285	DSA-Visualization.exe	c35b5be37a92903a
+23	1627	7973247649176975	CMakeFiles/DSA-Visualization.dir/src/ui/codepanel.cpp.obj	900427d26884ca4b
+1630	2255	7973247665288703	DSA-Visualization.exe	c35b5be37a92903a

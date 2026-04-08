@@ -437,7 +437,7 @@ void AVLScreen::drawSpeedSlider(sf::RenderWindow& window, const sf::Font& font) 
 
     sf::RectangleShape filledTrack({mSliderHandle.getPosition().x - mSliderTrack.getPosition().x, 8.f});
     filledTrack.setPosition(mSliderTrack.getPosition());
-    filledTrack.setFillColor(sf::Color(218, 112, 214));
+    filledTrack.setFillColor(sf::Color(110, 247, 242));
 
     window.draw(mSliderTrack);
     window.draw(filledTrack);
