@@ -1,3 +1,3 @@
-C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/build/CMakeFiles/DSA-Visualization.dir
-C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/build/CMakeFiles/edit_cache.dir
-C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/build/CMakeFiles/rebuild_cache.dir
+C:/Users/DELL/Desktop/Visualizer/build/CMakeFiles/DSA-Visualization.dir
+C:/Users/DELL/Desktop/Visualizer/build/CMakeFiles/edit_cache.dir
+C:/Users/DELL/Desktop/Visualizer/build/CMakeFiles/rebuild_cache.dir

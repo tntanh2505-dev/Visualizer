@@ -1,68 +1,38 @@
 [
 {
-  "directory": "C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/build",
-  "command": "C:\\msys64\\mingw64\\bin\\g++.exe -I\"C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/include\" -isystem \"C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/lib/include\" -g -std=gnu++17 -o CMakeFiles\\DSA-Visualization.dir\\src\\animation\\AnimationController.cpp.obj -c \"C:\\Users\\PeaceBringer\\Desktop\\First SFML project\\Visualizer\\src\\animation\\AnimationController.cpp\"",
-  "file": "C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/src/animation/AnimationController.cpp",
-  "output": "C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/build/CMakeFiles/DSA-Visualization.dir/src/animation/AnimationController.cpp.obj"
+  "directory": "C:/Users/DELL/Desktop/Visualizer/build",
+  "command": "C:\\mingw64\\bin\\g++.exe  @CMakeFiles/DSA-Visualization.dir/includes_CXX.rsp -g -std=gnu++17 -o CMakeFiles\\DSA-Visualization.dir\\src\\Shortest_Path\\Dijkstra.cpp.obj -c C:\\Users\\DELL\\Desktop\\Visualizer\\src\\Shortest_Path\\Dijkstra.cpp",
+  "file": "C:/Users/DELL/Desktop/Visualizer/src/Shortest_Path/Dijkstra.cpp",
+  "output": "CMakeFiles/DSA-Visualization.dir/src/Shortest_Path/Dijkstra.cpp.obj"
 },
 {
-  "directory": "C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/build",
-  "command": "C:\\msys64\\mingw64\\bin\\g++.exe -I\"C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/include\" -isystem \"C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/lib/include\" -g -std=gnu++17 -o CMakeFiles\\DSA-Visualization.dir\\src\\avl_tree\\avl_tree.cpp.obj -c \"C:\\Users\\PeaceBringer\\Desktop\\First SFML project\\Visualizer\\src\\avl_tree\\avl_tree.cpp\"",
-  "file": "C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/src/avl_tree/avl_tree.cpp",
-  "output": "C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/build/CMakeFiles/DSA-Visualization.dir/src/avl_tree/avl_tree.cpp.obj"
+  "directory": "C:/Users/DELL/Desktop/Visualizer/build",
+  "command": "C:\\mingw64\\bin\\g++.exe  @CMakeFiles/DSA-Visualization.dir/includes_CXX.rsp -g -std=gnu++17 -o CMakeFiles\\DSA-Visualization.dir\\src\\main.cpp.obj -c C:\\Users\\DELL\\Desktop\\Visualizer\\src\\main.cpp",
+  "file": "C:/Users/DELL/Desktop/Visualizer/src/main.cpp",
+  "output": "CMakeFiles/DSA-Visualization.dir/src/main.cpp.obj"
 },
 {
-  "directory": "C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/build",
-  "command": "C:\\msys64\\mingw64\\bin\\g++.exe -I\"C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/include\" -isystem \"C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/lib/include\" -g -std=gnu++17 -o CMakeFiles\\DSA-Visualization.dir\\src\\heap\\heap.cpp.obj -c \"C:\\Users\\PeaceBringer\\Desktop\\First SFML project\\Visualizer\\src\\heap\\heap.cpp\"",
-  "file": "C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/src/heap/heap.cpp",
-  "output": "C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/build/CMakeFiles/DSA-Visualization.dir/src/heap/heap.cpp.obj"
+  "directory": "C:/Users/DELL/Desktop/Visualizer/build",
+  "command": "C:\\mingw64\\bin\\g++.exe  @CMakeFiles/DSA-Visualization.dir/includes_CXX.rsp -g -std=gnu++17 -o CMakeFiles\\DSA-Visualization.dir\\src\\ui\\DijkstraScreen.cpp.obj -c C:\\Users\\DELL\\Desktop\\Visualizer\\src\\ui\\DijkstraScreen.cpp",
+  "file": "C:/Users/DELL/Desktop/Visualizer/src/ui/DijkstraScreen.cpp",
+  "output": "CMakeFiles/DSA-Visualization.dir/src/ui/DijkstraScreen.cpp.obj"
 },
 {
-  "directory": "C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/build",
-  "command": "C:\\msys64\\mingw64\\bin\\g++.exe -I\"C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/include\" -isystem \"C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/lib/include\" -g -std=gnu++17 -o CMakeFiles\\DSA-Visualization.dir\\src\\main.cpp.obj -c \"C:\\Users\\PeaceBringer\\Desktop\\First SFML project\\Visualizer\\src\\main.cpp\"",
-  "file": "C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/src/main.cpp",
-  "output": "C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/build/CMakeFiles/DSA-Visualization.dir/src/main.cpp.obj"
+  "directory": "C:/Users/DELL/Desktop/Visualizer/build",
+  "command": "C:\\mingw64\\bin\\g++.exe  @CMakeFiles/DSA-Visualization.dir/includes_CXX.rsp -g -std=gnu++17 -o CMakeFiles\\DSA-Visualization.dir\\src\\ui\\button.cpp.obj -c C:\\Users\\DELL\\Desktop\\Visualizer\\src\\ui\\button.cpp",
+  "file": "C:/Users/DELL/Desktop/Visualizer/src/ui/button.cpp",
+  "output": "CMakeFiles/DSA-Visualization.dir/src/ui/button.cpp.obj"
 },
 {
-  "directory": "C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/build",
-  "command": "C:\\msys64\\mingw64\\bin\\g++.exe -I\"C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/include\" -isystem \"C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/lib/include\" -g -std=gnu++17 -o CMakeFiles\\DSA-Visualization.dir\\src\\ui\\AVL_screen.cpp.obj -c \"C:\\Users\\PeaceBringer\\Desktop\\First SFML project\\Visualizer\\src\\ui\\AVL_screen.cpp\"",
-  "file": "C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/src/ui/AVL_screen.cpp",
-  "output": "C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/build/CMakeFiles/DSA-Visualization.dir/src/ui/AVL_screen.cpp.obj"
+  "directory": "C:/Users/DELL/Desktop/Visualizer/build",
+  "command": "C:\\mingw64\\bin\\g++.exe  @CMakeFiles/DSA-Visualization.dir/includes_CXX.rsp -g -std=gnu++17 -o CMakeFiles\\DSA-Visualization.dir\\src\\ui\\game.cpp.obj -c C:\\Users\\DELL\\Desktop\\Visualizer\\src\\ui\\game.cpp",
+  "file": "C:/Users/DELL/Desktop/Visualizer/src/ui/game.cpp",
+  "output": "CMakeFiles/DSA-Visualization.dir/src/ui/game.cpp.obj"
 },
 {
-  "directory": "C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/build",
-  "command": "C:\\msys64\\mingw64\\bin\\g++.exe -I\"C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/include\" -isystem \"C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/lib/include\" -g -std=gnu++17 -o CMakeFiles\\DSA-Visualization.dir\\src\\ui\\button.cpp.obj -c \"C:\\Users\\PeaceBringer\\Desktop\\First SFML project\\Visualizer\\src\\ui\\button.cpp\"",
-  "file": "C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/src/ui/button.cpp",
-  "output": "C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/build/CMakeFiles/DSA-Visualization.dir/src/ui/button.cpp.obj"
-},
-{
-  "directory": "C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/build",
-  "command": "C:\\msys64\\mingw64\\bin\\g++.exe -I\"C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/include\" -isystem \"C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/lib/include\" -g -std=gnu++17 -o CMakeFiles\\DSA-Visualization.dir\\src\\ui\\codepanel.cpp.obj -c \"C:\\Users\\PeaceBringer\\Desktop\\First SFML project\\Visualizer\\src\\ui\\codepanel.cpp\"",
-  "file": "C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/src/ui/codepanel.cpp",
-  "output": "C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/build/CMakeFiles/DSA-Visualization.dir/src/ui/codepanel.cpp.obj"
-},
-{
-  "directory": "C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/build",
-  "command": "C:\\msys64\\mingw64\\bin\\g++.exe -I\"C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/include\" -isystem \"C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/lib/include\" -g -std=gnu++17 -o CMakeFiles\\DSA-Visualization.dir\\src\\ui\\components\\graphic_node.cpp.obj -c \"C:\\Users\\PeaceBringer\\Desktop\\First SFML project\\Visualizer\\src\\ui\\components\\graphic_node.cpp\"",
-  "file": "C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/src/ui/components/graphic_node.cpp",
-  "output": "C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/build/CMakeFiles/DSA-Visualization.dir/src/ui/components/graphic_node.cpp.obj"
-},
-{
-  "directory": "C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/build",
-  "command": "C:\\msys64\\mingw64\\bin\\g++.exe -I\"C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/include\" -isystem \"C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/lib/include\" -g -std=gnu++17 -o CMakeFiles\\DSA-Visualization.dir\\src\\ui\\game.cpp.obj -c \"C:\\Users\\PeaceBringer\\Desktop\\First SFML project\\Visualizer\\src\\ui\\game.cpp\"",
-  "file": "C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/src/ui/game.cpp",
-  "output": "C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/build/CMakeFiles/DSA-Visualization.dir/src/ui/game.cpp.obj"
-},
-{
-  "directory": "C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/build",
-  "command": "C:\\msys64\\mingw64\\bin\\g++.exe -I\"C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/include\" -isystem \"C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/lib/include\" -g -std=gnu++17 -o CMakeFiles\\DSA-Visualization.dir\\src\\ui\\heap_screen.cpp.obj -c \"C:\\Users\\PeaceBringer\\Desktop\\First SFML project\\Visualizer\\src\\ui\\heap_screen.cpp\"",
-  "file": "C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/src/ui/heap_screen.cpp",
-  "output": "C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/build/CMakeFiles/DSA-Visualization.dir/src/ui/heap_screen.cpp.obj"
-},
-{
-  "directory": "C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/build",
-  "command": "C:\\msys64\\mingw64\\bin\\g++.exe -I\"C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/include\" -isystem \"C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/lib/include\" -g -std=gnu++17 -o CMakeFiles\\DSA-Visualization.dir\\src\\ui\\menuscreen.cpp.obj -c \"C:\\Users\\PeaceBringer\\Desktop\\First SFML project\\Visualizer\\src\\ui\\menuscreen.cpp\"",
-  "file": "C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/src/ui/menuscreen.cpp",
-  "output": "C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/build/CMakeFiles/DSA-Visualization.dir/src/ui/menuscreen.cpp.obj"
+  "directory": "C:/Users/DELL/Desktop/Visualizer/build",
+  "command": "C:\\mingw64\\bin\\g++.exe  @CMakeFiles/DSA-Visualization.dir/includes_CXX.rsp -g -std=gnu++17 -o CMakeFiles\\DSA-Visualization.dir\\src\\ui\\menuscreen.cpp.obj -c C:\\Users\\DELL\\Desktop\\Visualizer\\src\\ui\\menuscreen.cpp",
+  "file": "C:/Users/DELL/Desktop/Visualizer/src/ui/menuscreen.cpp",
+  "output": "CMakeFiles/DSA-Visualization.dir/src/ui/menuscreen.cpp.obj"
 }
 ]
