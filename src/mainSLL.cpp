@@ -1,6 +1,5 @@
 #include "UI.hpp"
 #include "SLL.hpp"
-#include "Heap.hpp"
 
 // --- Main Menu Scene ---
 class MainMenuScene : public Scene {
@@ -88,7 +87,7 @@ int main() {
                 delete currentScene; 
                 if (nextScene == SceneType::MAIN_MENU) currentScene = new MainMenuScene(font, window.getSize().x, window.getSize().y);
                 else if (nextScene == SceneType::LINKED_LIST) currentScene = new LinkedListScene(font, window.getSize().x, window.getSize().y);
-                else if (nextScene == SceneType::HEAP) currentScene = new HeapScene(font, window.getSize().x, window.getSize().y);
+                //else if (nextScene == SceneType::HEAP) currentScene = new HeapScene(font, window.getSize().x, window.getSize().y);
                 else currentScene = new MainMenuScene(font, window.getSize().x, window.getSize().y); // Fallback for AVL/Graph 
             }
             nextScene = SceneType::NONE;
