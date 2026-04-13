@@ -2,6 +2,7 @@
 #include "DSA-Visualization/ui/AVL_Screen.hpp"
 #include "DSA-Visualization/ui/heap_screen.hpp"
 #include "DSA-Visualization/ui/LinkedList_Screen.hpp"
+#include "DSA-Visualization/ui/DijkstraScreen.hpp"
 
 #include <iostream>
 #include <vector>
@@ -21,12 +22,13 @@ void Game::run() {
     AVLScreen  avl;
     HeapVisualizer heap(mFont);
     LL_screen linkedlist;
+    DijkstraScreen graph;
 
     std::vector<Screen*> screens = {
         &menu,   // 0
         &linkedlist,    // 1 LinkedList
         &heap, // 2 Heap (later)
-        nullptr, // 3 Dijkstra (later)
+        &graph, // 3 Dijkstra (later)
         &avl,    // 4
     };
 

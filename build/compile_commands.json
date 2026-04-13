@@ -13,6 +13,12 @@
 },
 {
   "directory": "C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/build",
+  "command": "C:\\msys64\\mingw64\\bin\\g++.exe -I\"C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/include\" -isystem \"C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/lib/include\" -g -std=gnu++17 -o CMakeFiles\\DSA-Visualization.dir\\src\\graph\\Dijkstra.cpp.obj -c \"C:\\Users\\PeaceBringer\\Desktop\\First SFML project\\Visualizer\\src\\graph\\Dijkstra.cpp\"",
+  "file": "C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/src/graph/Dijkstra.cpp",
+  "output": "C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/build/CMakeFiles/DSA-Visualization.dir/src/graph/Dijkstra.cpp.obj"
+},
+{
+  "directory": "C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/build",
   "command": "C:\\msys64\\mingw64\\bin\\g++.exe -I\"C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/include\" -isystem \"C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/lib/include\" -g -std=gnu++17 -o CMakeFiles\\DSA-Visualization.dir\\src\\heap\\heap.cpp.obj -c \"C:\\Users\\PeaceBringer\\Desktop\\First SFML project\\Visualizer\\src\\heap\\heap.cpp\"",
   "file": "C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/src/heap/heap.cpp",
   "output": "C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/build/CMakeFiles/DSA-Visualization.dir/src/heap/heap.cpp.obj"
@@ -28,6 +34,12 @@
   "command": "C:\\msys64\\mingw64\\bin\\g++.exe -I\"C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/include\" -isystem \"C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/lib/include\" -g -std=gnu++17 -o CMakeFiles\\DSA-Visualization.dir\\src\\ui\\AVL_screen.cpp.obj -c \"C:\\Users\\PeaceBringer\\Desktop\\First SFML project\\Visualizer\\src\\ui\\AVL_screen.cpp\"",
   "file": "C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/src/ui/AVL_screen.cpp",
   "output": "C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/build/CMakeFiles/DSA-Visualization.dir/src/ui/AVL_screen.cpp.obj"
+},
+{
+  "directory": "C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/build",
+  "command": "C:\\msys64\\mingw64\\bin\\g++.exe -I\"C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/include\" -isystem \"C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/lib/include\" -g -std=gnu++17 -o CMakeFiles\\DSA-Visualization.dir\\src\\ui\\DijkstraScreen.cpp.obj -c \"C:\\Users\\PeaceBringer\\Desktop\\First SFML project\\Visualizer\\src\\ui\\DijkstraScreen.cpp\"",
+  "file": "C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/src/ui/DijkstraScreen.cpp",
+  "output": "C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/build/CMakeFiles/DSA-Visualization.dir/src/ui/DijkstraScreen.cpp.obj"
 },
 {
   "directory": "C:/Users/PeaceBringer/Desktop/First SFML project/Visualizer/build",
