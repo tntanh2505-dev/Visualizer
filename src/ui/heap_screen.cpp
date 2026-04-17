@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cmath>
 #include <sstream>
+#include <iomanip>
 
 namespace {
     // Panel
@@ -52,6 +53,8 @@ namespace {
 HeapVisualizer::HeapVisualizer(const sf::Font& font)
     : mFont(font)
     // Input Area
+    , mSpeedLabel(makeText(font, "Speed: 0.60s", 14, sf::Color::White, {BUTTON_X, BUTTON_START_Y + 3 * (BUTTON_HEIGHT + BUTTON_GAP_Y) + 15.f}))
+    , mPlaceholderText(makeText(font, "Enter value (e.g. 10)...", 18, sf::Color(100, 100, 100, 150), {INPUT_X + 14.f, INPUT_Y + 8.f}))
     , mInputText(makeText(font, "", 22, sf::Color(26, 32, 44), {INPUT_X + 14.f, INPUT_Y + 8.f}))
     , mHintText(makeText(font, "Build format: 1, 2, 3...", 14, sf::Color(150, 150, 150), {INPUT_X, INPUT_Y + 55.f}))
     , mStatusText(makeText(font, "", 16, sf::Color(251, 209, 101), {400.f, 635.f}))
@@ -81,18 +84,64 @@ HeapVisualizer::HeapVisualizer(const sf::Font& font)
     mControlPanelBg.setOutlineThickness(1.f);
     mControlPanelBg.setOutlineColor(sf::Color(80, 80, 100));
 
+    // Speed Slider
+    float sliderY = BUTTON_START_Y + 3 * (BUTTON_HEIGHT + BUTTON_GAP_Y) + 40.f;
+    float sliderWidth = BUTTON_WIDTH * 2 + BUTTON_GAP_X;
+    mSliderTrack.setSize({sliderWidth, 6.f});
+    mSliderTrack.setPosition({BUTTON_X, sliderY});
+    mSliderTrack.setFillColor(sf::Color(60, 60, 80));
+    mSliderTrack.setOutlineThickness(1.f);
+    mSliderTrack.setOutlineColor(sf::Color(100, 100, 150));
+    mSliderKnob.setRadius(10.f);
+    mSliderKnob.setFillColor(sf::Color(181, 58, 199));
+    mSliderKnob.setOrigin(10.f, 10.f);
+    float t = 1.0f - (mActionInterval - 0.1f) / (2.0f - 0.1f);
+    mSliderKnob.setPosition({BUTTON_X + t * sliderWidth, sliderY + 3.f});
+    mIsDraggingSlider = false;
+
+    //Input area
     mInputBox.setPosition({INPUT_X, INPUT_Y});
     mInputBox.setSize({INPUT_WIDTH, INPUT_HEIGHT});
-    mInputBox.setFillColor(sf::Color(240, 240, 240));
+    mInputBox.setFillColor(sf::Color::White);
+    mInputBox.setOutlineThickness(2.f);
+    mInputBox.setOutlineColor(sf::Color(181, 58, 199, 100));
 
     setStatus("Ready.");
 }
 
 // Routes mouse and keyboard input to the correct heap action or text field update.
 void HeapVisualizer::handleEvent(const sf::Event& event, const sf::RenderWindow& window) {
-    if (event.type == sf::Event::MouseButtonReleased && event.mouseButton.button == sf::Mouse::Left) {
-        const sf::Vector2f mouse = window.mapPixelToCoords({event.mouseButton.x, event.mouseButton.y});
-        mInputFocused = mInputBox.getGlobalBounds().contains(mouse);
+    sf::Vector2f mouse = window.mapPixelToCoords(sf::Mouse::getPosition(window));
+
+    if (event.type == sf::Event::MouseButtonPressed) {
+        if (event.mouseButton.button == sf::Mouse::Left) {
+            sf::FloatRect knobBounds = mSliderKnob.getGlobalBounds();
+            knobBounds.left -= 10.f; knobBounds.width += 20.f;
+            knobBounds.top -= 10.f;  knobBounds.height += 20.f;
+
+            if (knobBounds.contains(mouse) || mSliderTrack.getGlobalBounds().contains(mouse)) {
+                mIsDraggingSlider = true;
+
+                const float left = mSliderTrack.getPosition().x;
+                const float width = mSliderTrack.getSize().x;
+                const float newX = std::max(left, std::min(mouse.x, left + width));
+                mSliderKnob.setPosition(newX, mSliderKnob.getPosition().y);
+
+                const float t = (newX - left) / width;
+                mActionInterval = MAX_INTERVAL - t * (MAX_INTERVAL - MIN_INTERVAL);
+
+                std::stringstream ss;
+                ss << "Speed: " << std::fixed << std::setprecision(2) << mActionInterval << "s";
+                mSpeedLabel.setString(ss.str());
+            }
+        }
+    }
+
+    if (event.type == sf::Event::MouseButtonReleased) {
+        if (event.mouseButton.button == sf::Mouse::Left) {
+            mIsDraggingSlider = false;
+            mInputFocused = mInputBox.getGlobalBounds().contains(mouse);
+        }
     }
 
     if (mInsertButton.isClicked(event, window)) {
@@ -160,6 +209,20 @@ void HeapVisualizer::update(float deltaTime, const sf::RenderWindow& window) {
     mInputText.setString(mInputBuffer + (mInputFocused ? "|" : ""));
     mRootText.setString(mDisplayArray.empty() ? "Root: --" : "Root: " + std::to_string(mDisplayArray.front()));
 
+    if (mIsDraggingSlider) {
+        const float left = mSliderTrack.getPosition().x;
+        const float width = mSliderTrack.getSize().x;
+        const float newX = std::max(left, std::min(mouse.x, left + width));
+        mSliderKnob.setPosition(newX, mSliderKnob.getPosition().y);
+
+        const float t = (newX - left) / width;
+        mActionInterval = MAX_INTERVAL - t * (MAX_INTERVAL - MIN_INTERVAL);
+
+        std::stringstream ss;
+        ss << "Speed: " << std::fixed << std::setprecision(2) << mActionInterval << "s";
+        mSpeedLabel.setString(ss.str());
+    }
+
     if (!mIsPlaying || mPendingActions.empty()) {
         return;
     }
@@ -209,6 +272,7 @@ void HeapVisualizer::runInsert() {
     mHeap.flushActions();
     mHeap.Insert(value);
     queueOperation(startArray);
+    clearInput();
     setStatus("Inserted " + std::to_string(value) + ".");
 }
 
@@ -251,6 +315,7 @@ void HeapVisualizer::runBuildHeap() {
     mPendingActions.clear();
     mHighlight = {};
     mActionTimer = 0.f;
+    clearInput();
 
     const std::vector<Action> actions = mHeap.flushActions();
     for (const Action& action : actions) {
@@ -441,7 +506,11 @@ void HeapVisualizer::drawPanel(sf::RenderWindow& window) const {
 // Draws the input label, box, current text, and usage hint.
 void HeapVisualizer::drawInputArea(sf::RenderWindow& window) const {
     window.draw(mInputBox);
-    window.draw(mInputText);
+    if (mInputBuffer.empty()) {
+        window.draw(mPlaceholderText);
+    } else {
+        window.draw(mInputText);
+    }
     window.draw(mHintText);
 }
 
@@ -455,6 +524,9 @@ void HeapVisualizer::drawButtons(sf::RenderWindow& window) const {
     mPlayPauseButton.draw(window);
     mStepButton.draw(window);
     mPrevButton.draw(window);
+    window.draw(mSpeedLabel);
+    window.draw(mSliderTrack);
+    window.draw(mSliderKnob);
 }
 
 // Draws the array representation under the tree, shrinking cells when many nodes are present.
@@ -602,6 +674,7 @@ void HeapVisualizer::appendCharacter(char character) {
 void HeapVisualizer::backspaceInput() {
     if (!mInputBuffer.empty()) {
         mInputBuffer.pop_back();
+        mInputText.setString(mInputBuffer);
     }
 }
 
@@ -670,6 +743,11 @@ sf::Color HeapVisualizer::nodeColor(std::size_t index) const {
     return sf::Color(106, 133, 176);
 }
 
+void HeapVisualizer::clearInput() {
+    mInputBuffer.clear(); 
+    mInputText.setString(""); 
+}
+
 int HeapVisualizer::run(sf::RenderWindow& window, sf::Font& font) {
     // 1. Load texture
     if (!mBgTexture.loadFromFile("assets/textures/avl_background.png")) {
@@ -717,3 +795,4 @@ int HeapVisualizer::run(sf::RenderWindow& window, sf::Font& font) {
 
     return -1;
 }
+

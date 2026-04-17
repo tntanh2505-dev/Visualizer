@@ -38,6 +38,7 @@ private:
     void togglePlayback();
     void queueOperation(const std::vector<int>& startArray);
     void processNextAction();
+    void clearInput();
     void processPreviousAction();
     void loadHeapifyCode();
     void loadInsertCode();
@@ -75,11 +76,19 @@ private:
     sf::RectangleShape mControlPanelBg;
     sf::RectangleShape mCodeBox;
 
+    sf::RectangleShape mSliderTrack;
+    sf::CircleShape mSliderKnob;
+    bool mIsDraggingSlider = false;
+    const float MIN_INTERVAL = 0.1f;
+    const float MAX_INTERVAL = 2.0f;
+
     sf::Text mTitleText;
     sf::Text mSubtitleText;
     sf::Text mInputLabel;
+    sf::Text mSpeedLabel;
     sf::Text mInputText;
     sf::Text mHintText;
+    sf::Text mPlaceholderText;
     sf::Text mStatusText;
     sf::Text mRootText;
     sf::Text mLegendText;
