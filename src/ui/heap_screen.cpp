@@ -173,6 +173,7 @@ void HeapVisualizer::render(sf::RenderWindow& window) const {
     drawTree(window);
     drawArray(window);
     drawLegend(window);
+    drawCodeSnippet(window);
 }
 
 // Clears temporary UI state when the user leaves and re-enters the heap screen.
@@ -190,7 +191,7 @@ void HeapVisualizer::runInsert() {
         setStatus("Insert expects a single integer.");
         return;
     }
-
+    loadInsertCode();
     const std::vector<int> startArray = mPendingActions.empty() ? mDisplayArray : mHeap.getArray();
     if (startArray.size() >= MAX_RENDERED_NODES) {
         setStatus("Limit reached. Clear or use fewer than 31 nodes.");
@@ -211,7 +212,7 @@ void HeapVisualizer::runDeleteRoot() {
         setStatus("Heap is empty.");
         return;
     }
-
+    loadHeapifyCode();
     const int rootValue = startArray.front();
     mHeap.BuildHeap(startArray);
     mHeap.flushActions();
@@ -228,7 +229,7 @@ void HeapVisualizer::runBuildHeap() {
         setStatus("Build Heap expects integers separated by spaces or commas.");
         return;
     }
-
+    loadHeapifyCode();
     if (values.size() > MAX_RENDERED_NODES) {
         values.resize(MAX_RENDERED_NODES);
         setStatus("Build input trimmed to 31 nodes for rendering.");
@@ -292,15 +293,17 @@ void HeapVisualizer::queueOperation(const std::vector<int>& startArray) {
 // Applies one recorded heap action to the currently displayed array and updates highlight colors.
 void HeapVisualizer::processNextAction() {
     if (mPendingActions.empty()) {
-        mDisplayArray = mHeap.getArray();
+        mActiveLine = -1;
         mHighlight = {};
         return;
     }
 
     const Action action = mPendingActions.front();
     mPendingActions.pop_front();
-    mHighlight = {};
     mHistory.push_back(action);
+
+    mHighlight = {};
+    mActiveLine = action.lineIdx;
 
     switch (action.type) {
     case ActionType::INSERT:
@@ -311,6 +314,7 @@ void HeapVisualizer::processNextAction() {
             mHighlight.label = "Inserted " + std::to_string(action.index2);
         }
         break;
+
     case ActionType::COMPARE:
         mHighlight.first = action.index1;
         mHighlight.second = action.index2;
@@ -318,10 +322,12 @@ void HeapVisualizer::processNextAction() {
         mHighlight.secondColor = sf::Color(87, 190, 255);
         mHighlight.label = "Compare";
         break;
+
     case ActionType::SWAP:
         if (action.index1 >= 0 && action.index2 >= 0 &&
             static_cast<std::size_t>(action.index1) < mDisplayArray.size() &&
             static_cast<std::size_t>(action.index2) < mDisplayArray.size()) {
+            
             std::swap(mDisplayArray[action.index1], mDisplayArray[action.index2]);
             mHighlight.first = action.index1;
             mHighlight.second = action.index2;
@@ -330,16 +336,12 @@ void HeapVisualizer::processNextAction() {
             mHighlight.label = "Swap";
         }
         break;
+
     case ActionType::HIGHLIGHT:
         mHighlight.first = action.index1;
         mHighlight.firstColor = sf::Color(248, 196, 76);
         mHighlight.label = "Focus";
         break;
-    }
-
-    if (mPendingActions.empty()) {
-        // Snap to the model's final state so removals and final positions are always correct.
-        mDisplayArray = mHeap.getArray();
     }
 }
 
@@ -381,6 +383,30 @@ void HeapVisualizer::processPreviousAction() {
     }
 
     mPendingActions.push_front(action);
+}
+
+void HeapVisualizer::loadHeapifyCode() {
+    mCurrentCode = {
+        "heapify(i):",                               // 0
+        "  l = left(i), r = right(i)",               // 1
+        "  largest = i",                             // 2
+        "  if l < size and nums[l] > nums[i]:",      // 3
+        "    largest = l",                           // 4
+        "  if r < size and nums[r] > nums[largest]:",// 5
+        "    largest = r",                           // 6
+        "  if largest != i:",                        // 7
+        "    swap(nums[i], nums[largest])",          // 8
+        "    heapify(largest)"                       // 9
+    };
+}
+
+void HeapVisualizer::loadInsertCode() {
+    mCurrentCode = {
+        "insert(val):",                              // 0
+        "  while i > 0 and nums[parent] < nums[i]:", // 1
+        "    swap(nums[i], nums[parent])",           // 2
+        "    i = parent(i)"                          // 3
+    };
 }
 
 // Draws the full-screen translucent backdrop and the status texts pinned to it.
@@ -506,6 +532,48 @@ void HeapVisualizer::drawLegend(sf::RenderWindow& window) const {
     focus.setPosition({itemX, LEGEND_Y + 4.f});
     window.draw(focus);
     window.draw(makeText(mFont, "Focused", 15, sf::Color::White, {itemX + 25.f, LEGEND_Y}));
+}
+
+void HeapVisualizer::drawCodeSnippet(sf::RenderWindow& window) const {
+    if (mCurrentCode.empty()) return;
+
+    // 1. Khung nền (Tính toán dựa trên các hằng số BUTTON của bạn)
+    // Tổng rộng của panel là khoảng 220-240
+    float boxWidth = (BUTTON_WIDTH * 2) + BUTTON_GAP_X + 20.f; 
+    sf::RectangleShape codeBg({boxWidth, 280.f});
+    codeBg.setPosition({BUTTON_X - 10.f, 100.f}); // Căn lề trái bằng nút Insert - 10px
+    codeBg.setFillColor(sf::Color(20, 20, 35, 200)); 
+    codeBg.setOutlineThickness(1.2f);
+    codeBg.setOutlineColor(sf::Color(100, 100, 255, 180));
+    window.draw(codeBg);
+
+    // 2. Vẽ nội dung
+    float startX = BUTTON_X; // Chữ bắt đầu thẳng hàng với nút Insert
+    float startY = 120.f;
+    float lineHeight = 24.f;
+
+    for (int i = 0; i < (int)mCurrentCode.size(); ++i) {
+        sf::Text text = makeText(mFont, mCurrentCode[i], 14, sf::Color(180, 180, 190), {startX, startY + i * lineHeight});
+        
+        if (i == mActiveLine) {
+            // Chữ sáng màu hồng
+            text.setFillColor(sf::Color(255, 105, 180)); 
+            text.setStyle(sf::Text::Bold);
+
+            // Vạch hồng bên trái (Sát lề khung)
+            sf::RectangleShape bar({4.f, 20.f});
+            bar.setPosition({BUTTON_X - 10.f, startY + i * lineHeight + 2.f});
+            bar.setFillColor(sf::Color(255, 105, 180));
+            window.draw(bar);
+            
+            // Background mờ cho dòng đang chọn (Optional)
+            sf::RectangleShape highlightRow({boxWidth, lineHeight});
+            highlightRow.setPosition({BUTTON_X - 10.f, startY + i * lineHeight});
+            highlightRow.setFillColor(sf::Color(255, 105, 180, 30));
+            window.draw(highlightRow);
+        }
+        window.draw(text);
+    }
 }
 
 // Adds a character to the input buffer while keeping the field length bounded.
