@@ -101,6 +101,9 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
     mNextBtn  ->setPosition(1160.f, 320.f);
     mReturnBtn.emplace("Return",  font, sf::Vector2f(120.f, 40.f));
     mReturnBtn->setPosition(ver_align, 660.f);
+    
+    mSkipAnimationBtn.emplace("Skip Animation", font, sf::Vector2f(150.f,40.f));
+    mSkipAnimationBtn->setPosition(ver_align,470.f);
 
     // Speed slider track
     mSliderTrack = sf::RectangleShape({180.f, 8.f});
@@ -136,6 +139,7 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
         mPrevBtn->update(mouseRaw);
         mNextBtn->update(mouseRaw);
         mReturnBtn->update(mouseRaw);
+        mSkipAnimationBtn->update(mouseRaw);
 
         sf::Event event;
         while (window.pollEvent(event)) {
@@ -250,6 +254,13 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
                         mHistoryIndex++;
                         buildSteps(op);
                     }
+                }
+
+                if (mSkipAnimationBtn->isClicked(mouseRaw,true)){
+                    if (mHistoryIndex > 0) {
+                            buildSteps(mHistory[mHistoryIndex - 1]);
+                            mController.skipToEnd();
+                        }
                 }
             }
             
@@ -382,7 +393,7 @@ void AVLScreen::drawControls(sf::RenderWindow& window, const sf::Font& font) {
     float boxX = 990.f;  
     float boxY = 35.f;   
     float boxW = 250.f;  
-    float boxH = 430.f;  
+    float boxH = 470.f;  
     float radius = 18.f; 
 
     const float pi = 3.141592654f;
@@ -412,6 +423,7 @@ void AVLScreen::drawControls(sf::RenderWindow& window, const sf::Font& font) {
     window.draw(*mPrevBtn);
     window.draw(*mNextBtn);
     window.draw(*mReturnBtn);
+    window.draw(*mSkipAnimationBtn);
 
     sf::Text counter;
     counter.setFont(font);
