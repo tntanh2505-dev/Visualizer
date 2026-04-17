@@ -6,76 +6,79 @@
 #include <sstream>
 
 namespace {
+    // Panel
+    constexpr float PANEL_WIDTH = 1280.f;
+    constexpr float PANEL_HEIGHT = 720.f;
 
-constexpr float PANEL_X = 0.f;
-constexpr float PANEL_Y = 0.f;
-constexpr float PANEL_WIDTH = 1280.f;
-constexpr float PANEL_HEIGHT = 720.f;
+    // Button
+    constexpr float BUTTON_WIDTH = 90.f;
+    constexpr float BUTTON_HEIGHT = 45.f;
+    constexpr float BUTTON_X = 1030.f;
+    constexpr float BUTTON_GAP_Y = 15.f;
+    constexpr float BUTTON_GAP_X = 10.f;
+    constexpr float BUTTON_START_Y = 400.f; 
+    constexpr float BUTTON_X2 = BUTTON_X + BUTTON_WIDTH + BUTTON_GAP_X;
 
-constexpr float INPUT_X = 40.f;
-constexpr float INPUT_Y = 135.f;
-constexpr float INPUT_WIDTH = 422.f;
-constexpr float INPUT_HEIGHT = 44.f;
+    // Input
+    constexpr float INPUT_X = 40.f;
+    constexpr float INPUT_Y = 620.f;
+    constexpr float INPUT_WIDTH = 300.f;
+    constexpr float INPUT_HEIGHT = 45.f;
 
-constexpr float BUTTON_WIDTH = 154.f;
-constexpr float BUTTON_HEIGHT = 44.f;
-constexpr float NODE_RADIUS = 24.f;
+    // Tree + Array
+    constexpr std::size_t MAX_RENDERED_NODES = 31;
+    constexpr float NODE_RADIUS = 24.f;
+    constexpr float TREE_WIDTH = 900.f;
+    constexpr float TREE_LEFT_X = 40.f;
+    constexpr float TREE_TOP_Y = 180.f;
+    constexpr float ARRAY_Y = 40.f;
 
-constexpr float TREE_LEFT_X = 40.f;
-constexpr float TREE_WIDTH = 1200.f;
-constexpr float TREE_TOP_Y = 280.f; 
-
-constexpr float ARRAY_Y = 655.f;
-constexpr float ARRAY_CELL = 52.f;
-constexpr std::size_t MAX_RENDERED_NODES = 31;
-
-sf::Text makeText(const sf::Font& font,
-                  const std::string& value,
-                  unsigned int size,
-                  sf::Color color,
-                  sf::Vector2f position) {
-    // Small helper so the constructor can define UI text elements compactly.
-    sf::Text text;
-    text.setFont(font);
-    text.setString(value);
-    text.setCharacterSize(size);
-    text.setFillColor(color);
-    text.setPosition(position);
-    return text;
-}
+    // Helper
+    sf::Text makeText(const sf::Font& font,
+                    const std::string& value,
+                    unsigned int size,
+                    sf::Color color,
+                    sf::Vector2f position) {
+        sf::Text text;
+        text.setFont(font);
+        text.setString(value);
+        text.setCharacterSize(size);
+        text.setFillColor(color);
+        text.setPosition(position);
+        return text;
+    }
 }
 
 HeapVisualizer::HeapVisualizer(const sf::Font& font)
     : mFont(font)
-
-    , mTitleText(makeText(font, "Heap Visualizer", 34, sf::Color(241, 246, 255), {250.f, 20.f}))
-    , mSubtitleText(makeText(font, "Build, insert, delete, and inspect a max heap with animated steps.", 16, sf::Color(210, 220, 236), {250.f, 65.f}))
+    // Input Area
+    , mInputText(makeText(font, "", 22, sf::Color(26, 32, 44), {INPUT_X + 14.f, INPUT_Y + 8.f}))
+    , mHintText(makeText(font, "Build format: 1, 2, 3...", 14, sf::Color(150, 150, 150), {INPUT_X, INPUT_Y + 55.f}))
+    , mStatusText(makeText(font, "", 16, sf::Color(251, 209, 101), {400.f, 635.f}))
     
-    , mInputLabel(makeText(font, "Input", 18, sf::Color(241, 246, 255), {40.f, 110.f}))
-    , mInputText(makeText(font, "", 22, sf::Color(26, 32, 44), {54.f, 143.f}))
-    , mHintText(makeText(font, "Insert: one integer. Build Heap: space- or comma-separated integers.", 14, sf::Color(189, 198, 214), {40.f, 185.f}))
-    , mStatusText(makeText(font, "", 16, sf::Color(251, 209, 101), {40.f, 215.f}))
-    , mRootText(makeText(font, "Root: --", 18, sf::Color(241, 246, 255), {40.f, 240.f}))
-    
-    , mInsertButton("Insert", font, {480.f, 135.f}, {BUTTON_WIDTH, BUTTON_HEIGHT})
-    , mDeleteButton("Delete Root", font, {644.f, 135.f}, {BUTTON_WIDTH, BUTTON_HEIGHT})
-    , mBuildButton("Build Heap", font, {808.f, 135.f}, {BUTTON_WIDTH, BUTTON_HEIGHT})
-    , mClearButton("Clear", font, {480.f, 185.f}, {BUTTON_WIDTH, BUTTON_HEIGHT})
-    , mPlayPauseButton("Pause", font, {644.f, 185.f}, {BUTTON_WIDTH, BUTTON_HEIGHT})
-    , mStepButton("Step", font, {808.f, 185.f}, {BUTTON_WIDTH, BUTTON_HEIGHT}) 
+    // Button
+    , mInsertButton("Insert", font, {BUTTON_X, BUTTON_START_Y}, {BUTTON_WIDTH, BUTTON_HEIGHT})
+    , mDeleteButton("Delete", font, {BUTTON_X2, BUTTON_START_Y}, {BUTTON_WIDTH, BUTTON_HEIGHT})
+    , mBuildButton("Build", font, {BUTTON_X, BUTTON_START_Y + (BUTTON_HEIGHT + BUTTON_GAP_Y)}, {BUTTON_WIDTH, BUTTON_HEIGHT})
+    , mClearButton("Clear", font, {BUTTON_X2, BUTTON_START_Y + (BUTTON_HEIGHT + BUTTON_GAP_Y)}, {BUTTON_WIDTH, BUTTON_HEIGHT})
+    , mPlayPauseButton("Pause", font, {BUTTON_X, BUTTON_START_Y + 2 * (BUTTON_HEIGHT + BUTTON_GAP_Y)}, {BUTTON_WIDTH, BUTTON_HEIGHT})
+    , mStepButton("Next", font, {BUTTON_X2, BUTTON_START_Y + 2 * (BUTTON_HEIGHT + BUTTON_GAP_Y)}, {BUTTON_WIDTH, BUTTON_HEIGHT})
+    , mReturnButton("Return", font, {BUTTON_X, 650.f}, {BUTTON_WIDTH * 2 + BUTTON_GAP_X, BUTTON_HEIGHT})
 {
-    mPanel.setPosition({PANEL_X, PANEL_Y});
+    // Panel
     mPanel.setSize({PANEL_WIDTH, PANEL_HEIGHT});
-    mPanel.setFillColor(sf::Color(9, 16, 29, 210));
-    mPanel.setOutlineThickness(0.f);
+    mPanel.setFillColor(sf::Color(10, 10, 15));
+    mControlPanelBg.setSize({240.f, 620.f});
+    mControlPanelBg.setPosition({1010.f, 80.f});
+    mControlPanelBg.setFillColor(sf::Color(25, 25, 35, 200));
+    mControlPanelBg.setOutlineThickness(1.f);
+    mControlPanelBg.setOutlineColor(sf::Color(80, 80, 100));
 
     mInputBox.setPosition({INPUT_X, INPUT_Y});
     mInputBox.setSize({INPUT_WIDTH, INPUT_HEIGHT});
-    mInputBox.setFillColor(sf::Color(244, 247, 252));
-    mInputBox.setOutlineThickness(2.f);
-    mInputBox.setOutlineColor(sf::Color(113, 139, 178));
+    mInputBox.setFillColor(sf::Color(240, 240, 240));
 
-    setStatus("Ready. Insert a value or build from a sequence.");
+    setStatus("Ready.");
 }
 
 // Routes mouse and keyboard input to the correct heap action or text field update.
@@ -329,15 +332,12 @@ void HeapVisualizer::processNextAction() {
 // Draws the full-screen translucent backdrop and the status texts pinned to it.
 void HeapVisualizer::drawPanel(sf::RenderWindow& window) const {
     window.draw(mPanel);
-    window.draw(mTitleText);
-    window.draw(mSubtitleText);
+    window.draw(mControlPanelBg);
     window.draw(mStatusText);
-    window.draw(mRootText);
 }
 
 // Draws the input label, box, current text, and usage hint.
 void HeapVisualizer::drawInputArea(sf::RenderWindow& window) const {
-    window.draw(mInputLabel);
     window.draw(mInputBox);
     window.draw(mInputText);
     window.draw(mHintText);
@@ -346,9 +346,10 @@ void HeapVisualizer::drawInputArea(sf::RenderWindow& window) const {
 // Draws the button cluster used to control heap operations and animation playback.
 void HeapVisualizer::drawButtons(sf::RenderWindow& window) const {
     mInsertButton.draw(window);
-    mDeleteButton.draw(window);
+    mDeleteButton.draw(window); 
     mBuildButton.draw(window);
     mClearButton.draw(window);
+    mReturnButton.draw(window);
     mPlayPauseButton.draw(window);
     mStepButton.draw(window);
 }
@@ -380,7 +381,8 @@ void HeapVisualizer::drawArray(sf::RenderWindow& window) const {
         sf::Text indexText = makeText(mFont, std::to_string(i), 12, sf::Color(189, 198, 214), {0.f, 0.f});
         sf::FloatRect idxBounds = indexText.getLocalBounds();
         indexText.setOrigin(idxBounds.left + idxBounds.width / 2.f, 0.f);
-        indexText.setPosition({cell.getPosition().x + cellWidth / 2.f, cell.getPosition().y + cellWidth + 4.f});
+        // Đặt ở vị trí ARRAY_Y - 15.f (phía trên ô)
+        indexText.setPosition({cell.getPosition().x + cellWidth / 2.f, cell.getPosition().y - 18.f});
         window.draw(indexText);
     }
 }
@@ -418,33 +420,37 @@ void HeapVisualizer::drawTree(sf::RenderWindow& window) const {
 
 // Draws the animation status and the color legend for compare, swap, and focus states.
 void HeapVisualizer::drawLegend(sf::RenderWindow& window) const {
-    const float legendY = 600.f; 
-
+    // Step
+    constexpr float LEGEND_Y = 570.f;
     if (!mHighlight.label.empty()) {
-        sf::Text stepText = makeText(mFont, "Step: " + mHighlight.label, 16, sf::Color(251, 209, 101), {40.f, legendY});
+        sf::Text stepText = makeText(mFont, "Step: " + mHighlight.label, 16, sf::Color(251, 209, 101), {40.f, LEGEND_Y});
         window.draw(stepText);
     }
 
-    sf::Text playText = makeText(mFont, mIsPlaying ? "Animation: auto" : "Animation: paused", 16, sf::Color(189, 198, 214), {300.f, legendY});
-    window.draw(playText);
+    float itemX = 600.f; 
 
+    // Compare
     sf::CircleShape compare(8.f);
     compare.setFillColor(sf::Color(87, 190, 255));
-    compare.setPosition({820.f, legendY + 4.f});
+    compare.setPosition({itemX, LEGEND_Y + 4.f});
     window.draw(compare);
-    window.draw(makeText(mFont, "Compare", 15, sf::Color(225, 232, 242), {840.f, legendY}));
+    window.draw(makeText(mFont, "Compare", 15, sf::Color::White, {itemX + 25.f, LEGEND_Y}));
 
+    // Swap
+    itemX += 120.f;
     sf::CircleShape swap(8.f);
     swap.setFillColor(sf::Color(255, 124, 124));
-    swap.setPosition({930.f, legendY + 4.f});
+    swap.setPosition({itemX, LEGEND_Y + 4.f});
     window.draw(swap);
-    window.draw(makeText(mFont, "Swap", 15, sf::Color(225, 232, 242), {950.f, legendY}));
+    window.draw(makeText(mFont, "Swap", 15, sf::Color::White, {itemX + 25.f, LEGEND_Y}));
 
+    // Focused
+    itemX += 100.f;
     sf::CircleShape focus(8.f);
     focus.setFillColor(sf::Color(248, 196, 76));
-    focus.setPosition({1020.f, legendY + 4.f});
+    focus.setPosition({itemX, LEGEND_Y + 4.f});
     window.draw(focus);
-    window.draw(makeText(mFont, "Focused node", 15, sf::Color(225, 232, 242), {1040.f, legendY}));
+    window.draw(makeText(mFont, "Focused", 15, sf::Color::White, {itemX + 25.f, LEGEND_Y}));
 }
 
 // Adds a character to the input buffer while keeping the field length bounded.
@@ -472,7 +478,13 @@ void HeapVisualizer::backspaceInput() {
 void HeapVisualizer::setStatus(const std::string& status) {
     mStatusMessage = status;
     mStatusText.setString(status);
-    mPlayPauseButton = Button(mIsPlaying ? "Pause" : "Play", mFont, {644.f, 185.f}, {BUTTON_WIDTH, BUTTON_HEIGHT});
+    float row3Y = BUTTON_START_Y + 2 * (BUTTON_HEIGHT + BUTTON_GAP_Y);
+    mPlayPauseButton = Button(
+        mIsPlaying ? "Pause" : "Play",
+        mFont,
+        {BUTTON_X, row3Y},
+        {BUTTON_WIDTH, BUTTON_HEIGHT}
+    );
 }
 
 // Parses the input as exactly one integer, used by the Insert action.
@@ -527,17 +539,47 @@ sf::Color HeapVisualizer::nodeColor(std::size_t index) const {
 }
 
 int HeapVisualizer::run(sf::RenderWindow& window, sf::Font& font) {
-    if (!mBgTexture.loadFromFile("assets/textures/avl_background.png"))
+    // 1. Load texture
+    if (!mBgTexture.loadFromFile("assets/textures/avl_background.png")) {
         std::cerr << "Failed to load background.png\n";
+    }
+    mBgSprite.setTexture(mBgTexture);
+    
+    mBgSprite.setScale(1280.f / mBgTexture.getSize().x, 720.f / mBgTexture.getSize().y);
 
-    while (window.isOpen()){
-        
-        
+    sf::Clock clock;
 
+    // 2. Event Loop
+    while (window.isOpen()) {
+        float deltaTime = clock.restart().asSeconds();
+        sf::Event event;
+
+        while (window.pollEvent(event)) {
+            if (event.type == sf::Event::Closed) {
+                window.close();
+                return -1;
+            }
+
+            if (mReturnButton.isClicked(event, window)) {
+                return 0;
+            }
+
+            if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape) {
+                return 0;
+            }
+
+            handleEvent(event, window);
+        }
+
+        // 3. Update logic (animation, hover effect...)
+        update(deltaTime, window);
+
+        // 4. Render
         window.clear();
-        window.draw(mBgSprite);
-        drawButtons(window);
-
+        
+        window.draw(mBgSprite); // background
+        render(window);         // render tree, array, buttons...
+        
         window.display();
     }
 

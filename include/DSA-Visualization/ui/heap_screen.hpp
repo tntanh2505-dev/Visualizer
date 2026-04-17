@@ -62,6 +62,7 @@ private:
 
     sf::RectangleShape mPanel;
     sf::RectangleShape mInputBox;
+    sf::RectangleShape mControlPanelBg;
     sf::Text mTitleText;
     sf::Text mSubtitleText;
     sf::Text mInputLabel;
@@ -75,6 +76,7 @@ private:
     Button mDeleteButton;
     Button mBuildButton;
     Button mClearButton;
+    Button mReturnButton;
     Button mPlayPauseButton;
     Button mStepButton;
 
