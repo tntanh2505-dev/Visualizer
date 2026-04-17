@@ -2,6 +2,7 @@
 
 #include <SFML/Graphics.hpp>
 #include "DSA-Visualization/ui/Screen.hpp"
+#include "DSA-Visualization/ui/CodePanel.hpp"
 #include <deque>
 #include <string>
 #include <vector>
@@ -58,6 +59,7 @@ private:
     sf::Vector2f nodePosition(std::size_t index) const;
     sf::Color nodeColor(std::size_t index) const;
 
+    CodePanel mCodePanel;
     const sf::Font& mFont;
     MaxHeap mHeap;
     std::vector<int> mDisplayArray;

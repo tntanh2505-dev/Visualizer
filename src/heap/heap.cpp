@@ -18,17 +18,17 @@ int MaxHeap::getChildRight(int i) {
 
 void MaxHeap::MaxHeapify(int i) {
     while (true) {
-        int l = 2 * i + 1, r = 2 * i + 2, largest = i;
+        int l = 2 * i + 1, r = 2 * i + 2, largest = i;  
         if (l < nums.size()) {
-            actionQueue.push_back({ActionType::COMPARE, l, i, 3}); 
+            actionQueue.push_back({ActionType::COMPARE, l, i, 2}); 
             if (nums[largest] < nums[l]) largest = l;
         }
         if (r < nums.size()) {
-            actionQueue.push_back({ActionType::COMPARE, r, largest, 5}); 
+            actionQueue.push_back({ActionType::COMPARE, r, largest, 4}); 
             if (nums[largest] < nums[r]) largest = r;
-        }
+        }   
         if (largest == i) break;
-        actionQueue.push_back({ActionType::SWAP, i, largest, 8}); 
+        actionQueue.push_back({ActionType::SWAP, i, largest, 7}); 
         int temp = nums[i];
         nums[i] = nums[largest];
         nums[largest] = temp;
@@ -46,7 +46,7 @@ void MaxHeap::Increase(int i, int k) {
     nums[i] = k;
     while (i > 0 && nums[i] > nums[(i - 1) / 2]) {
         actionQueue.push_back({ActionType::COMPARE, i, (i - 1) / 2, 1}); 
-        actionQueue.push_back({ActionType::SWAP, i, (i - 1) / 2, 2}); 
+        actionQueue.push_back({ActionType::SWAP, i, (i - 1) / 2, 2});
         int temp = nums[i];
         nums[i] = nums[(i - 1) / 2];
         nums[(i - 1) / 2] = temp;

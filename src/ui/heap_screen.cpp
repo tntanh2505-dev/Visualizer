@@ -1,4 +1,4 @@
-#include<DSA-Visualization/ui/heap_screen.hpp>
+#include "DSA-Visualization/ui/heap_screen.hpp"
 #include <iostream>
 
 #include <algorithm>
@@ -67,8 +67,14 @@ HeapVisualizer::HeapVisualizer(const sf::Font& font)
     , mReturnButton("Return", font, {BUTTON_X, 650.f}, {BUTTON_WIDTH * 2 + BUTTON_GAP_X, BUTTON_HEIGHT})
 {
     // Panel
+    float cpX = 1020.f;
+    float cpY = 90.f;
+    float cpWidth = 220.f;
+    float cpHeight = 290.f;
     mPanel.setSize({PANEL_WIDTH, PANEL_HEIGHT});
     mPanel.setFillColor(sf::Color(10, 10, 15));
+    mCodePanel = CodePanel(font, {cpX, cpY}, {cpWidth, cpHeight});
+    loadHeapifyCode();
     mControlPanelBg.setSize({240.f, 620.f});
     mControlPanelBg.setPosition({1010.f, 80.f});
     mControlPanelBg.setFillColor(sf::Color(25, 25, 35, 200));
@@ -174,6 +180,7 @@ void HeapVisualizer::render(sf::RenderWindow& window) const {
     drawArray(window);
     drawLegend(window);
     drawCodeSnippet(window);
+    const_cast<CodePanel&>(mCodePanel).draw(window);
 }
 
 // Clears temporary UI state when the user leaves and re-enters the heap screen.
@@ -295,6 +302,7 @@ void HeapVisualizer::processNextAction() {
     if (mPendingActions.empty()) {
         mActiveLine = -1;
         mHighlight = {};
+        mCodePanel.highlight(-1);
         return;
     }
 
@@ -304,6 +312,7 @@ void HeapVisualizer::processNextAction() {
 
     mHighlight = {};
     mActiveLine = action.lineIdx;
+    mCodePanel.highlight(action.lineIdx);
 
     switch (action.type) {
     case ActionType::INSERT:
@@ -348,6 +357,7 @@ void HeapVisualizer::processNextAction() {
 void HeapVisualizer::processPreviousAction() {
     if (mHistory.empty()) {
         setStatus("At the beginning of operation.");
+        mCodePanel.highlight(-1);
         return;
     }
 
@@ -382,31 +392,43 @@ void HeapVisualizer::processPreviousAction() {
         break;
     }
 
+    mCodePanel.highlight(action.lineIdx);
+
+    if (mHistory.empty()) {
+        mActiveLine = -1;
+    } else {
+        mActiveLine = mHistory.back().lineIdx;
+    }
+
     mPendingActions.push_front(action);
 }
 
 void HeapVisualizer::loadHeapifyCode() {
-    mCurrentCode = {
-        "heapify(i):",                               // 0
-        "  l = left(i), r = right(i)",               // 1
-        "  largest = i",                             // 2
-        "  if l < size and nums[l] > nums[i]:",      // 3
-        "    largest = l",                           // 4
-        "  if r < size and nums[r] > nums[largest]:",// 5
-        "    largest = r",                           // 6
-        "  if largest != i:",                        // 7
-        "    swap(nums[i], nums[largest])",          // 8
-        "    heapify(largest)"                       // 9
+    std::vector<std::string> code = {
+        "heapify(i):",
+        "  l = 2i + 1, r = 2i + 2",
+        "  lar = i",
+        "  if l < sz && A[l] > A[i]:",
+        "    lar = l",
+        "  if r < sz && A[r] > A[lar]:",
+        "    lar = r",
+        "  if lar != i:",
+        "    swap(A[i], A[lar])",
+        "    heapify(lar)"
     };
+    mCodePanel.setCode(code);
 }
 
 void HeapVisualizer::loadInsertCode() {
-    mCurrentCode = {
-        "insert(val):",                              // 0
-        "  while i > 0 and nums[parent] < nums[i]:", // 1
-        "    swap(nums[i], nums[parent])",           // 2
-        "    i = parent(i)"                          // 3
+    std::vector<std::string> code = {
+        "insert(val):",
+        "  A.push(val)",
+        "  i = last_idx",
+        "  while i > 0 && A[p] < A[i]:",
+        "    swap(A[i], A[p])",
+        "    i = parent(i)"
     };
+    mCodePanel.setCode(code);
 }
 
 // Draws the full-screen translucent backdrop and the status texts pinned to it.
@@ -537,40 +559,26 @@ void HeapVisualizer::drawLegend(sf::RenderWindow& window) const {
 void HeapVisualizer::drawCodeSnippet(sf::RenderWindow& window) const {
     if (mCurrentCode.empty()) return;
 
-    // 1. Khung nền (Tính toán dựa trên các hằng số BUTTON của bạn)
-    // Tổng rộng của panel là khoảng 220-240
-    float boxWidth = (BUTTON_WIDTH * 2) + BUTTON_GAP_X + 20.f; 
+    float boxX = BUTTON_X - 15.f; 
+    float boxWidth = (BUTTON_WIDTH * 2) + BUTTON_GAP_X + 25.f; 
+
     sf::RectangleShape codeBg({boxWidth, 280.f});
-    codeBg.setPosition({BUTTON_X - 10.f, 100.f}); // Căn lề trái bằng nút Insert - 10px
-    codeBg.setFillColor(sf::Color(20, 20, 35, 200)); 
+    codeBg.setPosition({boxX, 100.f});
+    codeBg.setFillColor(sf::Color(15, 15, 25, 230)); 
     codeBg.setOutlineThickness(1.2f);
-    codeBg.setOutlineColor(sf::Color(100, 100, 255, 180));
+    codeBg.setOutlineColor(sf::Color(100, 100, 255, 150));
     window.draw(codeBg);
 
-    // 2. Vẽ nội dung
-    float startX = BUTTON_X; // Chữ bắt đầu thẳng hàng với nút Insert
-    float startY = 120.f;
-    float lineHeight = 24.f;
-
     for (int i = 0; i < (int)mCurrentCode.size(); ++i) {
-        sf::Text text = makeText(mFont, mCurrentCode[i], 14, sf::Color(180, 180, 190), {startX, startY + i * lineHeight});
+        sf::Text text = makeText(mFont, mCurrentCode[i], 12, sf::Color(190, 190, 200), {boxX + 15.f, 120.f + i * 22.f});
         
         if (i == mActiveLine) {
-            // Chữ sáng màu hồng
-            text.setFillColor(sf::Color(255, 105, 180)); 
-            text.setStyle(sf::Text::Bold);
-
-            // Vạch hồng bên trái (Sát lề khung)
-            sf::RectangleShape bar({4.f, 20.f});
-            bar.setPosition({BUTTON_X - 10.f, startY + i * lineHeight + 2.f});
+            text.setFillColor(sf::Color(255, 105, 180));
+            
+            sf::RectangleShape bar({3.f, 16.f});
+            bar.setPosition({boxX + 5.f, 124.f + i * 22.f});
             bar.setFillColor(sf::Color(255, 105, 180));
             window.draw(bar);
-            
-            // Background mờ cho dòng đang chọn (Optional)
-            sf::RectangleShape highlightRow({boxWidth, lineHeight});
-            highlightRow.setPosition({BUTTON_X - 10.f, startY + i * lineHeight});
-            highlightRow.setFillColor(sf::Color(255, 105, 180, 30));
-            window.draw(highlightRow);
         }
         window.draw(text);
     }
