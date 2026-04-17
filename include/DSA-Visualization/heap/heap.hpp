@@ -13,6 +13,7 @@ struct Action {
     ActionType type;
     int index1;
     int index2;
+    int lineIdx;
 };
 
 class MaxHeap {
