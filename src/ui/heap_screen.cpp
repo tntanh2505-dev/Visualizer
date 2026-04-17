@@ -61,8 +61,9 @@ HeapVisualizer::HeapVisualizer(const sf::Font& font)
     , mDeleteButton("Delete", font, {BUTTON_X2, BUTTON_START_Y}, {BUTTON_WIDTH, BUTTON_HEIGHT})
     , mBuildButton("Build", font, {BUTTON_X, BUTTON_START_Y + (BUTTON_HEIGHT + BUTTON_GAP_Y)}, {BUTTON_WIDTH, BUTTON_HEIGHT})
     , mClearButton("Clear", font, {BUTTON_X2, BUTTON_START_Y + (BUTTON_HEIGHT + BUTTON_GAP_Y)}, {BUTTON_WIDTH, BUTTON_HEIGHT})
-    , mPlayPauseButton("Pause", font, {BUTTON_X, BUTTON_START_Y + 2 * (BUTTON_HEIGHT + BUTTON_GAP_Y)}, {BUTTON_WIDTH, BUTTON_HEIGHT})
-    , mStepButton("Next", font, {BUTTON_X2, BUTTON_START_Y + 2 * (BUTTON_HEIGHT + BUTTON_GAP_Y)}, {BUTTON_WIDTH, BUTTON_HEIGHT})
+    , mPrevButton("<", font, {BUTTON_X, BUTTON_START_Y + 2 * (BUTTON_HEIGHT + BUTTON_GAP_Y)}, {BUTTON_WIDTH / 2.f, BUTTON_HEIGHT})
+    , mPlayPauseButton("Pause", font, {BUTTON_X + (BUTTON_WIDTH / 2.f) + (BUTTON_GAP_X / 2.f), BUTTON_START_Y + 2 * (BUTTON_HEIGHT + BUTTON_GAP_Y)}, {BUTTON_WIDTH, BUTTON_HEIGHT})
+    , mStepButton(">", font, {BUTTON_X + (BUTTON_WIDTH / 2.f) + (BUTTON_GAP_X / 2.f) + BUTTON_WIDTH + (BUTTON_GAP_X / 2.f), BUTTON_START_Y + 2 * (BUTTON_HEIGHT + BUTTON_GAP_Y)}, {BUTTON_WIDTH / 2.f, BUTTON_HEIGHT})
     , mReturnButton("Return", font, {BUTTON_X, 650.f}, {BUTTON_WIDTH * 2 + BUTTON_GAP_X, BUTTON_HEIGHT})
 {
     // Panel
@@ -104,10 +105,20 @@ void HeapVisualizer::handleEvent(const sf::Event& event, const sf::RenderWindow&
         togglePlayback();
     }
     if (mStepButton.isClicked(event, window)) {
+        mIsPlaying = false;
         if (!mPendingActions.empty()) {
             processNextAction();
         } else {
             setStatus("No pending animation steps.");
+        }
+    }
+    if (mPrevButton.isClicked(event, window)) {
+        mIsPlaying = false;
+        if (!mHistory.empty()) {
+            processPreviousAction();
+            setStatus("Stepped back."); 
+        } else {
+            setStatus("Already at the start of operation.");
         }
     }
 
@@ -137,6 +148,7 @@ void HeapVisualizer::update(float deltaTime, const sf::RenderWindow& window) {
     mClearButton.setHighlight(mClearButton.getGlobalBounds().contains(mouse));
     mPlayPauseButton.setHighlight(mPlayPauseButton.getGlobalBounds().contains(mouse));
     mStepButton.setHighlight(mStepButton.getGlobalBounds().contains(mouse));
+    mPrevButton.setHighlight(mPrevButton.getGlobalBounds().contains(mouse));
 
     mInputBox.setOutlineColor(mInputFocused ? sf::Color(255, 187, 76) : sf::Color(113, 139, 178));
     mInputText.setString(mInputBuffer + (mInputFocused ? "|" : ""));
@@ -260,6 +272,7 @@ void HeapVisualizer::togglePlayback() {
 void HeapVisualizer::queueOperation(const std::vector<int>& startArray) {
     mDisplayArray = startArray;
     mPendingActions.clear();
+    mHistory.clear();
     mHighlight = {};
     mActionTimer = 0.f;
 
@@ -287,6 +300,7 @@ void HeapVisualizer::processNextAction() {
     const Action action = mPendingActions.front();
     mPendingActions.pop_front();
     mHighlight = {};
+    mHistory.push_back(action);
 
     switch (action.type) {
     case ActionType::INSERT:
@@ -329,6 +343,46 @@ void HeapVisualizer::processNextAction() {
     }
 }
 
+void HeapVisualizer::processPreviousAction() {
+    if (mHistory.empty()) {
+        setStatus("At the beginning of operation.");
+        return;
+    }
+
+    Action action = mHistory.back();
+    mHistory.pop_back();
+
+    mHighlight = {};
+
+    switch (action.type) {
+    case ActionType::INSERT:
+        if (action.index1 >= 0 && static_cast<std::size_t>(action.index1) < mDisplayArray.size()) {
+            mDisplayArray.erase(mDisplayArray.begin() + action.index1);
+            mHighlight.label = "Undo Insert";
+        }
+        break;
+
+    case ActionType::SWAP:
+        if (action.index1 >= 0 && action.index2 >= 0) {
+            std::swap(mDisplayArray[action.index1], mDisplayArray[action.index2]);
+            mHighlight.first = action.index1;
+            mHighlight.second = action.index2;
+            mHighlight.firstColor = sf::Color(255, 124, 124);
+            mHighlight.secondColor = sf::Color(255, 124, 124);
+            mHighlight.label = "Undo Swap";
+        }
+        break;
+
+    case ActionType::COMPARE:
+
+    case ActionType::HIGHLIGHT:
+        mHighlight.label = "Undo " + std::string(action.type == ActionType::COMPARE ? "Compare" : "Focus");
+        break;
+    }
+
+    mPendingActions.push_front(action);
+}
+
 // Draws the full-screen translucent backdrop and the status texts pinned to it.
 void HeapVisualizer::drawPanel(sf::RenderWindow& window) const {
     window.draw(mPanel);
@@ -352,6 +406,7 @@ void HeapVisualizer::drawButtons(sf::RenderWindow& window) const {
     mReturnButton.draw(window);
     mPlayPauseButton.draw(window);
     mStepButton.draw(window);
+    mPrevButton.draw(window);
 }
 
 // Draws the array representation under the tree, shrinking cells when many nodes are present.
@@ -479,10 +534,11 @@ void HeapVisualizer::setStatus(const std::string& status) {
     mStatusMessage = status;
     mStatusText.setString(status);
     float row3Y = BUTTON_START_Y + 2 * (BUTTON_HEIGHT + BUTTON_GAP_Y);
+    float playX = BUTTON_X + (BUTTON_WIDTH / 2.f) + (BUTTON_GAP_X / 2.f);
     mPlayPauseButton = Button(
         mIsPlaying ? "Pause" : "Play",
         mFont,
-        {BUTTON_X, row3Y},
+        {playX, row3Y},
         {BUTTON_WIDTH, BUTTON_HEIGHT}
     );
 }

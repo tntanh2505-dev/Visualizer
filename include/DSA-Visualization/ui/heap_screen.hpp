@@ -37,6 +37,7 @@ private:
     void togglePlayback();
     void queueOperation(const std::vector<int>& startArray);
     void processNextAction();
+    void processPreviousAction();
 
     void drawPanel(sf::RenderWindow& window) const;
     void drawInputArea(sf::RenderWindow& window) const;
@@ -58,6 +59,7 @@ private:
     MaxHeap mHeap;
     std::vector<int> mDisplayArray;
     std::deque<Action> mPendingActions;
+    std::vector<Action> mHistory;
     HighlightState mHighlight;
 
     sf::RectangleShape mPanel;
@@ -79,6 +81,7 @@ private:
     Button mReturnButton;
     Button mPlayPauseButton;
     Button mStepButton;
+    Button mPrevButton;
 
     sf::Texture           mBgTexture;
     sf::Sprite            mBgSprite;
