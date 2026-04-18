@@ -55,7 +55,7 @@ inline Snapshot TakeSnapshot_SLL(SLLNode* head, std::string desc, int highlighte
 }
 
 inline void ApplySLLLayout(Snapshot& snap, float startX, float startY) {
-    float horizontalSpacing = 140.f; float verticalSpacing = 120.f; int nodesPerRow = 6;             
+    float horizontalSpacing = 140.f; float verticalSpacing = 120.f; int nodesPerRow = 8;             
     for (int i = 0; i < snap.nodes.size(); ++i) {
         int row = i / nodesPerRow; int col = i % nodesPerRow;
         if(row % 2 == 0) snap.nodes[i].targetX = startX + (col * horizontalSpacing);
@@ -167,13 +167,13 @@ private:
     float rightWidth;
     bool leftExpanded;
     bool rightExpanded;
-    const float LEFT_PANEL_WIDTH = 300.f;
+    const float LEFT_PANEL_WIDTH = 260.f;
     const float RIGHT_PANEL_WIDTH = 420.f;
     const float TAB_WIDTH = 35.f;
     const float TAB_HEIGHT = 50.f;
 
     void UpdateVisualsFromFrame() {
-        ApplySLLLayout(timeline[currentFrame], leftWidth + 200.f, 200.f);
+        ApplySLLLayout(timeline[currentFrame], 200.f, 200.f);
         for (const auto& record : timeline[currentFrame].nodes) {
             VisualNode* vn = FindNode(record.UID, nodes);
             if (vn) vn->index = record.index; 
@@ -195,40 +195,12 @@ public:
         leftExpanded = false;
         rightExpanded = false;
 
-        // --- NEW: Adjusted short pseudo-code snippets for cleaner code panels ---
         std::map<std::string, std::vector<std::string>> llSnippets;
-        llSnippets["InsertFront"] = { 
-            "Node* n = new Node(x);", 
-            "n->next = head;", 
-            "head = n;" 
-        };
-        llSnippets["InsertBack"] = { 
-            "if (!head) { head = new Node(x); return; }", 
-            "Node* cur = head;", 
-            "while (cur->next) cur = cur->next;", 
-            "cur->next = new Node(x);" 
-        };
-        llSnippets["Search"] = { 
-            "Node* cur = head;", 
-            "while (cur) {", 
-            "  if (cur->val == target) return cur;", 
-            "  cur = cur->next;", 
-            "}", 
-            "return NULL;" 
-        };
-        llSnippets["DeleteBack"] = { 
-            "if (!head) return;", 
-            "if (!head->next) { delete head; head = NULL; }", 
-            "Node* cur = head;", 
-            "while (cur->next->next) cur = cur->next;", 
-            "delete cur->next; cur->next = NULL;" 
-        };
-        llSnippets["DeleteFront"] = { 
-            "if (!head) return;", 
-            "Node* temp = head;", 
-            "head = head->next;", 
-            "delete temp;" 
-        };
+        llSnippets["InsertFront"] = { "SLLNode* newNode = new SLLNode(x);", "newNode->next = head;", "head = newNode;" };
+        llSnippets["InsertBack"] = { "if (head == NULL) { head = new SLLNode(x); return; }", "SLLNode* cur = head;", "while (cur->next != NULL) cur = cur->next;", "cur->next = new SLLNode(x);" };
+        llSnippets["Search"] = { "SLLNode* cur = head;", "while (cur != NULL) {", "    if (cur->val == targetValue) return cur;", "    cur = cur->next;", "}", "return NULL;" };
+        llSnippets["DeleteBack"] = { "if (head == NULL) return;", "if (head->next == NULL) { delete head; return; }", "SLLNode* cur = head;", "while (cur->next->next != NULL) cur = cur->next;", "delete cur->next; cur->next = NULL;" };
+        llSnippets["DeleteFront"] = { "if (head == NULL) return;", "SLLNode* temp = head;", "head = head->next;", "delete temp;" };
         codePanel.loadSnippets(llSnippets);
 
         // Size optimized to fit in 260px Left Panel (105 + 10 gap + 105 = 220 total span)
@@ -248,8 +220,7 @@ public:
         buttons.emplace_back(Button("BACK", font, {0, 0}, 70, 40));       // 10
         buttons.emplace_back(Button("CLEAR ALL", font, {0, 0}, 220, 40)); // 11
         buttons[11].shape.setFillColor(UITheme::Color::ButtonDanger); 
-        buttons.emplace_back(Button("ADD FILE", font, {0, 0}, 220, 40));  // 12    
-         
+        buttons.emplace_back(Button("ADD FILE", font, {0, 0}, 220, 40));  // 12     
 
         timeline.push_back(TakeSnapshot_SLL(pHead, "Initial State", INT_MIN, true));
         SyncToFrame(timeline[currentFrame], nodes, lines, font);
@@ -381,16 +352,8 @@ public:
         float rightBaseX = window.getSize().x - rightWidth;
         codePanel.setPosition({rightBaseX + TAB_WIDTH + 10.f, 20.f});
         
-        // --- Timeline Slider stays at bottom, scales dynamically ---
+        // Node Panel Floats Freely, Timeline Slider stays at bottom
         slider.setPosition({leftWidth + 20.f, window.getSize().y - 50.f}, window.getSize().x - leftWidth - rightWidth - 40.f);
-
-        // --- NEW: Update Node Panel Position ---
-        // Dynamically pushes the Node Panel to the left so it stays beside the Right Panel
-        if (nodePanel.isVisible) {
-            float npX = rightBaseX - UITheme::Size::PanelDefault.x - 20.f;
-            float npY = window.getSize().y - 230.f; 
-            nodePanel.setPosition({npX, npY});
-        }
 
         // --- Apply Hovers ---
         sf::Vector2f mPos = window.mapPixelToCoords(sf::Mouse::getPosition(window));
@@ -417,7 +380,7 @@ public:
         for (auto& node : nodes) node.update(window, deltaTime);
         
         // Nodes will smoothly bounce off the expanded panel edges!
-        ResolveCollisions(nodes, window, leftWidth + 100.0f, window.getSize().x - rightWidth); 
+        ResolveCollisions(nodes, window, leftWidth, window.getSize().x - rightWidth); 
         
         for (auto& line : lines) {
             VisualNode* s = FindNode(line.start_UID, nodes);

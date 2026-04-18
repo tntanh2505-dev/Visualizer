@@ -44,7 +44,7 @@ namespace {
 
 HeapVisualizer::HeapVisualizer(const sf::Font& font)
     : mFont(font)
-    , mSpeedLabel(makeText(font, "Speed: 0.60s", 14, UITheme::Color::TextWhite, {0, 0}))
+    , mSpeedLabel(makeText(font, "Speed: 1x", 14, UITheme::Color::AVLSpeedSliderText, {0, 0}))
     , mPlaceholderText(makeText(font, "Enter value...", 14, UITheme::Color::TextMuted, {0, 0}))
     , mInputText(makeText(font, "", 16, UITheme::Color::TextDark, {0, 0}))
     , mHintText(makeText(font, "Format: 1, 2, 3...", 12, UITheme::Color::TextMuted, {0, 0}))
@@ -75,8 +75,10 @@ HeapVisualizer::HeapVisualizer(const sf::Font& font)
     mSliderTrack.setSize({220.f, 6.f});
     mSliderTrack.setFillColor(UITheme::Color::SliderTrack);
     mSliderTrack.setOutlineThickness(1.f);
+    mSliderTrack.setOutlineColor(UITheme::Color::AVLGlow); // Glow border for track
+
     mSliderKnob.setRadius(10.f);
-    mSliderKnob.setFillColor(UITheme::Color::HeapAccent);
+    mSliderKnob.setFillColor(UITheme::Color::SliderHandle);
     mSliderKnob.setOrigin(10.f, 10.f);
     mIsDraggingSlider = false;
 
@@ -114,17 +116,6 @@ void HeapVisualizer::handleEvent(const sf::Event& event, const sf::RenderWindow&
 
         if (knobBounds.contains(mouse) || mSliderTrack.getGlobalBounds().contains(mouse)) {
             mIsDraggingSlider = true;
-            const float left = mSliderTrack.getPosition().x;
-            const float width = mSliderTrack.getSize().x;
-            const float newX = std::max(left, std::min(mouse.x, left + width));
-            mSliderKnob.setPosition(newX, mSliderKnob.getPosition().y);
-
-            const float t = (newX - left) / width;
-            mActionInterval = MAX_INTERVAL - t * (MAX_INTERVAL - MIN_INTERVAL);
-
-            std::stringstream ss;
-            ss << "Speed: " << std::fixed << std::setprecision(2) << mActionInterval << "s";
-            mSpeedLabel.setString(ss.str());
         }
     }
 
@@ -180,48 +171,51 @@ void HeapVisualizer::update(float deltaTime, const sf::RenderWindow& window) {
     float leftBaseX = g_leftWidth - LEFT_PANEL_WIDTH; 
     float currentY = 40.f;
     
-    mInputBox.setPosition({leftBaseX + 20.f, currentY});
-    mPlaceholderText.setPosition({leftBaseX + 26.f, currentY + 10.f});
-    mInputText.setPosition({leftBaseX + 26.f, currentY + 8.f});
-    mHintText.setPosition({leftBaseX + 20.f, currentY + 45.f});
+    mInputBox.setPosition({leftBaseX + 30.f, currentY});
+    mPlaceholderText.setPosition({leftBaseX + 36.f, currentY + 10.f});
+    mInputText.setPosition({leftBaseX + 36.f, currentY + 8.f});
+    mHintText.setPosition({leftBaseX + 30.f, currentY + 45.f});
 
     currentY += 80.f;
-    mInsertButton.setPosition({leftBaseX + 20.f, currentY});
-    mDeleteButton.setPosition({leftBaseX + 130.f, currentY});
+    mInsertButton.setPosition({leftBaseX + 30.f, currentY});
+    mDeleteButton.setPosition({leftBaseX + 140.f, currentY});
 
     currentY += 60.f;
-    mBuildButton.setPosition({leftBaseX + 20.f, currentY});
-    mClearButton.setPosition({leftBaseX + 130.f, currentY});
+    mBuildButton.setPosition({leftBaseX + 30.f, currentY});
+    mClearButton.setPosition({leftBaseX + 140.f, currentY});
 
     currentY += 60.f;
-    mPrevButton.setPosition({leftBaseX + 20.f, currentY});
-    mPlayPauseButton.setPosition({leftBaseX + 75.f, currentY});
-    mStepButton.setPosition({leftBaseX + 180.f, currentY}); 
+    mPrevButton.setPosition({leftBaseX + 30.f, currentY});
+    mPlayPauseButton.setPosition({leftBaseX + 85.f, currentY});
+    mStepButton.setPosition({leftBaseX + 190.f, currentY}); 
 
     currentY += 70.f;
-    mSpeedLabel.setPosition({leftBaseX + 20.f, currentY - 20.f});
-    mSliderTrack.setPosition({leftBaseX + 20.f, currentY});
+    mSpeedLabel.setPosition({leftBaseX + 30.f, currentY - 20.f});
+    mSliderTrack.setPosition({leftBaseX + 30.f, currentY});
     mPanel.setSize({(float)window.getSize().x, (float)window.getSize().y});
 
-    float t = 1.0f - (mActionInterval - MIN_INTERVAL) / (MAX_INTERVAL - MIN_INTERVAL);
-    if (!mIsDraggingSlider) {
-        mSliderKnob.setPosition({leftBaseX + 20.f + t * mSliderTrack.getSize().x, currentY + 3.f});
-    } else {
+    // Handle Dragging Logic and dynamic label multiplier mapping!
+    if (mIsDraggingSlider) {
         const sf::Vector2f mouse = window.mapPixelToCoords(sf::Mouse::getPosition(window));
         const float left = mSliderTrack.getPosition().x;
         const float width = mSliderTrack.getSize().x;
-        const float newX = std::max(left, std::min(mouse.x, left + width));
+        
+        float newX = std::max(left, std::min(mouse.x, left + width));
         mSliderKnob.setPosition(newX, currentY + 3.f);
 
-        const float newT = (newX - left) / width;
-        mActionInterval = MAX_INTERVAL - newT * (MAX_INTERVAL - MIN_INTERVAL);
-        std::stringstream ss;
-        ss << "Speed: " << std::fixed << std::setprecision(2) << mActionInterval << "s";
-        mSpeedLabel.setString(ss.str());
+        float ratio = (newX - left) / width;
+        float speedMult = 0.5f + ratio * 7.5f; 
+        
+        mActionInterval = 1.0f / speedMult; // Map 0.5x to 2.0s, 8.0x to 0.125s
+        mSpeedLabel.setString("Speed: " + std::to_string((int)speedMult) + "x");
+    } else {
+        float speedMult = 1.0f / mActionInterval;
+        float ratio = (speedMult - 0.5f) / 7.5f;
+        mSliderKnob.setPosition({leftBaseX + 30.f + ratio * mSliderTrack.getSize().x, currentY + 3.f});
     }
 
     currentY += 60.f;
-    mReturnButton.setPosition({leftBaseX + 20.f, currentY});
+    mReturnButton.setPosition({leftBaseX + 30.f, currentY});
 
     // --- Right Panel Layout ---
     float rightBaseX = window.getSize().x - g_rightWidth;
@@ -306,6 +300,28 @@ void HeapVisualizer::render(sf::RenderWindow& window) const {
     const_cast<CodePanel&>(mCodePanel).draw(window);
 }
 
+void HeapVisualizer::drawButtons(sf::RenderWindow& window) const {
+    mInsertButton.draw(window);
+    mDeleteButton.draw(window); 
+    mBuildButton.draw(window);
+    mClearButton.draw(window);
+    mReturnButton.draw(window);
+    mPlayPauseButton.draw(window);
+    mStepButton.draw(window);
+    mPrevButton.draw(window);
+    window.draw(mSpeedLabel);
+    
+    // --- Render Filled Track specifically for Heap ---
+    sf::RectangleShape filledTrack({mSliderKnob.getPosition().x - mSliderTrack.getPosition().x, 6.f});
+    filledTrack.setPosition(mSliderTrack.getPosition());
+    filledTrack.setFillColor(UITheme::Color::HeapAccent); 
+
+    window.draw(mSliderTrack);
+    window.draw(filledTrack);
+    window.draw(mSliderKnob);
+}
+
+// ... [The rest of the heap_screen.cpp implementation remains exactly the same as previously provided]
 void HeapVisualizer::reset() {
     mInputFocused = false;
     mPendingActions.clear();
@@ -313,7 +329,7 @@ void HeapVisualizer::reset() {
     mActionTimer = 0.f;
 }
 
-// ... [runInsert, runDeleteRoot, runBuildHeap, runClear, togglePlayback, queueOperation, processNextAction, processPreviousAction remain unchanged logically, identical to your previous implementation] ...
+// ... [runInsert, runDeleteRoot, runBuildHeap, runClear, togglePlayback, queueOperation, processNextAction, processPreviousAction remain unchanged] ...
 
 void HeapVisualizer::runInsert() {
     int value = 0;
@@ -539,20 +555,6 @@ void HeapVisualizer::drawInputArea(sf::RenderWindow& window) const {
     if (mInputBuffer.empty()) window.draw(mPlaceholderText);
     else window.draw(mInputText);
     window.draw(mHintText);
-}
-
-void HeapVisualizer::drawButtons(sf::RenderWindow& window) const {
-    mInsertButton.draw(window);
-    mDeleteButton.draw(window); 
-    mBuildButton.draw(window);
-    mClearButton.draw(window);
-    mReturnButton.draw(window);
-    mPlayPauseButton.draw(window);
-    mStepButton.draw(window);
-    mPrevButton.draw(window);
-    window.draw(mSpeedLabel);
-    window.draw(mSliderTrack);
-    window.draw(mSliderKnob);
 }
 
 void HeapVisualizer::drawArray(sf::RenderWindow& window) const {
