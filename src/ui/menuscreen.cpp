@@ -30,7 +30,9 @@ int MenuScreen::run(sf::RenderWindow& window, sf::Font& font) {
 
     sf::Vector2u size = mBgTexture.getSize();
     mBgSprite.setTexture(mBgTexture);
-    mBgSprite.setScale(1280.f / size.x, 720.f / size.y);
+    mBgSprite.setScale(static_cast<float>(window.getSize().x) / mBgTexture.getSize().x, 
+                       static_cast<float>(window.getSize().y) / mBgTexture.getSize().y);
+                       
 
     buildButtons(font);
 
