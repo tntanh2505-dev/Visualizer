@@ -1,34 +1,30 @@
 #include "DSA-Visualization/ui/button.hpp"
+#include "DSA-Visualization/ui/UI_Theme.hpp"
 #include <cmath>
 
 ModernButton::ModernButton(const std::string& text, const sf::Font& font, sf::Vector2f size, float radius)
-    : m_size(size), m_radius(radius), m_isHovered(false) // radius is kept in signature to match your .hpp, but unused visually
+    : m_size(size), m_radius(radius), m_isHovered(false) 
 {
-    // 1. Setup Theme Colors (Amethyst Dark Mode)
-    m_topNormal    = sf::Color(32, 26, 43);     // Deep plum
-    m_bottomNormal = sf::Color(20, 16, 27);     // Darker plum
-    m_topHover     = sf::Color(53, 38, 77);     // Vibrant amethyst hover
-    m_bottomHover  = sf::Color(37, 24, 56);     // Darker amethyst
-    m_borderColor  = sf::Color(181, 58, 199, 120); // Neon purple outline
+    m_topNormal    = UITheme::Color::ModernBtnTop;
+    m_bottomNormal = UITheme::Color::ModernBtnBottom;
+    m_topHover     = UITheme::Color::ModernBtnHoverT;
+    m_bottomHover  = UITheme::Color::ModernBtnHoverB;
+    m_borderColor  = UITheme::Color::ModernBtnBorder;
 
-    // 2. Setup Text properties (Scaled down for smaller button)
     m_text.setFont(font);
     m_text.setString(text);
-    m_text.setCharacterSize(16); // Reduced from 22
-    m_text.setFillColor(sf::Color::White);
-    m_text.setLetterSpacing(1.1f); 
+    m_text.setCharacterSize(UITheme::Size::FontNormal - 2); 
+    m_text.setFillColor(UITheme::Color::TextWhite);
+    m_text.setLetterSpacing(1.1f);
 
-    // 3. Generate the simple rectangle geometry
     buildGeometry();
 
-    // 4. Center the text perfectly
     sf::FloatRect textRect = m_text.getLocalBounds();
     m_text.setOrigin(textRect.left + textRect.width / 2.0f, textRect.top + textRect.height / 2.0f);
     m_text.setPosition(m_size.x / 2.0f, m_size.y / 2.0f);
-
-    // Set origin to center for smooth scaling effects
     setOrigin(m_size.x / 2.0f, m_size.y / 2.0f);
 }
+
 
 void ModernButton::update(sf::Vector2f mousePos)
 {
@@ -123,14 +119,15 @@ Button::Button(const std::string& label, const sf::Font& font,
 {
     mBox.setPosition(position);
     mBox.setSize(size);
-    mBox.setFillColor(sf::Color(70, 130, 180));
-    mBox.setOutlineThickness(2.f);
-    mBox.setOutlineColor(sf::Color::White);
+    // --- Replaced Hardcoded Colors with UITheme ---
+    mBox.setFillColor(UITheme::Color::ButtonPrimary);
+    mBox.setOutlineThickness(UITheme::Size::BoxOutlineThickness);
+    mBox.setOutlineColor(UITheme::Color::PanelBorder);
 
     mText.setFont(font);
     mText.setString(label);
-    mText.setCharacterSize(22);
-    mText.setFillColor(sf::Color::White);
+    mText.setCharacterSize(UITheme::Size::FontTitle);
+    mText.setFillColor(UITheme::Color::TextWhite);
 
     while (mText.getLocalBounds().width > size.x - 24.f && mText.getCharacterSize() > 14) {
         mText.setCharacterSize(mText.getCharacterSize() - 1);
@@ -144,9 +141,8 @@ Button::Button(const std::string& label, const sf::Font& font,
 }
 
 void Button::setHighlight(bool highlight) {
-    mBox.setFillColor(highlight
-        ? sf::Color(100, 160, 210)
-        : sf::Color(70, 130, 180));
+    // Replaced Highlight Colors
+    mBox.setFillColor(highlight ? UITheme::Color::TextBoxSelected : UITheme::Color::ButtonPrimary);
 }
 
 bool Button::isClicked(const sf::Event& event, const sf::RenderWindow& window) {

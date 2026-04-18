@@ -1,5 +1,6 @@
 #pragma once
 #include "DSA-Visualization/linked_list/SLL_UI.hpp"
+#include "DSA-Visualization/ui/UI_Theme.hpp"
 
 namespace SLL {
 struct SLLNode {
@@ -147,6 +148,8 @@ inline int Search_Visual(SLLNode* head, int targetValue, std::vector<Snapshot>& 
 // --- SLL Scene ---
 class LinkedListScene : public Scene {
 private:
+    float baseWidth;
+    float baseHeight;
     SLLNode* pHead;
     std::vector<VisualNode> nodes;
     std::vector<Connector> lines;
@@ -161,9 +164,11 @@ private:
 
     void updateUIPositions(float width, float height) {
         float margin = 100.f;
+        float marginX = 30.f;
+        float bottomAreaY = height - 160.f;
         slider.setPosition({margin, height - margin}, width - (margin * 2));
         nodePanel.setPosition({width - margin - 360.f, height - margin - 180.f});
-        codePanel.setPosition({width - margin - 360.f, height - margin - 180.f - 200.f});
+        codePanel.setPosition({marginX, 80.f});
 
         float startX = margin; float row0Y = height - margin + 25.f; float row2Y = height - margin - 70.f; float row1Y = height - margin - 130.f;
         if (!boxes.empty() && buttons.size() >= 13) {
@@ -190,6 +195,8 @@ public:
     LinkedListScene(sf::Font& font, float windowWidth, float windowHeight) 
     : nodePanel(font), codePanel(font), slider({200.f, 750.f}, 1000.f), speedCtrl(font, &timeInterval), menuBtn("MENU", font, {20.f, 20.f}, 80, 40)
     {   
+        baseWidth = windowWidth;
+        baseHeight = windowHeight;
         fontPtr = &font; pHead = nullptr; currentFrame = 0; isAutoPlaying = true; pendingSearchUID = INT_MIN; timeInterval = 0.005f; dt = 0.001f;
 
         std::map<std::string, std::vector<std::string>> llSnippets;
@@ -250,6 +257,12 @@ public:
             }
         }
 
+        if (event.type == sf::Event::Resized) {
+            // Lock the view exactly to the layout's original coordinates
+            sf::View stretchedView(sf::FloatRect(0, 0, baseWidth, baseHeight));
+            window.setView(stretchedView);
+        }
+
         if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
             sf::Vector2f mPos = window.mapPixelToCoords(sf::Mouse::getPosition(window));
             auto FastForward = [&]() { if (currentFrame < timeline.size() - 1) currentFrame = timeline.size() - 1; };
@@ -276,6 +289,7 @@ public:
             else if (buttons[9].isClicked(mPos)) { isAutoPlaying = false; buttons[3].setText("PLAY"); int target = timeline.size() - 1; for (int i = currentFrame + 1; i < timeline.size(); i++) { if (timeline[i].isKeyStage) { target = i; break; } } if (currentFrame != target) { currentFrame = target; UpdateVisualsFromFrame(); } }
             else if (buttons[10].isClicked(mPos)) { isAutoPlaying = false; buttons[3].setText("PLAY"); int target = 0; for (int i = currentFrame - 1; i >= 0; i--) { if (timeline[i].isKeyStage) { target = i; break; } } if (currentFrame != target) { currentFrame = target; UpdateVisualsFromFrame(); } }
         }
+
     }
 
     void Update(float deltaTime, sf::RenderWindow& window) override {

@@ -1,4 +1,5 @@
 #include "DSA-Visualization/ui/heap_screen.hpp"
+#include "DSA-Visualization/ui/UI_Theme.hpp"
 #include <iostream>
 
 #include <algorithm>
@@ -28,7 +29,7 @@ namespace {
 
     // Tree + Array
     constexpr std::size_t MAX_RENDERED_NODES = 31;
-    constexpr float NODE_RADIUS = 24.f;
+    const float NODE_RADIUS = UITheme::Size::NodeRadius;
     constexpr float TREE_WIDTH = 900.f;
     constexpr float TREE_LEFT_X = 40.f;
     constexpr float TREE_TOP_Y = 180.f;
@@ -52,13 +53,12 @@ namespace {
 
 HeapVisualizer::HeapVisualizer(const sf::Font& font)
     : mFont(font)
-    // Input Area
-    , mSpeedLabel(makeText(font, "Speed: 0.60s", 14, sf::Color::White, {BUTTON_X, BUTTON_START_Y + 3 * (BUTTON_HEIGHT + BUTTON_GAP_Y) + 15.f}))
-    , mPlaceholderText(makeText(font, "Enter value (e.g. 10)...", 18, sf::Color(100, 100, 100, 150), {INPUT_X + 14.f, INPUT_Y + 8.f}))
-    , mInputText(makeText(font, "", 22, sf::Color(26, 32, 44), {INPUT_X + 14.f, INPUT_Y + 8.f}))
-    , mHintText(makeText(font, "Build format: 1, 2, 3...", 14, sf::Color(150, 150, 150), {INPUT_X, INPUT_Y + 55.f}))
-    , mStatusText(makeText(font, "", 16, sf::Color(251, 209, 101), {400.f, 635.f}))
-    
+    , mSpeedLabel(makeText(font, "Speed: 0.60s", 14, UITheme::Color::TextWhite, {BUTTON_X, BUTTON_START_Y + 3 * (BUTTON_HEIGHT + BUTTON_GAP_Y) + 15.f}))
+    , mPlaceholderText(makeText(font, "Enter value (e.g. 10)...", 18, UITheme::Color::TextMuted, {INPUT_X + 14.f, INPUT_Y + 8.f}))
+    , mInputText(makeText(font, "", 22, UITheme::Color::TextDark, {INPUT_X + 14.f, INPUT_Y + 8.f}))
+    , mHintText(makeText(font, "Build format: 1, 2, 3...", 14, UITheme::Color::TextMuted, {INPUT_X, INPUT_Y + 55.f}))
+    , mStatusText(makeText(font, "", 16, UITheme::Color::HeapTextHighlight, {400.f, 635.f}))
+
     // Button
     , mInsertButton("Insert", font, {BUTTON_X, BUTTON_START_Y}, {BUTTON_WIDTH, BUTTON_HEIGHT})
     , mDeleteButton("Delete", font, {BUTTON_X2, BUTTON_START_Y}, {BUTTON_WIDTH, BUTTON_HEIGHT})
@@ -75,15 +75,14 @@ HeapVisualizer::HeapVisualizer(const sf::Font& font)
     float cpWidth = 220.f;
     float cpHeight = 290.f;
     mPanel.setSize({PANEL_WIDTH, PANEL_HEIGHT});
-    mPanel.setFillColor(sf::Color(10, 10, 15));
+    mPanel.setFillColor(UITheme::Color::HeapBackground);
     mCodePanel = CodePanel(font, {cpX, cpY}, {cpWidth, cpHeight});
     loadHeapifyCode();
     mControlPanelBg.setSize({240.f, 620.f});
     mControlPanelBg.setPosition({1010.f, 80.f});
-    mControlPanelBg.setFillColor(sf::Color(25, 25, 35, 200));
+    mControlPanelBg.setFillColor(UITheme::Color::HeapControlBg);
     mControlPanelBg.setOutlineThickness(1.f);
-    mControlPanelBg.setOutlineColor(sf::Color(80, 80, 100));
-
+    mControlPanelBg.setOutlineColor(UITheme::Color::SliderTrack); // Using standardized color
     // Speed Slider
     float sliderY = BUTTON_START_Y + 3 * (BUTTON_HEIGHT + BUTTON_GAP_Y) + 40.f;
     float sliderWidth = BUTTON_WIDTH * 2 + BUTTON_GAP_X;
@@ -91,9 +90,9 @@ HeapVisualizer::HeapVisualizer(const sf::Font& font)
     mSliderTrack.setPosition({BUTTON_X, sliderY});
     mSliderTrack.setFillColor(sf::Color(60, 60, 80));
     mSliderTrack.setOutlineThickness(1.f);
-    mSliderTrack.setOutlineColor(sf::Color(100, 100, 150));
+    mSliderTrack.setFillColor(UITheme::Color::SliderTrack);
     mSliderKnob.setRadius(10.f);
-    mSliderKnob.setFillColor(sf::Color(181, 58, 199));
+    mSliderKnob.setFillColor(UITheme::Color::HeapAccent);
     mSliderKnob.setOrigin(10.f, 10.f);
     float t = 1.0f - (mActionInterval - 0.1f) / (2.0f - 0.1f);
     mSliderKnob.setPosition({BUTTON_X + t * sliderWidth, sliderY + 3.f});
@@ -102,9 +101,9 @@ HeapVisualizer::HeapVisualizer(const sf::Font& font)
     //Input area
     mInputBox.setPosition({INPUT_X, INPUT_Y});
     mInputBox.setSize({INPUT_WIDTH, INPUT_HEIGHT});
-    mInputBox.setFillColor(sf::Color::White);
+    mInputBox.setFillColor(UITheme::Color::TextBoxBg);
     mInputBox.setOutlineThickness(2.f);
-    mInputBox.setOutlineColor(sf::Color(181, 58, 199, 100));
+    mInputBox.setOutlineColor(UITheme::Color::HeapAccent);
 
     setStatus("Ready.");
 }
@@ -384,7 +383,7 @@ void HeapVisualizer::processNextAction() {
         if (action.index1 >= 0 && static_cast<std::size_t>(action.index1) <= mDisplayArray.size()) {
             mDisplayArray.insert(mDisplayArray.begin() + action.index1, action.index2);
             mHighlight.first = action.index1;
-            mHighlight.firstColor = sf::Color(248, 196, 76);
+            mHighlight.firstColor = UITheme::Color::HeapFocus;
             mHighlight.label = "Inserted " + std::to_string(action.index2);
         }
         break;
@@ -392,8 +391,8 @@ void HeapVisualizer::processNextAction() {
     case ActionType::COMPARE:
         mHighlight.first = action.index1;
         mHighlight.second = action.index2;
-        mHighlight.firstColor = sf::Color(87, 190, 255);
-        mHighlight.secondColor = sf::Color(87, 190, 255);
+        mHighlight.firstColor = UITheme::Color::HeapCompare;
+        mHighlight.secondColor = UITheme::Color::HeapCompare;
         mHighlight.label = "Compare";
         break;
 
@@ -405,15 +404,15 @@ void HeapVisualizer::processNextAction() {
             std::swap(mDisplayArray[action.index1], mDisplayArray[action.index2]);
             mHighlight.first = action.index1;
             mHighlight.second = action.index2;
-            mHighlight.firstColor = sf::Color(255, 124, 124);
-            mHighlight.secondColor = sf::Color(255, 124, 124);
+            mHighlight.firstColor = UITheme::Color::HeapSwap;
+            mHighlight.secondColor = UITheme::Color::HeapSwap;
             mHighlight.label = "Swap";
         }
         break;
 
     case ActionType::HIGHLIGHT:
         mHighlight.first = action.index1;
-        mHighlight.firstColor = sf::Color(248, 196, 76);
+        mHighlight.firstColor = UITheme::Color::HeapFocus;
         mHighlight.label = "Focus";
         break;
     }

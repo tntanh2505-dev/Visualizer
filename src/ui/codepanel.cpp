@@ -1,11 +1,13 @@
 #include "DSA-Visualization/ui/CodePanel.hpp"
+#include "DSA-Visualization/ui/UI_Theme.hpp"
+#include <cmath>
+#include <sstream>
 
 static const float PADDING     = 12.f;
 static const float LINE_HEIGHT = 22.f;
-static const int   FONT_SIZE   = 12;
+static const int   FONT_SIZE   = UITheme::Size::FontCode;
 
-#include <cmath>
-#include <sstream>
+
 
 CodePanel::CodePanel()
 : mFont(nullptr)
@@ -36,35 +38,27 @@ static void buildTopRoundedRect(sf::ConvexShape& shape, sf::Vector2f size, float
     shape.setPoint(20, sf::Vector2f(0.f, size.y));
     shape.setPoint(21, sf::Vector2f(size.x, size.y));
 }
-
 CodePanel::CodePanel(const sf::Font& font, sf::Vector2f position, sf::Vector2f size)
-: mFont(&font)
-, mPosition(position)
-, mSize(size)
-, mHighlightedLine(-1)
-, mLineHeight(LINE_HEIGHT)
+: mFont(&font), mPosition(position), mSize(size), mHighlightedLine(-1), mLineHeight(LINE_HEIGHT)
 {
     float radius = 10.f;
 
-    // Drop Shadow
     mDropShadow.setSize(size);
     mDropShadow.setPosition(position + sf::Vector2f(6.f, 8.f));
-    mDropShadow.setFillColor(sf::Color(0, 0, 0, 100));
+    mDropShadow.setFillColor(sf::Color(0, 0, 0, 100)); 
 
-    // Main background
     buildRoundedRect(mBackground, size, radius);
     mBackground.setPosition(position);
-    mBackground.setFillColor(sf::Color(16, 13, 20, 240));
+    // --- Standardized UITheme Elements ---
+    mBackground.setFillColor(UITheme::Color::CodePanelBg);
     mBackground.setOutlineThickness(1.5f);
-    mBackground.setOutlineColor(sf::Color(40, 30, 50, 180));
+    mBackground.setOutlineColor(UITheme::Color::CodePanelBorder);
 
-    // Title Bar
     float titleHeight = 24.f;
     buildTopRoundedRect(mTitleBar, sf::Vector2f(size.x, titleHeight), radius);
     mTitleBar.setPosition(position);
-    mTitleBar.setFillColor(sf::Color(30, 25, 38, 255));
+    mTitleBar.setFillColor(UITheme::Color::CodeTitleBar);
 
-    // Mac Buttons
     sf::Color macColors[3] = { sf::Color(255, 95, 86), sf::Color(255, 189, 46), sf::Color(39, 201, 63) };
     for (int i = 0; i < 3; ++i) {
         mMacButtons[i].setRadius(5.f);
@@ -72,44 +66,33 @@ CodePanel::CodePanel(const sf::Font& font, sf::Vector2f position, sf::Vector2f s
         mMacButtons[i].setPosition(position.x + 12.f + i * 16.f, position.y + 7.f);
     }
 
-    // Highlight track
     mHighlightBar.setSize({size.x, LINE_HEIGHT});
-    mHighlightBar.setFillColor(sf::Color(181, 58, 199, 40));
-}
-
+    mHighlightBar.setFillColor(UITheme::Color::CodeHighlight);
+}    
 void CodePanel::generateSyntaxHighlighting(const std::string& rawLine, int lineIndex, float yPos) {
-    // Simple tokenizer by space
     std::string token;
     std::stringstream ss(rawLine);
     
-    float currentX = mPosition.x + PADDING + 30.f; // 30.f offset for line numbers
-    
-    // Check initial indent for spacing
+    float currentX = mPosition.x + PADDING + 30.f; 
     int indentSpaces = 0;
     while(indentSpaces < (int)rawLine.size() && rawLine[indentSpaces] == ' ') {
         indentSpaces++;
     }
     
     std::vector<sf::Text> parsedLine;
-    
     sf::Text indentText;
-    indentText.setFont(*mFont);
-    indentText.setCharacterSize(FONT_SIZE);
-    indentText.setString(std::string(indentSpaces, ' '));
-    indentText.setPosition(currentX, yPos);
-    currentX += indentText.getLocalBounds().width;
+    // ... [indentText init] ...
 
     std::stringstream tokenStream(rawLine.substr(indentSpaces));
     while (tokenStream >> token) {
-        sf::Color color = sf::Color(230, 235, 240); // default
+        sf::Color color = UITheme::Color::CodeTextDefault;
         
-        // Basic keywords
         if (token == "if" || token == "else" || token == "return" || token == "else:" || token == "void") {
-            color = sf::Color(218, 112, 214); // Pinkish string/keyword
+            color = UITheme::Color::CodeKeyword;
         } else if (token == "node" || token == "null" || token == "null:" || token == "left" || token == "right") {
-            color = sf::Color(110, 247, 242); // bright Cyan
+            color = UITheme::Color::CodeType;
         } else if (token.find("(") != std::string::npos || token.find(")") != std::string::npos) {
-            color = sf::Color(255, 189, 46); // Yellow for functions
+            color = UITheme::Color::CodeFunction;
         }
 
         sf::Text word;
@@ -123,7 +106,6 @@ void CodePanel::generateSyntaxHighlighting(const std::string& rawLine, int lineI
         currentX += word.getLocalBounds().width;
         parsedLine.push_back(word);
     }
-    
     mSyntaxLines.push_back(parsedLine);
 }
 
@@ -133,17 +115,16 @@ void CodePanel::setCode(const std::vector<std::string>& lines) {
     mLineNumbers.clear();
     mSyntaxLines.clear();
 
-    float topMargin = PADDING + 24.f; // below title bar
+    float topMargin = PADDING + 24.f;
 
     for (int i = 0; i < (int)lines.size(); i++) {
         float yPos = mPosition.y + topMargin + i * LINE_HEIGHT;
         
-        // Line number
         sf::Text numText;
         numText.setFont(*mFont);
         numText.setString(std::to_string(i + 1));
         numText.setCharacterSize(FONT_SIZE - 1);
-        numText.setFillColor(sf::Color(100, 90, 120));
+        numText.setFillColor(UITheme::Color::CodeLineNum);
         numText.setPosition(mPosition.x + 10.f, yPos);
         mLineNumbers.push_back(numText);
 
@@ -172,7 +153,7 @@ void CodePanel::draw(sf::RenderWindow& window) {
         window.draw(mHighlightBar);
         sf::RectangleShape accent({4.f, mLineHeight});
         accent.setPosition(mHighlightBar.getPosition());
-        accent.setFillColor(sf::Color(33, 238, 252));
+        accent.setFillColor(UITheme::Color::CodeAccent);
         window.draw(accent);
     }
 
