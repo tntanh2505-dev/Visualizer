@@ -1,22 +1,23 @@
 #include "DSA-Visualization/ui/button.hpp"
+#include "DSA-Visualization/ui/UI_Theme.hpp"
 #include <cmath>
 
 ModernButton::ModernButton(const std::string& text, const sf::Font& font, sf::Vector2f size, float radius)
-    : m_size(size), m_radius(radius), m_isHovered(false) // radius is kept in signature to match your .hpp, but unused visually
+    : m_size(size), m_radius(radius), m_isHovered(false) 
 {
-    // 1. Setup Theme Colors (Amethyst Dark Mode)
-    m_topNormal    = sf::Color(32, 26, 43);     // Deep plum
-    m_bottomNormal = sf::Color(20, 16, 27);     // Darker plum
-    m_topHover     = sf::Color(53, 38, 77);     // Vibrant amethyst hover
-    m_bottomHover  = sf::Color(37, 24, 56);     // Darker amethyst
-    m_borderColor  = sf::Color(181, 58, 199, 120); // Neon purple outline
+    // 1. Setup Theme Colors from central config
+    m_topNormal    = UITheme::Color::ModernBtnTop;
+    m_bottomNormal = UITheme::Color::ModernBtnBottom;
+    m_topHover     = UITheme::Color::ModernBtnHoverT;
+    m_bottomHover  = UITheme::Color::ModernBtnHoverB;
+    m_borderColor  = UITheme::Color::ModernBtnBorder;
 
-    // 2. Setup Text properties (Scaled down for smaller button)
+    // 2. Setup Text properties 
     m_text.setFont(font);
     m_text.setString(text);
-    m_text.setCharacterSize(16); // Reduced from 22
-    m_text.setFillColor(sf::Color::White);
-    m_text.setLetterSpacing(1.1f); 
+    m_text.setCharacterSize(UITheme::Size::FontNormal - 2); // E.g., keeping it scaled down 
+    m_text.setFillColor(UITheme::Color::TextWhite);
+    m_text.setLetterSpacing(1.1f);
 
     // 3. Generate the simple rectangle geometry
     buildGeometry();
