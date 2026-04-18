@@ -1,4 +1,5 @@
 #include "DSA-Visualization/ui/AVL_Screen.hpp"
+#include "DSA-Visualization/ui/UI_Theme.hpp"
 #include "DSA-Visualization/ui/components/graphic_node.hpp"
 #include <iostream>
 #include <cmath>
@@ -37,7 +38,7 @@ const std::vector<std::string> AVLScreen::SEARCH_CODE = {
     "  else: return found"
 };
 
-static const float NODE_RADIUS   = 28.f;
+static const float NODE_RADIUS   = UITheme::Size::NodeRadius;
 static const float CANVAS_X      = 230.f;
 static const float CANVAS_Y      = 20.f;
 static const float CANVAS_W      = 760.f;
@@ -79,7 +80,7 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
     sf::Vector2u sz = mBgTexture.getSize();
     mBgSprite.setTexture(mBgTexture);
     mBgSprite.setScale(1280.f / sz.x, 720.f / sz.y);
-    mBgSprite.setColor(sf::Color(255, 255, 255, 20)); // ultra-dimmed for the clean look
+    mBgSprite.setColor(UITheme::Color::AVLBackground);
 
     mCodePanel = CodePanel(font, sf::Vector2f(8.f, 16.f), sf::Vector2f(240.f, 280.f));
     mCodePanel.setCode(INSERT_CODE);
@@ -108,20 +109,20 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
     // Speed slider track
     mSliderTrack = sf::RectangleShape({180.f, 8.f});
     mSliderTrack.setPosition(1025.f, 385.f);
-    mSliderTrack.setFillColor(sf::Color(30, 25, 40));
+    mSliderTrack.setFillColor(sf::Color::Black);
     mSliderTrack.setOutlineThickness(1.f);
-    mSliderTrack.setOutlineColor(sf::Color(181, 58, 199, 50));
+    mSliderTrack.setOutlineColor(UITheme::Color::AVLGlow);
 
     mSliderHandle = sf::CircleShape(10.f);
     mSliderHandle.setOrigin(10.f, 10.f);
-    mSliderHandle.setFillColor(sf::Color::White); // Sleek white handle
+    mSliderHandle.setFillColor(UITheme::Color::SliderHandle); 
     updateSliderHandle();
 
     // 1. Initialize dot grid VertexArray for clean background
     sf::VertexArray dotGrid(sf::Points);
     for (int x = 0; x <= 1280; x += 30) {
         for (int y = 0; y <= 720; y += 30) {
-            dotGrid.append(sf::Vertex(sf::Vector2f(x, y), sf::Color(181, 58, 199, 30)));
+            dotGrid.append(sf::Vertex(sf::Vector2f(x, y), UITheme::Color::AVLGlow));
         }
     }
 
@@ -290,8 +291,7 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
 
         mController.update(dt);
 
-        // 3. Render everything in the correct order
-        window.clear(sf::Color(13, 11, 15)); // Charcoal
+        window.clear(UITheme::Color::AVLBackground); 
 
         window.draw(mBgSprite); 
         window.draw(dotGrid); 
@@ -354,19 +354,17 @@ void AVLScreen::drawEdges(sf::RenderWindow& window,
         if (len < 0.1f) return;
         float angle = std::atan2(dir.y, dir.x) * 180.f / 3.14159f;
 
-        // Glow Line
         sf::RectangleShape glow(sf::Vector2f(len, 7.f));
         glow.setOrigin(0, 3.5f);
         glow.setPosition(p1);
-        glow.setFillColor(sf::Color(181, 58, 199, 30));
+        glow.setFillColor(UITheme::Color::AVLGlow);
         glow.setRotation(angle);
         window.draw(glow);
 
-        // Core Line
         sf::RectangleShape line(sf::Vector2f(len, 2.5f));
         line.setOrigin(0, 1.25f);
         line.setPosition(p1);
-        line.setFillColor(sf::Color(218, 112, 214, 200));
+        line.setFillColor(UITheme::Color::AVLAccent); 
         line.setRotation(angle);
         window.draw(line);
     };
@@ -386,9 +384,9 @@ void AVLScreen::drawControls(sf::RenderWindow& window, const sf::Font& font) {
     // --- Unified Control Panel Background ---
     sf::ConvexShape bgBox(40); 
     
-    bgBox.setFillColor(sf::Color(22, 18, 28, 230));  // Dark glass plum
+    bgBox.setFillColor(UITheme::Color::AVLPanelBg);
     bgBox.setOutlineThickness(1.5f);
-    bgBox.setOutlineColor(sf::Color(181, 58, 199, 40));
+    bgBox.setOutlineColor(UITheme::Color::AVLGlow);
 
     float boxX = 990.f;  
     float boxY = 35.f;   
@@ -442,14 +440,14 @@ void AVLScreen::drawSpeedSlider(sf::RenderWindow& window, const sf::Font& font) 
     label.setFont(font);
     label.setCharacterSize(13);
     label.setLetterSpacing(1.1f);
-    label.setFillColor(sf::Color(200, 210, 220));
+    label.setFillColor(UITheme::Color::AVLSpeedSliderText);
     label.setString("Speed: " + std::to_string((int)mSpeedValue) + "x");
     label.setPosition(1025.f, 405.f);
     window.draw(label);
 
     sf::RectangleShape filledTrack({mSliderHandle.getPosition().x - mSliderTrack.getPosition().x, 8.f});
     filledTrack.setPosition(mSliderTrack.getPosition());
-    filledTrack.setFillColor(sf::Color(110, 247, 242));
+    filledTrack.setFillColor(UITheme::Color::AVLSliderFill);
 
     window.draw(mSliderTrack);
     window.draw(filledTrack);
@@ -466,18 +464,17 @@ void AVLScreen::drawSpeedSlider(sf::RenderWindow& window, const sf::Font& font) 
 void AVLScreen::drawInputBox(sf::RenderWindow& window, const sf::Font& font) {
     sf::RectangleShape box({150.f, 42.f});
     box.setPosition(CANVAS_X + 10.f, CANVAS_H + 10.f);
-    box.setFillColor(sf::Color(22, 18, 28, 230));
+    box.setFillColor(UITheme::Color::AVLPanelBg);
     box.setOutlineThickness(1.5f);
-    box.setOutlineColor(mInputActive ? sf::Color(218, 112, 214) : sf::Color(80, 60, 90));
+    box.setOutlineColor(mInputActive ? UITheme::Color::AVLAccent : UITheme::Color::AVLPanelBg);
     window.draw(box);
 
-    // Subtle glow if active
     if (mInputActive) {
         sf::RectangleShape glowBox({150.f, 42.f});
         glowBox.setPosition(CANVAS_X + 10.f, CANVAS_H + 10.f);
         glowBox.setFillColor(sf::Color::Transparent);
         glowBox.setOutlineThickness(4.f);
-        glowBox.setOutlineColor(sf::Color(218, 112, 214, 40));
+        glowBox.setOutlineColor(UITheme::Color::AVLGlow);
         window.draw(glowBox);
     }
 
@@ -502,15 +499,14 @@ void AVLScreen::drawDescription(sf::RenderWindow& window, const sf::Font& font) 
 
     sf::RectangleShape bar({CANVAS_W - 30.f, 54.f});
     bar.setPosition(CANVAS_X + 20.f, CANVAS_H + 64.f);
-    bar.setFillColor(sf::Color(22, 18, 28, 240));
+    bar.setFillColor(UITheme::Color::AVLPanelBg);
     bar.setOutlineThickness(1.5f);
-    bar.setOutlineColor(sf::Color(181, 58, 199, 60));
+    bar.setOutlineColor(UITheme::Color::AVLGlowStrong);
     window.draw(bar);
 
-    // Accent line
     sf::RectangleShape accent({4.f, 54.f});
     accent.setPosition(CANVAS_X + 20.f, CANVAS_H + 64.f);
-    accent.setFillColor(sf::Color(218, 112, 214));
+    accent.setFillColor(UITheme::Color::AVLAccent);
     window.draw(accent);
 
     sf::Text desc;

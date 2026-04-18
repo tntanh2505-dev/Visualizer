@@ -15,7 +15,8 @@ Game::Game() {
     sf::VideoMode desktop = sf::VideoMode::getDesktopMode();
     unsigned int safeWidth = static_cast<unsigned int>(desktop.width * UITheme::Window::WidthRatio);
     unsigned int safeHeight = static_cast<unsigned int>(desktop.height * UITheme::Window::HeightRatio);
-    
+    // UITheme::Window::ReferenceHeight = safeHeight;
+    // UITheme::Window::ReferenceWidth = safeWidth;
     mWindow.create(sf::VideoMode(safeWidth, safeHeight), "DSA Visualizer", sf::Style::Default, settings);
     
     // 2. Use UITheme for offset centering

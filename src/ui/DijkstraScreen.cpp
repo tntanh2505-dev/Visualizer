@@ -1,8 +1,9 @@
 #include "DSA-Visualization/ui/DijkstraScreen.hpp"
+#include "DSA-Visualization/ui/UI_Theme.hpp"
 #include <cmath>
-#include <math.h>
 
-const float NODE_RADIUS = 25.f;
+
+const float NODE_RADIUS = UITheme::Size::NodeRadius;
 const float LEFT_PANEL_WIDTH = 200.f;
 const float RIGHT_PANEL_WIDTH = 300.f;
 const float TAB_WIDTH = 35.f;
@@ -85,7 +86,7 @@ int DijkstraScreen::run(sf::RenderWindow &window, sf::Font &font) {
             tickClock.restart();
         }
 
-        window.clear(sf::Color(20, 20, 25));
+        window.clear(UITheme::Color::GraphBackground);
         drawGraph(window, font);
 
         // Rubber-band effect
@@ -384,11 +385,11 @@ void DijkstraScreen::drawGraph(sf::RenderWindow &window, sf::Font &font) {
         if (isEditMode && isSegmentHovering(worldPos, A, B) && hoveredNode == -1)
             line.setFillColor(sf::Color::White);
         else if (from == processingNode && to == visitingNode)
-            line.setFillColor(sf::Color::Yellow);
+            line.setFillColor(UITheme::Color::GraphVisiting);
         else
-            line.setFillColor(sf::Color(100, 100, 100));
+            line.setFillColor(UITheme::Color::GraphEdge);
 
-        window.draw(line);
+        window.draw(line);  
         
         // --- VẼ HÌNH TAM GIÁC (MŨI TÊN) Ở CUỐI ĐƯỜNG NỐI ---
         // 1. Tính toán vector hướng và độ dài
@@ -414,9 +415,9 @@ void DijkstraScreen::drawGraph(sf::RenderWindow &window, sf::Font &font) {
             if (isEditMode && isSegmentHovering(worldPos, A, B) && hoveredNode == -1)
                 arrow.setFillColor(sf::Color::White);
             else if (from == processingNode && to == visitingNode)
-                arrow.setFillColor(sf::Color::Yellow);
+                arrow.setFillColor(UITheme::Color::GraphVisiting);
             else
-                arrow.setFillColor(sf::Color(100, 100, 100));
+                arrow.setFillColor(UITheme::Color::GraphEdge);
 
             window.draw(arrow);
         }
@@ -477,9 +478,9 @@ void DijkstraScreen::drawGraph(sf::RenderWindow &window, sf::Font &font) {
         sf::CircleShape shape(NODE_RADIUS);
         shape.setOrigin(NODE_RADIUS, NODE_RADIUS);
         shape.setPosition(nodes[i].x, nodes[i].y);
-        shape.setFillColor(sf::Color(50, 50, 50)); 
+        shape.setFillColor(UITheme::Color::GraphNodeFill); 
         shape.setOutlineThickness(-3.f);
-        shape.setOutlineColor(sf::Color(100, 100, 100));
+        shape.setOutlineColor(UITheme::Color::GraphEdge);
 
         if (i == hoveredNode) {
             shape.setOutlineThickness(-5.f);
@@ -487,20 +488,19 @@ void DijkstraScreen::drawGraph(sf::RenderWindow &window, sf::Font &font) {
         }
         if (i == selectNode) {
             shape.setOutlineThickness(-5.f); 
-            shape.setOutlineColor(sf::Color::Magenta);
+            shape.setOutlineColor(UITheme::Color::NodeHighlightColor);
         }
       
         if (!isEditMode) {
             if (nodes[i].isProcessed)
-                shape.setOutlineColor(sf::Color::Blue);
+                shape.setOutlineColor(UITheme::Color::GraphProcessed);
             if (i == sourceNode)
-                shape.setOutlineColor(sf::Color::Green);
+                shape.setOutlineColor(UITheme::Color::GraphSource);
             if (i == visitingNode)
-                shape.setOutlineColor(sf::Color::Yellow);
+                shape.setOutlineColor(UITheme::Color::GraphVisiting);
             if (i == processingNode)
-                shape.setOutlineColor(sf::Color::Red);
+                shape.setOutlineColor(UITheme::Color::GraphProcessing);
         }
-
         window.draw(shape);
 
         // Hiển thị nhãn hoặc ô nhập liệu
@@ -533,13 +533,13 @@ void DijkstraScreen::drawGraph(sf::RenderWindow &window, sf::Font &font) {
 
 void DijkstraScreen::drawUI(sf::RenderWindow &window, sf::Font &font, sf::Vector2i mPos) {
     sf::RectangleShape menu(sf::Vector2f(leftWidth, window.getSize().y));
-    menu.setFillColor(sf::Color(35, 35, 40));
+    menu.setFillColor(UITheme::Color::GraphPanelBg);
     window.draw(menu);
 
     // ----- LEFT PANEL -----
     float centerY = window.getSize().y / 2.f;
     sf::RectangleShape tab(sf::Vector2f(TAB_WIDTH, TAB_HEIGHT));
-    tab.setFillColor(sf::Color(45, 45, 50));
+    tab.setFillColor(UITheme::Color::GraphTabBg);
     tab.setPosition(leftWidth - TAB_WIDTH, centerY - TAB_HEIGHT / 2.f);
     tab.setOutlineThickness(-1.f);
     tab.setOutlineColor(sf::Color(100, 100, 100));
@@ -590,14 +590,14 @@ void DijkstraScreen::drawUI(sf::RenderWindow &window, sf::Font &font, sf::Vector
     
     // 1. Vẽ nền Panel
     sf::RectangleShape rightMenu(sf::Vector2f(rightWidth, winH));
+    rightMenu.setFillColor(UITheme::Color::GraphPanelBg);
     rightMenu.setOrigin(rightWidth, 0); // Đặt gốc bên phải để giãn về bên trái
     rightMenu.setPosition(winW, 0);
-    rightMenu.setFillColor(sf::Color(35, 35, 40));
     window.draw(rightMenu);
 
     // 2. Nút Tab Collapse (Mũi tên lật ngược lại so với bên trái)
     sf::RectangleShape rTab(sf::Vector2f(TAB_WIDTH, TAB_HEIGHT));
-    rTab.setFillColor(sf::Color(45, 45, 50));
+    rTab.setFillColor(UITheme::Color::GraphTabBg);
     rTab.setPosition(winW - rightWidth, winH / 2.f - TAB_HEIGHT / 2.f);
     rTab.setOutlineThickness(-1.f);
     rTab.setOutlineColor(sf::Color(100, 100, 100));
@@ -678,9 +678,8 @@ other nodes.
                     sf::RectangleShape background;
                     background.setSize(sf::Vector2f(rightWidth - 10.f, lineIncr)); 
                     background.setPosition(startX, currentYPos);
-                    
-                    // Màu nền highlight (Xanh dương đậm hoặc Cam nhạt tùy gu của bạn)
-                    background.setFillColor(sf::Color(60, 60, 90)); 
+
+                    background.setFillColor(UITheme::Color::GraphHighlightBg); 
                     window.draw(background);
                 }
 

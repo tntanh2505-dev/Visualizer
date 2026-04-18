@@ -1,5 +1,6 @@
 #pragma once
 #include "DSA-Visualization/linked_list/SLL_UI.hpp"
+#include "DSA-Visualization/ui/UI_Theme.hpp"
 
 namespace SLL {
 struct SLLNode {
@@ -161,9 +162,11 @@ private:
 
     void updateUIPositions(float width, float height) {
         float margin = 100.f;
+        float marginX = 30.f;
+        float bottomAreaY = height - 160.f;
         slider.setPosition({margin, height - margin}, width - (margin * 2));
         nodePanel.setPosition({width - margin - 360.f, height - margin - 180.f});
-        codePanel.setPosition({width - margin - 360.f, height - margin - 180.f - 200.f});
+        codePanel.setPosition({marginX, 80.f});
 
         float startX = margin; float row0Y = height - margin + 25.f; float row2Y = height - margin - 70.f; float row1Y = height - margin - 130.f;
         if (!boxes.empty() && buttons.size() >= 13) {
@@ -250,6 +253,22 @@ public:
             }
         }
 
+        if (event.type == sf::Event::Resized) {
+            // 1. Calculate the Scaling Factors
+            float scaleX = static_cast<float>(event.size.width) / UITheme::Window::ReferenceWidth;
+            float scaleY = static_cast<float>(event.size.height) / UITheme::Window::ReferenceHeight;
+            
+            // 2. Apply scale to all UI components
+            //for(auto& btn : buttons) btn.applyScale(scaleX, scaleY);
+            //for(auto& box : boxes)   box.applyScale(scaleX, scaleY);
+            // nodePanel.applyScale(scaleX, scaleY);
+            // codePanel.applyScale(scaleX, scaleY);
+            
+            // 3. Reset the View so SFML doesn't stretch things natively
+            sf::FloatRect visibleArea(0, 0, event.size.width, event.size.height);
+            window.setView(sf::View(visibleArea));
+        }
+
         if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
             sf::Vector2f mPos = window.mapPixelToCoords(sf::Mouse::getPosition(window));
             auto FastForward = [&]() { if (currentFrame < timeline.size() - 1) currentFrame = timeline.size() - 1; };
@@ -276,6 +295,7 @@ public:
             else if (buttons[9].isClicked(mPos)) { isAutoPlaying = false; buttons[3].setText("PLAY"); int target = timeline.size() - 1; for (int i = currentFrame + 1; i < timeline.size(); i++) { if (timeline[i].isKeyStage) { target = i; break; } } if (currentFrame != target) { currentFrame = target; UpdateVisualsFromFrame(); } }
             else if (buttons[10].isClicked(mPos)) { isAutoPlaying = false; buttons[3].setText("PLAY"); int target = 0; for (int i = currentFrame - 1; i >= 0; i--) { if (timeline[i].isKeyStage) { target = i; break; } } if (currentFrame != target) { currentFrame = target; UpdateVisualsFromFrame(); } }
         }
+
     }
 
     void Update(float deltaTime, sf::RenderWindow& window) override {

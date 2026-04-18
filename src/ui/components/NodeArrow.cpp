@@ -1,4 +1,5 @@
 #include "DSA-Visualization/ui/components/NodeArrow.hpp"
+#include "DSA-Visualization/ui/UI_Theme.hpp"
 #include <cmath>
 #include <algorithm>
 

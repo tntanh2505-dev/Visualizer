@@ -122,6 +122,10 @@ public:
         baseOutlineColor.a = static_cast<sf::Uint8>(currentAlpha);
         shape.setOutlineColor(baseOutlineColor);
 
+        sf::Color fillColor = shape.getFillColor();
+        fillColor.a = static_cast<sf::Uint8>(currentAlpha);
+        shape.setFillColor(fillColor);
+
         sf::Color txtColor = text.getFillColor();
         txtColor.a = static_cast<sf::Uint8>(currentAlpha);
         text.setFillColor(txtColor);
@@ -282,28 +286,39 @@ inline void ResolveCollisions(std::vector<VisualNode>& nodes, const sf::RenderWi
 class Button {
 public:
     sf::RectangleShape shape;
+    sf::Vector2f basePos;
+    sf::Vector2f baseSize;
     sf::Text label;
+    unsigned int baseFontSize;
     float l, w;
+    
 
-    Button(std::string txt, sf::Font& font, sf::Vector2f pos, float length = UITheme::Size::ButtonDefault.x, float width = UITheme::Size::ButtonDefault.y) {
-        l = length; w = width;
+    Button(std::string txt, sf::Font& font, sf::Vector2f pos, int length = 100, int width = 40) {
+        l = length;
+        w = width;
         shape.setSize({l, w});
-        shape.setFillColor(UITheme::Color::ButtonPrimary); 
+        shape.setFillColor(UITheme::Color::ButtonPrimary); // Dark Green
         shape.setPosition(pos);
 
-        label.setFont(font); label.setString(txt); 
-        label.setCharacterSize(UITheme::Size::FontNormal);
+        label.setFont(font);
+        label.setString(txt);
+        label.setCharacterSize(18);
         label.setFillColor(UITheme::Color::TextWhite);
+        // Center text in button
         sf::FloatRect b = label.getLocalBounds();
+
         label.setOrigin(b.left + b.width/2.f, b.top + b.height/2.f);
         label.setPosition(pos.x + l / 2, pos.y + w / 2);
     }
+
+
     void setPosition(sf::Vector2f pos) {
         shape.setPosition(pos);
         sf::FloatRect b = label.getLocalBounds();
         label.setOrigin(b.left + b.width/2.f, b.top + b.height/2.f);
         label.setPosition(pos.x + l / 2.f, pos.y + w / 2.f);
-    }
+    }   
+
     void setText(std::string s) { label.setString(s); }
     bool isClicked(sf::Vector2f mPos) { return shape.getGlobalBounds().contains(mPos); }
     void draw(sf::RenderWindow& window) { window.draw(shape); window.draw(label); }
@@ -598,7 +613,7 @@ public:
 class SpeedController {
 public:
     Button minusBtn; Button plusBtn; TextBox inputBox; sf::Text label;
-    int multiplier = 0; float baseTimeInterval = 0.001f; float* targetTimeInterval;     
+    int multiplier = 0; float baseTimeInterval = 0.1f; float* targetTimeInterval;     
 
     SpeedController(sf::Font& font, float* timeIntervalPtr)
         : minusBtn("-", font, {0, 0}, 40, 40), plusBtn("+", font, {0, 0}, 40, 40),
@@ -610,9 +625,9 @@ public:
     }
 
     void updateTimeInterval() {
-        if (multiplier > 3) multiplier = 3; if (multiplier < -2) multiplier = -2;
+        if (multiplier > 10) multiplier = 10; if (multiplier < -2) multiplier = -2;
         inputBox.input = std::to_string(multiplier); inputBox.text.setString(inputBox.input); inputBox.text.setFillColor(sf::Color::Black);
-        *targetTimeInterval = baseTimeInterval * std::pow(10.0f, multiplier);
+        *targetTimeInterval = baseTimeInterval *  multiplier;
     }
 
     void applyTextInput() {
