@@ -4,6 +4,7 @@
 #include <cmath>
 #include <map>
 #include <functional>
+#include <fstream> // Added for file loading
 
 const std::vector<std::string> AVLScreen::INSERT_CODE = {
     "insert(value):",
@@ -85,29 +86,39 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
     mCodePanel.setCode(INSERT_CODE);
     
     float ver_align = 1115.f; // Centered in the control panel
+    
+    // --- FAMILY 1: Operations & Playback ---
     mInsertBtn.emplace("Insert",  font, sf::Vector2f(120.f, 40.f));
     mInsertBtn->setPosition(ver_align,  70.f);
     mDeleteBtn.emplace("Delete",  font, sf::Vector2f(120.f, 40.f));
     mDeleteBtn->setPosition(ver_align, 120.f);
     mSearchBtn.emplace("Search",  font, sf::Vector2f(120.f, 40.f));
     mSearchBtn->setPosition(ver_align, 170.f);
-    mRandomBtn.emplace("Random",  font, sf::Vector2f(120.f, 40.f));
-    mRandomBtn->setPosition(ver_align, 220.f);
-    mClearBtn .emplace("Clear",   font, sf::Vector2f(120.f, 40.f));
-    mClearBtn ->setPosition(ver_align, 270.f);
+    
     mPrevBtn  .emplace("< Prev",  font, sf::Vector2f(80.f,  40.f));
-    mPrevBtn  ->setPosition(1070.f, 320.f);
+    mPrevBtn  ->setPosition(1070.f, 220.f);
     mNextBtn  .emplace("Next >",  font, sf::Vector2f(80.f,  40.f));
-    mNextBtn  ->setPosition(1160.f, 320.f);
+    mNextBtn  ->setPosition(1160.f, 220.f);
+    
+    mSkipAnimationBtn.emplace("Skip Animation", font, sf::Vector2f(150.f, 40.f));
+    mSkipAnimationBtn->setPosition(ver_align, 270.f);
+
+    // --- FAMILY 2: Data Configuration ---
+    mRandomBtn.emplace("Random",  font, sf::Vector2f(120.f, 40.f));
+    mRandomBtn->setPosition(ver_align, 420.f);
+    mClearBtn .emplace("Clear",   font, sf::Vector2f(120.f, 40.f));
+    mClearBtn ->setPosition(ver_align, 470.f);
+    
+    mLoadFileBtn.emplace("Load File", font, sf::Vector2f(120.f, 40.f));
+    mLoadFileBtn->setPosition(ver_align, 520.f); // Fixed incorrect syntax from original file
+
+    // Return button is placed far out of the standard control box
     mReturnBtn.emplace("Return",  font, sf::Vector2f(120.f, 40.f));
     mReturnBtn->setPosition(ver_align, 660.f);
     
-    mSkipAnimationBtn.emplace("Skip Animation", font, sf::Vector2f(150.f,40.f));
-    mSkipAnimationBtn->setPosition(ver_align,470.f);
-
-    // Speed slider track
+    // Speed slider track (Moved up to fit within Family 1 grouping)
     mSliderTrack = sf::RectangleShape({180.f, 8.f});
-    mSliderTrack.setPosition(1025.f, 385.f);
+    mSliderTrack.setPosition(1025.f, 345.f);
     mSliderTrack.setFillColor(sf::Color(30, 25, 40));
     mSliderTrack.setOutlineThickness(1.f);
     mSliderTrack.setOutlineColor(sf::Color(181, 58, 199, 50));
@@ -140,6 +151,7 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
         mNextBtn->update(mouseRaw);
         mReturnBtn->update(mouseRaw);
         mSkipAnimationBtn->update(mouseRaw);
+        mLoadFileBtn->update(mouseRaw); // Update new button properly
 
         sf::Event event;
         while (window.pollEvent(event)) {
@@ -256,11 +268,46 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
                     }
                 }
 
-                if (mSkipAnimationBtn->isClicked(mouseRaw,true)){
+                if (mSkipAnimationBtn->isClicked(mouseRaw, true)){
                     if (mHistoryIndex > 0) {
+                        buildSteps(mHistory[mHistoryIndex - 1]);
+                        mController.skipToEnd();
+                    }
+                }
+
+                // File Load functionality explicitly added
+                if (mLoadFileBtn->isClicked(mouseRaw, true)) {
+                    std::ifstream file("data/AVL_tree.txt");
+                    if (file.is_open()) {
+                        if (mHistoryIndex < (int)mHistory.size()) {
+                            mHistory.erase(mHistory.begin() + mHistoryIndex, mHistory.end());
+                        }
+
+                        // Clear the tree initially so the load creates a fresh state
+                        mHistory.push_back({OpType::Clear, 0});
+                        mHistoryIndex++;
+                        
+                        int val;
+                        while (file >> val) {
+                            mHistory.push_back({OpType::Insert, val});
+                            mHistoryIndex++;
+                        }
+                        
+                        mTree.clear();
+                        mController.clear();
+                        for(int i = 0; i < mHistoryIndex - 1; ++i) {
+                            if (mHistory[i].type == OpType::Insert)       mTree.insert(mHistory[i].value, nullptr);
+                            else if (mHistory[i].type == OpType::Delete)  mTree.remove(mHistory[i].value, nullptr);
+                            else if (mHistory[i].type == OpType::Clear)   mTree.clear();
+                        }
+                        if (mHistoryIndex > 0) {
                             buildSteps(mHistory[mHistoryIndex - 1]);
                             mController.skipToEnd();
                         }
+                        mInputString.clear();
+                    } else {
+                        std::cerr << "Failed to open data/AVL_tree.txt\n";
+                    }
                 }
             }
             
@@ -314,7 +361,7 @@ void AVLScreen::updateSliderHandle() {
     float trackLeft  = 1025.f;
     float trackRight = 1205.f;
     float ratio = (mSpeedValue - 0.5f) / 7.5f;
-    mSliderHandle.setPosition(trackLeft + ratio * (trackRight - trackLeft), 389.f);
+    mSliderHandle.setPosition(trackLeft + ratio * (trackRight - trackLeft), 349.f); // Adjusted Y for placement inside new layout
 }
 
 void AVLScreen::drawTree(sf::RenderWindow& window, const sf::Font& font) {
@@ -393,7 +440,7 @@ void AVLScreen::drawControls(sf::RenderWindow& window, const sf::Font& font) {
     float boxX = 990.f;  
     float boxY = 35.f;   
     float boxW = 250.f;  
-    float boxH = 470.f;  
+    float boxH = 540.f;  // Increased to fit both UI Families nicely
     float radius = 18.f; 
 
     const float pi = 3.141592654f;
@@ -415,16 +462,27 @@ void AVLScreen::drawControls(sf::RenderWindow& window, const sf::Font& font) {
     
     window.draw(bgBox);
 
+    // Render UI Buttons
     window.draw(*mInsertBtn);
     window.draw(*mDeleteBtn);
     window.draw(*mSearchBtn);
-    window.draw(*mRandomBtn);
-    window.draw(*mClearBtn);
     window.draw(*mPrevBtn);
     window.draw(*mNextBtn);
-    window.draw(*mReturnBtn);
     window.draw(*mSkipAnimationBtn);
 
+    // Separator line between Family 1 and Family 2
+    sf::RectangleShape separator({210.f, 2.f});
+    separator.setPosition(1010.f, 395.f);
+    separator.setFillColor(sf::Color(181, 58, 199, 50));
+    window.draw(separator);
+
+    window.draw(*mRandomBtn);
+    window.draw(*mClearBtn);
+    window.draw(*mLoadFileBtn);
+
+    window.draw(*mReturnBtn);
+
+    // Step Counter Text 
     sf::Text counter;
     counter.setFont(font);
     counter.setCharacterSize(13);
@@ -433,7 +491,7 @@ void AVLScreen::drawControls(sf::RenderWindow& window, const sf::Font& font) {
         ? std::to_string(mController.currentIndex() + 1) + " / "
           + std::to_string(mController.totalSteps())
         : "0 / 0");
-    counter.setPosition(1025.f, 355.f);
+    counter.setPosition(1025.f, 315.f); // Moved up
     window.draw(counter);
 }
 
@@ -444,7 +502,7 @@ void AVLScreen::drawSpeedSlider(sf::RenderWindow& window, const sf::Font& font) 
     label.setLetterSpacing(1.1f);
     label.setFillColor(sf::Color(200, 210, 220));
     label.setString("Speed: " + std::to_string((int)mSpeedValue) + "x");
-    label.setPosition(1025.f, 405.f);
+    label.setPosition(1025.f, 365.f); // Moved up
     window.draw(label);
 
     sf::RectangleShape filledTrack({mSliderHandle.getPosition().x - mSliderTrack.getPosition().x, 8.f});
