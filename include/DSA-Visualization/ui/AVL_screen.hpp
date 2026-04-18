@@ -46,6 +46,7 @@ private:
     std::optional<ModernButton> mNextBtn;
     std::optional<ModernButton> mReturnBtn;
     std::optional<ModernButton> mSkipAnimationBtn;
+    std::optional<ModernButton> mLoadFileBtn;
 
     std::string           mInputString;
     bool                  mInputActive;
