@@ -5,31 +5,30 @@
 using namespace std;
 
 int MaxHeap::getParent(int i) {
-    return ((i-1)/2 >= 0) ? nums[(i-1)/2] : -1; 
+    return ((i - 1) / 2 >= 0) ? nums[(i - 1) / 2] : -1; 
 }
 
 int MaxHeap::getChildLeft(int i) {
-    return (2*i+1 < nums.size()) ? nums[2*i+1] : -1;
+    return (2 * i + 1 < nums.size()) ? nums[2 * i + 1] : -1;
 }
 
 int MaxHeap::getChildRight(int i) {
-    return (2*i+2 < nums.size()) ? nums[2*i+2] : -1;
+    return (2 * i + 2 < nums.size()) ? nums[2 * i + 2] : -1;
 }
 
 void MaxHeap::MaxHeapify(int i) {
     while (true) {
-        int l = 2*i+1, r =2*i+2, largest = i;
+        int l = 2 * i + 1, r = 2 * i + 2, largest = i;  
         if (l < nums.size()) {
-            actionQueue.push_back({ActionType::COMPARE, l, i});
+            actionQueue.push_back({ActionType::COMPARE, l, i, 2}); 
             if (nums[largest] < nums[l]) largest = l;
         }
         if (r < nums.size()) {
-            actionQueue.push_back({ActionType::COMPARE, r, i});
+            actionQueue.push_back({ActionType::COMPARE, r, largest, 4}); 
             if (nums[largest] < nums[r]) largest = r;
-        }
-        //Stop if node i-th violates or has no children
+        }   
         if (largest == i) break;
-        actionQueue.push_back({ActionType::SWAP, i, largest});
+        actionQueue.push_back({ActionType::SWAP, i, largest, 7}); 
         int temp = nums[i];
         nums[i] = nums[largest];
         nums[largest] = temp;
@@ -39,28 +38,26 @@ void MaxHeap::MaxHeapify(int i) {
 
 void MaxHeap::BuildHeap(const std::vector<int>& input_array) {
     nums = input_array;
-    for (int i= nums.size()/2 - 1; i>=0; --i) MaxHeapify(i);
+    for (int i= nums.size()/2 - 1; i >= 0; --i) MaxHeapify(i);
 }
 
-void MaxHeap::Increase(int i,int k) {
-    if (nums[i]>k) return;
-    actionQueue.push_back({ActionType::HIGHLIGHT, i, -1});
-    nums[i]=k;
-    //Bubble up if violates
-    while (i > 0 && nums[i] > nums[(i-1)/2]) {
-        actionQueue.push_back({ActionType::COMPARE, i, (i-1)/2});
-        actionQueue.push_back({ActionType::SWAP, i, (i-1)/2});
+void MaxHeap::Increase(int i, int k) {
+    if (nums[i] > k) return;
+    nums[i] = k;
+    while (i > 0 && nums[i] > nums[(i - 1) / 2]) {
+        actionQueue.push_back({ActionType::COMPARE, i, (i - 1) / 2, 1}); 
+        actionQueue.push_back({ActionType::SWAP, i, (i - 1) / 2, 2});
         int temp = nums[i];
-        nums[i] = nums[(i-1)/2];
-        nums[(i-1)/2] = temp;
-        i = (i-1)/2;
+        nums[i] = nums[(i - 1) / 2];
+        nums[(i - 1) / 2] = temp;
+        i = (i - 1) / 2;
     }
 }
 
 void MaxHeap::Decrease(int i,int k) {
-    if (nums[i]<k) return;
+    if (nums[i] < k) return;
     actionQueue.push_back({ActionType::HIGHLIGHT, i, -1});
-    nums[i]=k;
+    nums[i] = k;
     //Sink down if violates
     MaxHeapify(i);
 }
@@ -68,19 +65,19 @@ void MaxHeap::Decrease(int i,int k) {
 void MaxHeap::Insert(int k) {
     actionQueue.push_back({ActionType::INSERT, (int)nums.size(), k});
     nums.push_back(INT_MIN);
-    int i = nums.size()-1;
-    Increase(i,k);
+    int i = nums.size() - 1;
+    Increase(i, k);
 }
 
 void MaxHeap::Delete(int i) {
-    if (i>=nums.size()) return;
-    actionQueue.push_back({ActionType::SWAP, i, (int)nums.size()-1});
+    if (i >= nums.size()) return;
+    actionQueue.push_back({ActionType::SWAP, i, (int)nums.size() - 1});
     nums[i] = nums.back();
     nums.pop_back();
     //Fix if violates
     if (i<nums.size()) {
         //Bubble up first (if needed)
-        Increase(i,nums[i]);
+        Increase(i, nums[i]);
         //Then sink down (if needed)
         MaxHeapify(i);
     }

@@ -45,6 +45,7 @@ private:
     std::optional<ModernButton> mPrevBtn;
     std::optional<ModernButton> mNextBtn;
     std::optional<ModernButton> mReturnBtn;
+    std::optional<ModernButton> mSkipAnimationBtn;
 
     std::string           mInputString;
     bool                  mInputActive;

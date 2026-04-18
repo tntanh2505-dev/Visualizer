@@ -1,88 +1,147 @@
-#include<DSA-Visualization/ui/heap_screen.hpp>
+#include "DSA-Visualization/ui/heap_screen.hpp"
 #include <iostream>
 
 #include <algorithm>
 #include <cmath>
 #include <sstream>
+#include <iomanip>
 
 namespace {
+    // Panel
+    constexpr float PANEL_WIDTH = 1280.f;
+    constexpr float PANEL_HEIGHT = 720.f;
 
-constexpr float PANEL_X = 0.f;
-constexpr float PANEL_Y = 0.f;
-constexpr float PANEL_WIDTH = 1280.f;
-constexpr float PANEL_HEIGHT = 720.f;
+    // Button
+    constexpr float BUTTON_WIDTH = 90.f;
+    constexpr float BUTTON_HEIGHT = 45.f;
+    constexpr float BUTTON_X = 1030.f;
+    constexpr float BUTTON_GAP_Y = 15.f;
+    constexpr float BUTTON_GAP_X = 10.f;
+    constexpr float BUTTON_START_Y = 400.f; 
+    constexpr float BUTTON_X2 = BUTTON_X + BUTTON_WIDTH + BUTTON_GAP_X;
 
-constexpr float INPUT_X = 40.f;
-constexpr float INPUT_Y = 135.f;
-constexpr float INPUT_WIDTH = 422.f;
-constexpr float INPUT_HEIGHT = 44.f;
+    // Input
+    constexpr float INPUT_X = 40.f;
+    constexpr float INPUT_Y = 620.f;
+    constexpr float INPUT_WIDTH = 300.f;
+    constexpr float INPUT_HEIGHT = 45.f;
 
-constexpr float BUTTON_WIDTH = 154.f;
-constexpr float BUTTON_HEIGHT = 44.f;
-constexpr float NODE_RADIUS = 24.f;
+    // Tree + Array
+    constexpr std::size_t MAX_RENDERED_NODES = 31;
+    constexpr float NODE_RADIUS = 24.f;
+    constexpr float TREE_WIDTH = 900.f;
+    constexpr float TREE_LEFT_X = 40.f;
+    constexpr float TREE_TOP_Y = 180.f;
+    constexpr float ARRAY_Y = 40.f;
 
-constexpr float TREE_LEFT_X = 40.f;
-constexpr float TREE_WIDTH = 1200.f;
-constexpr float TREE_TOP_Y = 280.f; 
-
-constexpr float ARRAY_Y = 655.f;
-constexpr float ARRAY_CELL = 52.f;
-constexpr std::size_t MAX_RENDERED_NODES = 31;
-
-sf::Text makeText(const sf::Font& font,
-                  const std::string& value,
-                  unsigned int size,
-                  sf::Color color,
-                  sf::Vector2f position) {
-    // Small helper so the constructor can define UI text elements compactly.
-    sf::Text text;
-    text.setFont(font);
-    text.setString(value);
-    text.setCharacterSize(size);
-    text.setFillColor(color);
-    text.setPosition(position);
-    return text;
-}
+    // Helper
+    sf::Text makeText(const sf::Font& font,
+                    const std::string& value,
+                    unsigned int size,
+                    sf::Color color,
+                    sf::Vector2f position) {
+        sf::Text text;
+        text.setFont(font);
+        text.setString(value);
+        text.setCharacterSize(size);
+        text.setFillColor(color);
+        text.setPosition(position);
+        return text;
+    }
 }
 
 HeapVisualizer::HeapVisualizer(const sf::Font& font)
     : mFont(font)
-
-    , mTitleText(makeText(font, "Heap Visualizer", 34, sf::Color(241, 246, 255), {250.f, 20.f}))
-    , mSubtitleText(makeText(font, "Build, insert, delete, and inspect a max heap with animated steps.", 16, sf::Color(210, 220, 236), {250.f, 65.f}))
+    // Input Area
+    , mSpeedLabel(makeText(font, "Speed: 0.60s", 14, sf::Color::White, {BUTTON_X, BUTTON_START_Y + 3 * (BUTTON_HEIGHT + BUTTON_GAP_Y) + 15.f}))
+    , mPlaceholderText(makeText(font, "Enter value (e.g. 10)...", 18, sf::Color(100, 100, 100, 150), {INPUT_X + 14.f, INPUT_Y + 8.f}))
+    , mInputText(makeText(font, "", 22, sf::Color(26, 32, 44), {INPUT_X + 14.f, INPUT_Y + 8.f}))
+    , mHintText(makeText(font, "Build format: 1, 2, 3...", 14, sf::Color(150, 150, 150), {INPUT_X, INPUT_Y + 55.f}))
+    , mStatusText(makeText(font, "", 16, sf::Color(251, 209, 101), {400.f, 635.f}))
     
-    , mInputLabel(makeText(font, "Input", 18, sf::Color(241, 246, 255), {40.f, 110.f}))
-    , mInputText(makeText(font, "", 22, sf::Color(26, 32, 44), {54.f, 143.f}))
-    , mHintText(makeText(font, "Insert: one integer. Build Heap: space- or comma-separated integers.", 14, sf::Color(189, 198, 214), {40.f, 185.f}))
-    , mStatusText(makeText(font, "", 16, sf::Color(251, 209, 101), {40.f, 215.f}))
-    , mRootText(makeText(font, "Root: --", 18, sf::Color(241, 246, 255), {40.f, 240.f}))
-    
-    , mInsertButton("Insert", font, {480.f, 135.f}, {BUTTON_WIDTH, BUTTON_HEIGHT})
-    , mDeleteButton("Delete Root", font, {644.f, 135.f}, {BUTTON_WIDTH, BUTTON_HEIGHT})
-    , mBuildButton("Build Heap", font, {808.f, 135.f}, {BUTTON_WIDTH, BUTTON_HEIGHT})
-    , mClearButton("Clear", font, {480.f, 185.f}, {BUTTON_WIDTH, BUTTON_HEIGHT})
-    , mPlayPauseButton("Pause", font, {644.f, 185.f}, {BUTTON_WIDTH, BUTTON_HEIGHT})
-    , mStepButton("Step", font, {808.f, 185.f}, {BUTTON_WIDTH, BUTTON_HEIGHT}) 
+    // Button
+    , mInsertButton("Insert", font, {BUTTON_X, BUTTON_START_Y}, {BUTTON_WIDTH, BUTTON_HEIGHT})
+    , mDeleteButton("Delete", font, {BUTTON_X2, BUTTON_START_Y}, {BUTTON_WIDTH, BUTTON_HEIGHT})
+    , mBuildButton("Build", font, {BUTTON_X, BUTTON_START_Y + (BUTTON_HEIGHT + BUTTON_GAP_Y)}, {BUTTON_WIDTH, BUTTON_HEIGHT})
+    , mClearButton("Clear", font, {BUTTON_X2, BUTTON_START_Y + (BUTTON_HEIGHT + BUTTON_GAP_Y)}, {BUTTON_WIDTH, BUTTON_HEIGHT})
+    , mPrevButton("<", font, {BUTTON_X, BUTTON_START_Y + 2 * (BUTTON_HEIGHT + BUTTON_GAP_Y)}, {BUTTON_WIDTH / 2.f, BUTTON_HEIGHT})
+    , mPlayPauseButton("Pause", font, {BUTTON_X + (BUTTON_WIDTH / 2.f) + (BUTTON_GAP_X / 2.f), BUTTON_START_Y + 2 * (BUTTON_HEIGHT + BUTTON_GAP_Y)}, {BUTTON_WIDTH, BUTTON_HEIGHT})
+    , mStepButton(">", font, {BUTTON_X + (BUTTON_WIDTH / 2.f) + (BUTTON_GAP_X / 2.f) + BUTTON_WIDTH + (BUTTON_GAP_X / 2.f), BUTTON_START_Y + 2 * (BUTTON_HEIGHT + BUTTON_GAP_Y)}, {BUTTON_WIDTH / 2.f, BUTTON_HEIGHT})
+    , mReturnButton("Return", font, {BUTTON_X, 650.f}, {BUTTON_WIDTH * 2 + BUTTON_GAP_X, BUTTON_HEIGHT})
 {
-    mPanel.setPosition({PANEL_X, PANEL_Y});
+    // Panel
+    float cpX = 1020.f;
+    float cpY = 90.f;
+    float cpWidth = 220.f;
+    float cpHeight = 290.f;
     mPanel.setSize({PANEL_WIDTH, PANEL_HEIGHT});
-    mPanel.setFillColor(sf::Color(9, 16, 29, 210));
-    mPanel.setOutlineThickness(0.f);
+    mPanel.setFillColor(sf::Color(10, 10, 15));
+    mCodePanel = CodePanel(font, {cpX, cpY}, {cpWidth, cpHeight});
+    loadHeapifyCode();
+    mControlPanelBg.setSize({240.f, 620.f});
+    mControlPanelBg.setPosition({1010.f, 80.f});
+    mControlPanelBg.setFillColor(sf::Color(25, 25, 35, 200));
+    mControlPanelBg.setOutlineThickness(1.f);
+    mControlPanelBg.setOutlineColor(sf::Color(80, 80, 100));
 
+    // Speed Slider
+    float sliderY = BUTTON_START_Y + 3 * (BUTTON_HEIGHT + BUTTON_GAP_Y) + 40.f;
+    float sliderWidth = BUTTON_WIDTH * 2 + BUTTON_GAP_X;
+    mSliderTrack.setSize({sliderWidth, 6.f});
+    mSliderTrack.setPosition({BUTTON_X, sliderY});
+    mSliderTrack.setFillColor(sf::Color(60, 60, 80));
+    mSliderTrack.setOutlineThickness(1.f);
+    mSliderTrack.setOutlineColor(sf::Color(100, 100, 150));
+    mSliderKnob.setRadius(10.f);
+    mSliderKnob.setFillColor(sf::Color(181, 58, 199));
+    mSliderKnob.setOrigin(10.f, 10.f);
+    float t = 1.0f - (mActionInterval - 0.1f) / (2.0f - 0.1f);
+    mSliderKnob.setPosition({BUTTON_X + t * sliderWidth, sliderY + 3.f});
+    mIsDraggingSlider = false;
+
+    //Input area
     mInputBox.setPosition({INPUT_X, INPUT_Y});
     mInputBox.setSize({INPUT_WIDTH, INPUT_HEIGHT});
-    mInputBox.setFillColor(sf::Color(244, 247, 252));
+    mInputBox.setFillColor(sf::Color::White);
     mInputBox.setOutlineThickness(2.f);
-    mInputBox.setOutlineColor(sf::Color(113, 139, 178));
+    mInputBox.setOutlineColor(sf::Color(181, 58, 199, 100));
 
-    setStatus("Ready. Insert a value or build from a sequence.");
+    setStatus("Ready.");
 }
 
 // Routes mouse and keyboard input to the correct heap action or text field update.
 void HeapVisualizer::handleEvent(const sf::Event& event, const sf::RenderWindow& window) {
-    if (event.type == sf::Event::MouseButtonReleased && event.mouseButton.button == sf::Mouse::Left) {
-        const sf::Vector2f mouse = window.mapPixelToCoords({event.mouseButton.x, event.mouseButton.y});
-        mInputFocused = mInputBox.getGlobalBounds().contains(mouse);
+    sf::Vector2f mouse = window.mapPixelToCoords(sf::Mouse::getPosition(window));
+
+    if (event.type == sf::Event::MouseButtonPressed) {
+        if (event.mouseButton.button == sf::Mouse::Left) {
+            sf::FloatRect knobBounds = mSliderKnob.getGlobalBounds();
+            knobBounds.left -= 10.f; knobBounds.width += 20.f;
+            knobBounds.top -= 10.f;  knobBounds.height += 20.f;
+
+            if (knobBounds.contains(mouse) || mSliderTrack.getGlobalBounds().contains(mouse)) {
+                mIsDraggingSlider = true;
+
+                const float left = mSliderTrack.getPosition().x;
+                const float width = mSliderTrack.getSize().x;
+                const float newX = std::max(left, std::min(mouse.x, left + width));
+                mSliderKnob.setPosition(newX, mSliderKnob.getPosition().y);
+
+                const float t = (newX - left) / width;
+                mActionInterval = MAX_INTERVAL - t * (MAX_INTERVAL - MIN_INTERVAL);
+
+                std::stringstream ss;
+                ss << "Speed: " << std::fixed << std::setprecision(2) << mActionInterval << "s";
+                mSpeedLabel.setString(ss.str());
+            }
+        }
+    }
+
+    if (event.type == sf::Event::MouseButtonReleased) {
+        if (event.mouseButton.button == sf::Mouse::Left) {
+            mIsDraggingSlider = false;
+            mInputFocused = mInputBox.getGlobalBounds().contains(mouse);
+        }
     }
 
     if (mInsertButton.isClicked(event, window)) {
@@ -101,10 +160,20 @@ void HeapVisualizer::handleEvent(const sf::Event& event, const sf::RenderWindow&
         togglePlayback();
     }
     if (mStepButton.isClicked(event, window)) {
+        mIsPlaying = false;
         if (!mPendingActions.empty()) {
             processNextAction();
         } else {
             setStatus("No pending animation steps.");
+        }
+    }
+    if (mPrevButton.isClicked(event, window)) {
+        mIsPlaying = false;
+        if (!mHistory.empty()) {
+            processPreviousAction();
+            setStatus("Stepped back."); 
+        } else {
+            setStatus("Already at the start of operation.");
         }
     }
 
@@ -134,10 +203,25 @@ void HeapVisualizer::update(float deltaTime, const sf::RenderWindow& window) {
     mClearButton.setHighlight(mClearButton.getGlobalBounds().contains(mouse));
     mPlayPauseButton.setHighlight(mPlayPauseButton.getGlobalBounds().contains(mouse));
     mStepButton.setHighlight(mStepButton.getGlobalBounds().contains(mouse));
+    mPrevButton.setHighlight(mPrevButton.getGlobalBounds().contains(mouse));
 
     mInputBox.setOutlineColor(mInputFocused ? sf::Color(255, 187, 76) : sf::Color(113, 139, 178));
     mInputText.setString(mInputBuffer + (mInputFocused ? "|" : ""));
     mRootText.setString(mDisplayArray.empty() ? "Root: --" : "Root: " + std::to_string(mDisplayArray.front()));
+
+    if (mIsDraggingSlider) {
+        const float left = mSliderTrack.getPosition().x;
+        const float width = mSliderTrack.getSize().x;
+        const float newX = std::max(left, std::min(mouse.x, left + width));
+        mSliderKnob.setPosition(newX, mSliderKnob.getPosition().y);
+
+        const float t = (newX - left) / width;
+        mActionInterval = MAX_INTERVAL - t * (MAX_INTERVAL - MIN_INTERVAL);
+
+        std::stringstream ss;
+        ss << "Speed: " << std::fixed << std::setprecision(2) << mActionInterval << "s";
+        mSpeedLabel.setString(ss.str());
+    }
 
     if (!mIsPlaying || mPendingActions.empty()) {
         return;
@@ -158,6 +242,8 @@ void HeapVisualizer::render(sf::RenderWindow& window) const {
     drawTree(window);
     drawArray(window);
     drawLegend(window);
+    drawCodeSnippet(window);
+    const_cast<CodePanel&>(mCodePanel).draw(window);
 }
 
 // Clears temporary UI state when the user leaves and re-enters the heap screen.
@@ -175,7 +261,7 @@ void HeapVisualizer::runInsert() {
         setStatus("Insert expects a single integer.");
         return;
     }
-
+    loadInsertCode();
     const std::vector<int> startArray = mPendingActions.empty() ? mDisplayArray : mHeap.getArray();
     if (startArray.size() >= MAX_RENDERED_NODES) {
         setStatus("Limit reached. Clear or use fewer than 31 nodes.");
@@ -186,6 +272,7 @@ void HeapVisualizer::runInsert() {
     mHeap.flushActions();
     mHeap.Insert(value);
     queueOperation(startArray);
+    clearInput();
     setStatus("Inserted " + std::to_string(value) + ".");
 }
 
@@ -196,7 +283,7 @@ void HeapVisualizer::runDeleteRoot() {
         setStatus("Heap is empty.");
         return;
     }
-
+    loadHeapifyCode();
     const int rootValue = startArray.front();
     mHeap.BuildHeap(startArray);
     mHeap.flushActions();
@@ -213,7 +300,7 @@ void HeapVisualizer::runBuildHeap() {
         setStatus("Build Heap expects integers separated by spaces or commas.");
         return;
     }
-
+    loadHeapifyCode();
     if (values.size() > MAX_RENDERED_NODES) {
         values.resize(MAX_RENDERED_NODES);
         setStatus("Build input trimmed to 31 nodes for rendering.");
@@ -228,6 +315,7 @@ void HeapVisualizer::runBuildHeap() {
     mPendingActions.clear();
     mHighlight = {};
     mActionTimer = 0.f;
+    clearInput();
 
     const std::vector<Action> actions = mHeap.flushActions();
     for (const Action& action : actions) {
@@ -257,6 +345,7 @@ void HeapVisualizer::togglePlayback() {
 void HeapVisualizer::queueOperation(const std::vector<int>& startArray) {
     mDisplayArray = startArray;
     mPendingActions.clear();
+    mHistory.clear();
     mHighlight = {};
     mActionTimer = 0.f;
 
@@ -276,14 +365,19 @@ void HeapVisualizer::queueOperation(const std::vector<int>& startArray) {
 // Applies one recorded heap action to the currently displayed array and updates highlight colors.
 void HeapVisualizer::processNextAction() {
     if (mPendingActions.empty()) {
-        mDisplayArray = mHeap.getArray();
+        mActiveLine = -1;
         mHighlight = {};
+        mCodePanel.highlight(-1);
         return;
     }
 
     const Action action = mPendingActions.front();
     mPendingActions.pop_front();
+    mHistory.push_back(action);
+
     mHighlight = {};
+    mActiveLine = action.lineIdx;
+    mCodePanel.highlight(action.lineIdx);
 
     switch (action.type) {
     case ActionType::INSERT:
@@ -294,6 +388,7 @@ void HeapVisualizer::processNextAction() {
             mHighlight.label = "Inserted " + std::to_string(action.index2);
         }
         break;
+
     case ActionType::COMPARE:
         mHighlight.first = action.index1;
         mHighlight.second = action.index2;
@@ -301,10 +396,12 @@ void HeapVisualizer::processNextAction() {
         mHighlight.secondColor = sf::Color(87, 190, 255);
         mHighlight.label = "Compare";
         break;
+
     case ActionType::SWAP:
         if (action.index1 >= 0 && action.index2 >= 0 &&
             static_cast<std::size_t>(action.index1) < mDisplayArray.size() &&
             static_cast<std::size_t>(action.index2) < mDisplayArray.size()) {
+            
             std::swap(mDisplayArray[action.index1], mDisplayArray[action.index2]);
             mHighlight.first = action.index1;
             mHighlight.second = action.index2;
@@ -313,44 +410,123 @@ void HeapVisualizer::processNextAction() {
             mHighlight.label = "Swap";
         }
         break;
+
     case ActionType::HIGHLIGHT:
         mHighlight.first = action.index1;
         mHighlight.firstColor = sf::Color(248, 196, 76);
         mHighlight.label = "Focus";
         break;
     }
+}
 
-    if (mPendingActions.empty()) {
-        // Snap to the model's final state so removals and final positions are always correct.
-        mDisplayArray = mHeap.getArray();
+void HeapVisualizer::processPreviousAction() {
+    if (mHistory.empty()) {
+        setStatus("At the beginning of operation.");
+        mCodePanel.highlight(-1);
+        return;
     }
+
+    Action action = mHistory.back();
+    mHistory.pop_back();
+
+    mHighlight = {};
+
+    switch (action.type) {
+    case ActionType::INSERT:
+        if (action.index1 >= 0 && static_cast<std::size_t>(action.index1) < mDisplayArray.size()) {
+            mDisplayArray.erase(mDisplayArray.begin() + action.index1);
+            mHighlight.label = "Undo Insert";
+        }
+        break;
+
+    case ActionType::SWAP:
+        if (action.index1 >= 0 && action.index2 >= 0) {
+            std::swap(mDisplayArray[action.index1], mDisplayArray[action.index2]);
+            mHighlight.first = action.index1;
+            mHighlight.second = action.index2;
+            mHighlight.firstColor = sf::Color(255, 124, 124);
+            mHighlight.secondColor = sf::Color(255, 124, 124);
+            mHighlight.label = "Undo Swap";
+        }
+        break;
+
+    case ActionType::COMPARE:
+
+    case ActionType::HIGHLIGHT:
+        mHighlight.label = "Undo " + std::string(action.type == ActionType::COMPARE ? "Compare" : "Focus");
+        break;
+    }
+
+    mCodePanel.highlight(action.lineIdx);
+
+    if (mHistory.empty()) {
+        mActiveLine = -1;
+    } else {
+        mActiveLine = mHistory.back().lineIdx;
+    }
+
+    mPendingActions.push_front(action);
+}
+
+void HeapVisualizer::loadHeapifyCode() {
+    std::vector<std::string> code = {
+        "heapify(i):",
+        "  l = 2i + 1, r = 2i + 2",
+        "  lar = i",
+        "  if l < sz && A[l] > A[i]:",
+        "    lar = l",
+        "  if r < sz && A[r] > A[lar]:",
+        "    lar = r",
+        "  if lar != i:",
+        "    swap(A[i], A[lar])",
+        "    heapify(lar)"
+    };
+    mCodePanel.setCode(code);
+}
+
+void HeapVisualizer::loadInsertCode() {
+    std::vector<std::string> code = {
+        "insert(val):",
+        "  A.push(val)",
+        "  i = last_idx",
+        "  while i > 0 && A[p] < A[i]:",
+        "    swap(A[i], A[p])",
+        "    i = parent(i)"
+    };
+    mCodePanel.setCode(code);
 }
 
 // Draws the full-screen translucent backdrop and the status texts pinned to it.
 void HeapVisualizer::drawPanel(sf::RenderWindow& window) const {
     window.draw(mPanel);
-    window.draw(mTitleText);
-    window.draw(mSubtitleText);
+    window.draw(mControlPanelBg);
     window.draw(mStatusText);
-    window.draw(mRootText);
 }
 
 // Draws the input label, box, current text, and usage hint.
 void HeapVisualizer::drawInputArea(sf::RenderWindow& window) const {
-    window.draw(mInputLabel);
     window.draw(mInputBox);
-    window.draw(mInputText);
+    if (mInputBuffer.empty()) {
+        window.draw(mPlaceholderText);
+    } else {
+        window.draw(mInputText);
+    }
     window.draw(mHintText);
 }
 
 // Draws the button cluster used to control heap operations and animation playback.
 void HeapVisualizer::drawButtons(sf::RenderWindow& window) const {
     mInsertButton.draw(window);
-    mDeleteButton.draw(window);
+    mDeleteButton.draw(window); 
     mBuildButton.draw(window);
     mClearButton.draw(window);
+    mReturnButton.draw(window);
     mPlayPauseButton.draw(window);
     mStepButton.draw(window);
+    mPrevButton.draw(window);
+    window.draw(mSpeedLabel);
+    window.draw(mSliderTrack);
+    window.draw(mSliderKnob);
 }
 
 // Draws the array representation under the tree, shrinking cells when many nodes are present.
@@ -380,7 +556,8 @@ void HeapVisualizer::drawArray(sf::RenderWindow& window) const {
         sf::Text indexText = makeText(mFont, std::to_string(i), 12, sf::Color(189, 198, 214), {0.f, 0.f});
         sf::FloatRect idxBounds = indexText.getLocalBounds();
         indexText.setOrigin(idxBounds.left + idxBounds.width / 2.f, 0.f);
-        indexText.setPosition({cell.getPosition().x + cellWidth / 2.f, cell.getPosition().y + cellWidth + 4.f});
+        // Đặt ở vị trí ARRAY_Y - 15.f (phía trên ô)
+        indexText.setPosition({cell.getPosition().x + cellWidth / 2.f, cell.getPosition().y - 18.f});
         window.draw(indexText);
     }
 }
@@ -418,33 +595,65 @@ void HeapVisualizer::drawTree(sf::RenderWindow& window) const {
 
 // Draws the animation status and the color legend for compare, swap, and focus states.
 void HeapVisualizer::drawLegend(sf::RenderWindow& window) const {
-    const float legendY = 600.f; 
-
+    // Step
+    constexpr float LEGEND_Y = 570.f;
     if (!mHighlight.label.empty()) {
-        sf::Text stepText = makeText(mFont, "Step: " + mHighlight.label, 16, sf::Color(251, 209, 101), {40.f, legendY});
+        sf::Text stepText = makeText(mFont, "Step: " + mHighlight.label, 16, sf::Color(251, 209, 101), {40.f, LEGEND_Y});
         window.draw(stepText);
     }
 
-    sf::Text playText = makeText(mFont, mIsPlaying ? "Animation: auto" : "Animation: paused", 16, sf::Color(189, 198, 214), {300.f, legendY});
-    window.draw(playText);
+    float itemX = 600.f; 
 
+    // Compare
     sf::CircleShape compare(8.f);
     compare.setFillColor(sf::Color(87, 190, 255));
-    compare.setPosition({820.f, legendY + 4.f});
+    compare.setPosition({itemX, LEGEND_Y + 4.f});
     window.draw(compare);
-    window.draw(makeText(mFont, "Compare", 15, sf::Color(225, 232, 242), {840.f, legendY}));
+    window.draw(makeText(mFont, "Compare", 15, sf::Color::White, {itemX + 25.f, LEGEND_Y}));
 
+    // Swap
+    itemX += 120.f;
     sf::CircleShape swap(8.f);
     swap.setFillColor(sf::Color(255, 124, 124));
-    swap.setPosition({930.f, legendY + 4.f});
+    swap.setPosition({itemX, LEGEND_Y + 4.f});
     window.draw(swap);
-    window.draw(makeText(mFont, "Swap", 15, sf::Color(225, 232, 242), {950.f, legendY}));
+    window.draw(makeText(mFont, "Swap", 15, sf::Color::White, {itemX + 25.f, LEGEND_Y}));
 
+    // Focused
+    itemX += 100.f;
     sf::CircleShape focus(8.f);
     focus.setFillColor(sf::Color(248, 196, 76));
-    focus.setPosition({1020.f, legendY + 4.f});
+    focus.setPosition({itemX, LEGEND_Y + 4.f});
     window.draw(focus);
-    window.draw(makeText(mFont, "Focused node", 15, sf::Color(225, 232, 242), {1040.f, legendY}));
+    window.draw(makeText(mFont, "Focused", 15, sf::Color::White, {itemX + 25.f, LEGEND_Y}));
+}
+
+void HeapVisualizer::drawCodeSnippet(sf::RenderWindow& window) const {
+    if (mCurrentCode.empty()) return;
+
+    float boxX = BUTTON_X - 15.f; 
+    float boxWidth = (BUTTON_WIDTH * 2) + BUTTON_GAP_X + 25.f; 
+
+    sf::RectangleShape codeBg({boxWidth, 280.f});
+    codeBg.setPosition({boxX, 100.f});
+    codeBg.setFillColor(sf::Color(15, 15, 25, 230)); 
+    codeBg.setOutlineThickness(1.2f);
+    codeBg.setOutlineColor(sf::Color(100, 100, 255, 150));
+    window.draw(codeBg);
+
+    for (int i = 0; i < (int)mCurrentCode.size(); ++i) {
+        sf::Text text = makeText(mFont, mCurrentCode[i], 12, sf::Color(190, 190, 200), {boxX + 15.f, 120.f + i * 22.f});
+        
+        if (i == mActiveLine) {
+            text.setFillColor(sf::Color(255, 105, 180));
+            
+            sf::RectangleShape bar({3.f, 16.f});
+            bar.setPosition({boxX + 5.f, 124.f + i * 22.f});
+            bar.setFillColor(sf::Color(255, 105, 180));
+            window.draw(bar);
+        }
+        window.draw(text);
+    }
 }
 
 // Adds a character to the input buffer while keeping the field length bounded.
@@ -465,6 +674,7 @@ void HeapVisualizer::appendCharacter(char character) {
 void HeapVisualizer::backspaceInput() {
     if (!mInputBuffer.empty()) {
         mInputBuffer.pop_back();
+        mInputText.setString(mInputBuffer);
     }
 }
 
@@ -472,7 +682,14 @@ void HeapVisualizer::backspaceInput() {
 void HeapVisualizer::setStatus(const std::string& status) {
     mStatusMessage = status;
     mStatusText.setString(status);
-    mPlayPauseButton = Button(mIsPlaying ? "Pause" : "Play", mFont, {644.f, 185.f}, {BUTTON_WIDTH, BUTTON_HEIGHT});
+    float row3Y = BUTTON_START_Y + 2 * (BUTTON_HEIGHT + BUTTON_GAP_Y);
+    float playX = BUTTON_X + (BUTTON_WIDTH / 2.f) + (BUTTON_GAP_X / 2.f);
+    mPlayPauseButton = Button(
+        mIsPlaying ? "Pause" : "Play",
+        mFont,
+        {playX, row3Y},
+        {BUTTON_WIDTH, BUTTON_HEIGHT}
+    );
 }
 
 // Parses the input as exactly one integer, used by the Insert action.
@@ -526,20 +743,56 @@ sf::Color HeapVisualizer::nodeColor(std::size_t index) const {
     return sf::Color(106, 133, 176);
 }
 
+void HeapVisualizer::clearInput() {
+    mInputBuffer.clear(); 
+    mInputText.setString(""); 
+}
+
 int HeapVisualizer::run(sf::RenderWindow& window, sf::Font& font) {
-    if (!mBgTexture.loadFromFile("assets/textures/avl_background.png"))
+    // 1. Load texture
+    if (!mBgTexture.loadFromFile("assets/textures/avl_background.png")) {
         std::cerr << "Failed to load background.png\n";
+    }
+    mBgSprite.setTexture(mBgTexture);
+    
+    mBgSprite.setScale(1280.f / mBgTexture.getSize().x, 720.f / mBgTexture.getSize().y);
 
-    while (window.isOpen()){
-        
-        
+    sf::Clock clock;
 
+    // 2. Event Loop
+    while (window.isOpen()) {
+        float deltaTime = clock.restart().asSeconds();
+        sf::Event event;
+
+        while (window.pollEvent(event)) {
+            if (event.type == sf::Event::Closed) {
+                window.close();
+                return -1;
+            }
+
+            if (mReturnButton.isClicked(event, window)) {
+                return 0;
+            }
+
+            if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape) {
+                return 0;
+            }
+
+            handleEvent(event, window);
+        }
+
+        // 3. Update logic (animation, hover effect...)
+        update(deltaTime, window);
+
+        // 4. Render
         window.clear();
-        window.draw(mBgSprite);
-        drawButtons(window);
-
+        
+        window.draw(mBgSprite); // background
+        render(window);         // render tree, array, buttons...
+        
         window.display();
     }
 
     return -1;
 }
+
