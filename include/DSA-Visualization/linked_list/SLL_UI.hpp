@@ -12,6 +12,7 @@
 #include <ctime>
 #include <map>
 #include <algorithm>
+#include "DSA-Visualization\ui\UI_Theme.hpp"
 
 namespace SLL {
 inline int UniqueID = 0; // Global ID counter
@@ -33,8 +34,8 @@ public:
     float currentAlpha = 0.f;      
     bool isVisible = false;        
     bool isHighlighted = false;    
-    sf::Color defaultOutlineColor = sf::Color(0, 255, 255, 0); 
-    sf::Color highlightColor = sf::Color(255, 255, 0); 
+    sf::Color defaultOutlineColor = UITheme::Color::NodeOutlineColor; 
+    sf::Color highlightColor = UITheme::Color::NodeHighlightColor; 
     
     int index = -1;
     sf::Text indexText; 
@@ -43,8 +44,8 @@ public:
         this->value = value;
         UID = UniqueID++;
         shape.setRadius(radius);
-        shape.setFillColor(sf::Color::Transparent);
-        shape.setOutlineThickness(3);
+        shape.setFillColor(UITheme::Color::NodeFillColor);
+        shape.setOutlineThickness(UITheme::Size::NodeOutlineThickness);
         shape.setOutlineColor(defaultOutlineColor); 
         shape.setOrigin(radius, radius); 
         shape.setPosition(startPos);
@@ -52,15 +53,15 @@ public:
 
         text.setFont(font);
         text.setString(std::to_string(value));
-        text.setCharacterSize(20);
-        text.setFillColor(sf::Color(255, 255, 255, 0));
+        text.setCharacterSize(UITheme::Size::FontLarge);
+        text.setFillColor(UITheme::Color::ConnectorBase);
         centerText();
 
         indexText.setFont(font);
-        indexText.setCharacterSize(14);
-        indexText.setFillColor(sf::Color(150, 150, 150)); 
+        indexText.setCharacterSize(UITheme::Size::FontSmall);
+        indexText.setFillColor(UITheme::Color::TextMuted); 
     }
-    
+
     void centerText() {
         sf::FloatRect bounds = text.getLocalBounds();
         text.setOrigin(bounds.left + bounds.width / 2.0f, bounds.top + bounds.height / 2.0f);
@@ -152,9 +153,9 @@ public:
         head.setPoint(0, sf::Vector2f(0, 0));          
         head.setPoint(1, sf::Vector2f(-15, -7));      
         head.setPoint(2, sf::Vector2f(-15, 7));       
-        line[0].color = sf::Color(255, 255, 255, 0);
-        line[1].color = sf::Color(255, 255, 255, 0);
-        head.setFillColor(sf::Color(255, 255, 255, 0));
+        line[0].color = UITheme::Color::ConnectorBase;
+        line[1].color = UITheme::Color::ConnectorBase;
+        head.setFillColor(UITheme::Color::ConnectorBase);
         start_UID = p1.UID;
         end_UID = p2.UID;
     }
@@ -284,14 +285,15 @@ public:
     sf::Text label;
     float l, w;
 
-    Button(std::string txt, sf::Font& font, sf::Vector2f pos, int length = 100, int width = 40) {
+    Button(std::string txt, sf::Font& font, sf::Vector2f pos, float length = UITheme::Size::ButtonDefault.x, float width = UITheme::Size::ButtonDefault.y) {
         l = length; w = width;
         shape.setSize({l, w});
-        shape.setFillColor(sf::Color(0, 150, 0)); 
+        shape.setFillColor(UITheme::Color::ButtonPrimary); 
         shape.setPosition(pos);
 
-        label.setFont(font); label.setString(txt); label.setCharacterSize(18);
-        label.setFillColor(sf::Color::White);
+        label.setFont(font); label.setString(txt); 
+        label.setCharacterSize(UITheme::Size::FontNormal);
+        label.setFillColor(UITheme::Color::TextWhite);
         sf::FloatRect b = label.getLocalBounds();
         label.setOrigin(b.left + b.width/2.f, b.top + b.height/2.f);
         label.setPosition(pos.x + l / 2, pos.y + w / 2);
@@ -317,13 +319,17 @@ public:
     bool allowNegative = false;
     bool allowAllChars = false;
 
-    TextBox(sf::Font& font, sf::Vector2f pos, float length = 140, float width = 40) {
-        box.setSize({length, width}); box.setFillColor(sf::Color::White);
-        box.setOutlineThickness(2); box.setOutlineColor(sf::Color::Cyan);
+    TextBox(sf::Font& font, sf::Vector2f pos, float length = UITheme::Size::TextBoxDefault.x, float width = UITheme::Size::TextBoxDefault.y) {
+        box.setSize({length, width}); 
+        box.setFillColor(UITheme::Color::TextBoxBg);
+        box.setOutlineThickness(UITheme::Size::BoxOutlineThickness); 
+        box.setOutlineColor(UITheme::Color::TextBoxBorder);
         box.setPosition(pos);
 
-        text.setFont(font); text.setCharacterSize(18); text.setPosition(pos.x + 5, pos.y + 8);
-        text.setFillColor(sf::Color(150, 150, 150)); text.setString(placeholder);
+        text.setFont(font); text.setCharacterSize(UITheme::Size::FontNormal); 
+        text.setPosition(pos.x + 5, pos.y + 8);
+        text.setFillColor(UITheme::Color::TextMuted); 
+        text.setString(placeholder);
     }
 
     void HandleEvent_IB(sf::Event& event, sf::RenderWindow& window) {
@@ -341,9 +347,9 @@ public:
             else if (allowNegative && event.text.unicode == 45 && input.empty()) { input += '-'; }
 
             if (input.empty()) {
-                text.setFillColor(sf::Color(150, 150, 150)); text.setString(placeholder);
+                text.setFillColor(UITheme::Color::TextMuted); text.setString(placeholder);
             } else {
-                text.setFillColor(sf::Color::Black); text.setString(input);
+                text.setFillColor(UITheme::Color::TextDark); text.setString(input);
             }
         }
     }
@@ -431,14 +437,16 @@ public:
           closeBtn("X", font, {1440, 710}, 30, 30) 
     {
         fontPtr = &font;
-        bg.setSize({360, 160}); bg.setPosition(x, y); 
-        bg.setFillColor(sf::Color(40, 40, 40, 240));
-        bg.setOutlineThickness(2); bg.setOutlineColor(sf::Color::White);
+        bg.setSize(UITheme::Size::PanelDefault); 
+        bg.setPosition(x, y); 
+        bg.setFillColor(UITheme::Color::PanelBg);
+        bg.setOutlineThickness(UITheme::Size::BoxOutlineThickness); 
+        bg.setOutlineColor(UITheme::Color::PanelBorder);
 
-        infoText.setFont(font); infoText.setCharacterSize(18);
-        infoText.setPosition(x + 20, y + 20); infoText.setFillColor(sf::Color::White);
-        closeBtn.shape.setFillColor(sf::Color::Red);
-        deleteBtn.shape.setFillColor(sf::Color(200, 0, 0)); 
+        infoText.setFont(font); infoText.setCharacterSize(UITheme::Size::FontNormal);
+        infoText.setPosition(x + 20, y + 20); infoText.setFillColor(UITheme::Color::TextWhite);
+        closeBtn.shape.setFillColor(UITheme::Color::ButtonClose);
+        deleteBtn.shape.setFillColor(UITheme::Color::ButtonDanger); 
     }
 
     void setPosition(sf::Vector2f pos) {

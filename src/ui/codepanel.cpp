@@ -1,4 +1,5 @@
 #include "DSA-Visualization/ui/CodePanel.hpp"
+#include "DSA-Visualization/ui/UI_Theme.hpp"
 
 static const float PADDING     = 12.f;
 static const float LINE_HEIGHT = 22.f;
@@ -49,22 +50,21 @@ CodePanel::CodePanel(const sf::Font& font, sf::Vector2f position, sf::Vector2f s
     // Drop Shadow
     mDropShadow.setSize(size);
     mDropShadow.setPosition(position + sf::Vector2f(6.f, 8.f));
-    mDropShadow.setFillColor(sf::Color(0, 0, 0, 100));
+    mDropShadow.setFillColor(sf::Color(0, 0, 0, 100)); // Shadows are usually fine to leave hardcoded or map to a generic "Shadow" color.
 
     // Main background
     buildRoundedRect(mBackground, size, radius);
     mBackground.setPosition(position);
-    mBackground.setFillColor(sf::Color(16, 13, 20, 240));
+    mBackground.setFillColor(UITheme::Color::CodePanelBg);
     mBackground.setOutlineThickness(1.5f);
-    mBackground.setOutlineColor(sf::Color(40, 30, 50, 180));
+    mBackground.setOutlineColor(UITheme::Color::CodePanelBorder);
 
     // Title Bar
     float titleHeight = 24.f;
     buildTopRoundedRect(mTitleBar, sf::Vector2f(size.x, titleHeight), radius);
     mTitleBar.setPosition(position);
-    mTitleBar.setFillColor(sf::Color(30, 25, 38, 255));
+    mTitleBar.setFillColor(UITheme::Color::CodeTitleBar);
 
-    // Mac Buttons
     sf::Color macColors[3] = { sf::Color(255, 95, 86), sf::Color(255, 189, 46), sf::Color(39, 201, 63) };
     for (int i = 0; i < 3; ++i) {
         mMacButtons[i].setRadius(5.f);
@@ -74,8 +74,9 @@ CodePanel::CodePanel(const sf::Font& font, sf::Vector2f position, sf::Vector2f s
 
     // Highlight track
     mHighlightBar.setSize({size.x, LINE_HEIGHT});
-    mHighlightBar.setFillColor(sf::Color(181, 58, 199, 40));
-}
+    mHighlightBar.setFillColor(UITheme::Color::CodeHighlight);
+}   // Mac Buttons
+    
 
 void CodePanel::generateSyntaxHighlighting(const std::string& rawLine, int lineIndex, float yPos) {
     // Simple tokenizer by space
@@ -172,7 +173,7 @@ void CodePanel::draw(sf::RenderWindow& window) {
         window.draw(mHighlightBar);
         sf::RectangleShape accent({4.f, mLineHeight});
         accent.setPosition(mHighlightBar.getPosition());
-        accent.setFillColor(sf::Color(33, 238, 252));
+        accent.setFillColor(UITheme::Color::CodeAccent);
         window.draw(accent);
     }
 
