@@ -148,6 +148,8 @@ inline int Search_Visual(SLLNode* head, int targetValue, std::vector<Snapshot>& 
 // --- SLL Scene ---
 class LinkedListScene : public Scene {
 private:
+    float baseWidth;
+    float baseHeight;
     SLLNode* pHead;
     std::vector<VisualNode> nodes;
     std::vector<Connector> lines;
@@ -193,6 +195,8 @@ public:
     LinkedListScene(sf::Font& font, float windowWidth, float windowHeight) 
     : nodePanel(font), codePanel(font), slider({200.f, 750.f}, 1000.f), speedCtrl(font, &timeInterval), menuBtn("MENU", font, {20.f, 20.f}, 80, 40)
     {   
+        baseWidth = windowWidth;
+        baseHeight = windowHeight;
         fontPtr = &font; pHead = nullptr; currentFrame = 0; isAutoPlaying = true; pendingSearchUID = INT_MIN; timeInterval = 0.005f; dt = 0.001f;
 
         std::map<std::string, std::vector<std::string>> llSnippets;
@@ -254,19 +258,9 @@ public:
         }
 
         if (event.type == sf::Event::Resized) {
-            // 1. Calculate the Scaling Factors
-            float scaleX = static_cast<float>(event.size.width) / UITheme::Window::ReferenceWidth;
-            float scaleY = static_cast<float>(event.size.height) / UITheme::Window::ReferenceHeight;
-            
-            // 2. Apply scale to all UI components
-            //for(auto& btn : buttons) btn.applyScale(scaleX, scaleY);
-            //for(auto& box : boxes)   box.applyScale(scaleX, scaleY);
-            // nodePanel.applyScale(scaleX, scaleY);
-            // codePanel.applyScale(scaleX, scaleY);
-            
-            // 3. Reset the View so SFML doesn't stretch things natively
-            sf::FloatRect visibleArea(0, 0, event.size.width, event.size.height);
-            window.setView(sf::View(visibleArea));
+            // Lock the view exactly to the layout's original coordinates
+            sf::View stretchedView(sf::FloatRect(0, 0, baseWidth, baseHeight));
+            window.setView(stretchedView);
         }
 
         if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
