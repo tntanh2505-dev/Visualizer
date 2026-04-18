@@ -16,17 +16,18 @@ namespace UITheme {
         const sf::Color GlobalNodeOutline = sf::Color(110, 247, 242);   
         const sf::Color GlobalNodeFocus   = sf::Color(255, 215, 0);     
         
-        // --- UPDATED: Match AVL Amethyst Theme ---
+        // --- BUTTON THEME (Amethyst Dark Mode) ---
         const sf::Color GlobalButtonFill  = sf::Color(32, 26, 43);      // Amethyst dark
         const sf::Color GlobalButtonHover = sf::Color(53, 38, 77);      // Amethyst hover
         const sf::Color GlobalButtonBorder = sf::Color(181, 58, 199, 120); // Neon purple outline
         const sf::Color GlobalButtonHoverBorder = sf::Color(218, 112, 214); // Bright purple glow
+        const sf::Color GlobalButtonShadow = sf::Color(0, 0, 0, 150);   // Dark, smooth drop shadow
         
         const sf::Color GlobalTextPrimary = sf::Color(245, 245, 250);   
         const sf::Color GlobalTextMuted   = sf::Color(150, 150, 160);   
         
         const sf::Color GlobalAccent      = sf::Color(181, 58, 199);    
-        const sf::Color GlobalGlow        = sf::Color(181, 58, 199, 40);
+        const sf::Color GlobalGlow        = sf::Color(181, 58, 199, 80); // Intensified Base Glow
 
         // =========================================================================
         // 2. SPECIFIC MAPPINGS (LINKED TO GLOBALS ABOVE)
@@ -60,13 +61,14 @@ namespace UITheme {
         const sf::Color ModernBtnHoverT      = GlobalButtonHover;
         const sf::Color ModernBtnHoverB      = sf::Color(37, 24, 56);
         const sf::Color ModernBtnBorder      = GlobalButtonBorder;
-        const sf::Color ButtonHoverBorder    = GlobalButtonHoverBorder; // Used for hover glows
+        const sf::Color ButtonHoverBorder    = GlobalButtonHoverBorder; 
+        const sf::Color ButtonShadow         = GlobalButtonShadow;
         
         // Code Panel Theme
         const sf::Color CodePanelBg          = GlobalPanelBg;
         const sf::Color CodePanelBorder      = GlobalPanelBorder;
         const sf::Color CodeTitleBar         = sf::Color(20, 20, 25, 255); 
-        const sf::Color CodeHighlight        = GlobalGlow;
+        const sf::Color CodeHighlight        = sf::Color(181, 58, 199, 50); // Code select
         const sf::Color CodeAccent           = GlobalNodeOutline;
         const sf::Color CodeTextDefault      = sf::Color(230, 235, 240);
         const sf::Color CodeKeyword          = GlobalAccent;
@@ -79,7 +81,7 @@ namespace UITheme {
         const sf::Color AVLPanelBg           = GlobalPanelBg;
         const sf::Color AVLAccent            = GlobalAccent;
         const sf::Color AVLGlow              = GlobalGlow;
-        const sf::Color AVLGlowStrong        = sf::Color(181, 58, 199, 60);
+        const sf::Color AVLGlowStrong        = sf::Color(181, 58, 199, 140); // Brightest for hovers
         const sf::Color AVLSliderFill        = GlobalNodeOutline;
         const sf::Color AVLSpeedSliderText   = GlobalTextPrimary;
         

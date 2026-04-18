@@ -290,11 +290,12 @@ public:
     sf::Text label;
     unsigned int baseFontSize;
     float l, w;
+    bool isHovered = false; 
 
     Button(std::string txt, sf::Font& font, sf::Vector2f pos, int length = 100, int width = 40) {
         l = length; w = width;
         shape.setSize({l, w});
-        shape.setOrigin(l / 2.f, w / 2.f); // Centered Origin
+        shape.setOrigin(l / 2.f, w / 2.f); 
         shape.setPosition(pos.x + l / 2.f, pos.y + w / 2.f);
         
         shape.setFillColor(UITheme::Color::ButtonPrimary); 
@@ -317,6 +318,8 @@ public:
     }   
     
     void setHighlight(bool hover) {
+        isHovered = hover; 
+        
         shape.setFillColor(hover ? UITheme::Color::ModernBtnHoverT : UITheme::Color::ButtonPrimary);
         shape.setOutlineColor(hover ? UITheme::Color::ButtonHoverBorder : UITheme::Color::ModernBtnBorder);
         
@@ -328,6 +331,7 @@ public:
             label.setScale(1.0f, 1.0f);
         }
     }
+    
     void handleHover(sf::Vector2f mPos) {
         setHighlight(shape.getGlobalBounds().contains(mPos));
     }
@@ -337,10 +341,30 @@ public:
         sf::FloatRect b = label.getLocalBounds();
         label.setOrigin(b.left + b.width/2.f, b.top + b.height/2.f);
     }
+    
     bool isClicked(sf::Vector2f mPos) { return shape.getGlobalBounds().contains(mPos); }
-    void draw(sf::RenderWindow& window) { window.draw(shape); window.draw(label); }
-};
+    
+    void draw(sf::RenderWindow& window) { 
+        // --- NEW: Render Drop Shadow ---
+        sf::RectangleShape shadow = shape;
+        shadow.setFillColor(UITheme::Color::ButtonShadow);
+        shadow.setOutlineThickness(0.f);
+        shadow.move(4.f, 4.f);
+        window.draw(shadow);
 
+        // --- NEW: Render True Glow ---
+        if (isHovered) {
+            sf::RectangleShape glow = shape;
+            glow.setFillColor(sf::Color::Transparent);
+            glow.setOutlineThickness(shape.getOutlineThickness() + 4.f);
+            glow.setOutlineColor(UITheme::Color::AVLGlowStrong);
+            window.draw(glow);
+        }
+        
+        window.draw(shape); 
+        window.draw(label); 
+    }
+};
 
 class TextBox {
 public:

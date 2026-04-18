@@ -54,11 +54,17 @@ bool ModernButton::isClicked(sf::Vector2f mousePos, bool mousePressed) {
 void ModernButton::draw(sf::RenderTarget& target, sf::RenderStates states) const {
     states.transform *= getTransform();
     
-    // --- NEW: Render True Glow for ModernButton ---
+    // --- NEW: Drop Shadow for Modern Buttons ---
+    sf::RectangleShape shadow(m_size);
+    shadow.setFillColor(UITheme::Color::ButtonShadow);
+    shadow.setPosition(4.f, 4.f); 
+    target.draw(shadow, states);
+
+    // --- NEW: Render True Glow ---
     if (m_isHovered) {
         sf::RectangleShape glow(m_size);
         glow.setFillColor(sf::Color::Transparent);
-        glow.setOutlineThickness(3.5f);
+        glow.setOutlineThickness(4.f);
         glow.setOutlineColor(UITheme::Color::AVLGlowStrong);
         target.draw(glow, states);
     }
@@ -114,7 +120,7 @@ sf::Color ModernButton::interpolateColor(const sf::Color& color1, const sf::Colo
 Button::Button(const std::string& label, const sf::Font& font,
                sf::Vector2f position, sf::Vector2f size)
 {
-    mIsHovered = false; // Initialize
+    mIsHovered = false; 
     
     mBox.setSize(size);
     mBox.setOrigin(size.x / 2.f, size.y / 2.f); 
@@ -147,7 +153,7 @@ void Button::setText(const std::string& text) {
 }
 
 void Button::setHighlight(bool highlight) {
-    mIsHovered = highlight; // Save state for draw()
+    mIsHovered = highlight; 
     
     mBox.setFillColor(highlight ? UITheme::Color::ModernBtnHoverT : UITheme::Color::ButtonPrimary);
     mBox.setOutlineColor(highlight ? UITheme::Color::ButtonHoverBorder : UITheme::Color::ModernBtnBorder);
@@ -183,11 +189,18 @@ sf::FloatRect Button::getGlobalBounds() const {
 }
 
 void Button::draw(sf::RenderWindow& window) const {
-    // --- NEW: Render True Glow for Standard Button ---
+    // --- NEW: Render Drop Shadow ---
+    sf::RectangleShape shadow = mBox;
+    shadow.setFillColor(UITheme::Color::ButtonShadow);
+    shadow.setOutlineThickness(0.f);
+    shadow.move(4.f, 4.f);
+    window.draw(shadow);
+
+    // --- NEW: Render True Glow ---
     if (mIsHovered) {
         sf::RectangleShape glow = mBox;
         glow.setFillColor(sf::Color::Transparent);
-        glow.setOutlineThickness(mBox.getOutlineThickness() + 3.5f);
+        glow.setOutlineThickness(mBox.getOutlineThickness() + 4.f);
         glow.setOutlineColor(UITheme::Color::AVLGlowStrong);
         window.draw(glow);
     }
