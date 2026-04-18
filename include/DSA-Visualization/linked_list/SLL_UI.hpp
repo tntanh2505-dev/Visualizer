@@ -282,25 +282,31 @@ inline void ResolveCollisions(std::vector<VisualNode>& nodes, const sf::RenderWi
 }
 
 // --- Basic UI Components ---
-class Button {
+
+class Button : public sf::Transformable {
 public:
-    sf::RectangleShape shape;
-    sf::Vector2f basePos;
-    sf::Vector2f baseSize;
+    sf::VertexArray bg;
+    sf::VertexArray border;
     sf::Text label;
-    unsigned int baseFontSize;
     float l, w;
     bool isHovered = false; 
 
     Button(std::string txt, sf::Font& font, sf::Vector2f pos, int length = 100, int width = 40) {
         l = length; w = width;
-        shape.setSize({l, w});
-        shape.setOrigin(l / 2.f, w / 2.f); 
-        shape.setPosition(pos.x + l / 2.f, pos.y + w / 2.f);
         
-        shape.setFillColor(UITheme::Color::ButtonPrimary); 
-        shape.setOutlineThickness(1.5f);
-        shape.setOutlineColor(UITheme::Color::ModernBtnBorder); 
+        // Centered Origin
+        setOrigin(l / 2.f, w / 2.f);
+        sf::Transformable::setPosition(pos.x + l / 2.f, pos.y + w / 2.f);
+
+        bg.setPrimitiveType(sf::Quads);
+        bg.resize(4);
+        bg[0].position = {0.f, 0.f}; bg[1].position = {l, 0.f};
+        bg[2].position = {l, w}; bg[3].position = {0.f, w};
+
+        border.setPrimitiveType(sf::LineStrip);
+        border.resize(5);
+        for(int i=0; i<4; ++i) border[i].position = bg[i].position;
+        border[4].position = bg[0].position;
 
         label.setFont(font);
         label.setString(txt);
@@ -309,31 +315,33 @@ public:
         
         sf::FloatRect b = label.getLocalBounds();
         label.setOrigin(b.left + b.width/2.f, b.top + b.height/2.f);
-        label.setPosition(pos.x + l / 2.f, pos.y + w / 2.f - 2.f);
+        label.setPosition(l / 2.f, w / 2.f - 2.f); 
+
+        setHighlight(false); 
     }
 
     void setPosition(sf::Vector2f pos) {
-        shape.setPosition(pos.x + l / 2.f, pos.y + w / 2.f);
-        label.setPosition(pos.x + l / 2.f, pos.y + w / 2.f - 2.f);
+        sf::Transformable::setPosition(pos.x + l / 2.f, pos.y + w / 2.f);
     }   
     
     void setHighlight(bool hover) {
         isHovered = hover; 
         
-        shape.setFillColor(hover ? UITheme::Color::ModernBtnHoverT : UITheme::Color::ButtonPrimary);
-        shape.setOutlineColor(hover ? UITheme::Color::ButtonHoverBorder : UITheme::Color::ModernBtnBorder);
+        sf::Color topC = hover ? UITheme::Color::ModernBtnHoverT : UITheme::Color::ModernBtnTop;
+        sf::Color botC = hover ? UITheme::Color::ModernBtnHoverB : UITheme::Color::ModernBtnBottom;
+        sf::Color borderC = hover ? UITheme::Color::ButtonHoverBorder : UITheme::Color::ModernBtnBorder;
+
+        bg[0].color = topC; bg[1].color = topC;
+        bg[2].color = botC; bg[3].color = botC;
+        for(int i=0; i<5; ++i) border[i].color = borderC;
         
-        if (hover) {
-            shape.setScale(1.02f, 1.02f);
-            label.setScale(1.02f, 1.02f);
-        } else {
-            shape.setScale(1.0f, 1.0f);
-            label.setScale(1.0f, 1.0f);
-        }
+        if (hover) setScale(1.02f, 1.02f);
+        else setScale(1.0f, 1.0f);
     }
     
     void handleHover(sf::Vector2f mPos) {
-        setHighlight(shape.getGlobalBounds().contains(mPos));
+        sf::FloatRect bounds = getTransform().transformRect({0.f, 0.f, l, w});
+        setHighlight(bounds.contains(mPos));
     }
 
     void setText(std::string s) { 
@@ -342,27 +350,35 @@ public:
         label.setOrigin(b.left + b.width/2.f, b.top + b.height/2.f);
     }
     
-    bool isClicked(sf::Vector2f mPos) { return shape.getGlobalBounds().contains(mPos); }
+    bool isClicked(sf::Vector2f mPos) { 
+        sf::FloatRect bounds = getTransform().transformRect({0.f, 0.f, l, w});
+        if(bounds.contains(mPos)) {
+            setScale(0.98f, 0.98f);
+            return true;
+        }
+        return false;
+    }
     
     void draw(sf::RenderWindow& window) { 
-        // --- NEW: Render Drop Shadow ---
-        sf::RectangleShape shadow = shape;
-        shadow.setFillColor(UITheme::Color::ButtonShadow);
-        shadow.setOutlineThickness(0.f);
-        shadow.move(4.f, 4.f);
-        window.draw(shadow);
+        sf::RenderStates states;
+        states.transform = getTransform();
 
-        // --- NEW: Render True Glow ---
+        sf::RectangleShape shadow({l, w});
+        shadow.setFillColor(UITheme::Color::ButtonShadow);
+        shadow.setPosition(4.f, 4.f);
+        window.draw(shadow, states);
+
         if (isHovered) {
-            sf::RectangleShape glow = shape;
+            sf::RectangleShape glow({l, w});
             glow.setFillColor(sf::Color::Transparent);
-            glow.setOutlineThickness(shape.getOutlineThickness() + 4.f);
+            glow.setOutlineThickness(4.f);
             glow.setOutlineColor(UITheme::Color::AVLGlowStrong);
-            window.draw(glow);
+            window.draw(glow, states);
         }
         
-        window.draw(shape); 
-        window.draw(label); 
+        window.draw(bg, states); 
+        window.draw(border, states);
+        window.draw(label, states); 
     }
 };
 
@@ -502,8 +518,6 @@ public:
 
         infoText.setFont(font); infoText.setCharacterSize(UITheme::Size::FontNormal);
         infoText.setPosition(x + 20, y + 20); infoText.setFillColor(UITheme::Color::TextWhite);
-        closeBtn.shape.setFillColor(UITheme::Color::ButtonClose);
-        deleteBtn.shape.setFillColor(UITheme::Color::ButtonDanger); 
     }
 
     void setPosition(sf::Vector2f pos) {
@@ -713,52 +727,88 @@ public:
     }
 };
 
+
+// --- UPDATED SLL SpeedSlider Component ---
 class SpeedController {
 public:
-    Button minusBtn; Button plusBtn; TextBox inputBox; sf::Text label;
-    int multiplier = 0; float baseTimeInterval = 0.1f; float* targetTimeInterval;     
+    sf::RectangleShape track; 
+    sf::CircleShape handle; 
+    sf::Text label;
+    bool isDragging = false; 
+    float speedValue = 2.0f;
+    float baseTimeInterval = 1.0f; 
+    float* targetTimeInterval;     
 
     SpeedController(sf::Font& font, float* timeIntervalPtr)
-        : minusBtn("-", font, {0, 0}, 40, 40), plusBtn("+", font, {0, 0}, 40, 40),
-          inputBox(font, {0, 0}, 50, 35), targetTimeInterval(timeIntervalPtr) 
+        : targetTimeInterval(timeIntervalPtr) 
     {
-        inputBox.allowNegative = true; label.setFont(font); label.setString("Speed Mult.");
-        label.setCharacterSize(16); label.setFillColor(sf::Color::White);
+        track.setSize({220.f, 6.f});
+        track.setFillColor(UITheme::Color::SliderTrack);
+        track.setOutlineThickness(1.f);
+        track.setOutlineColor(UITheme::Color::NodeOutlineColor); // SLL glow accent
+
+        handle.setRadius(10.f);
+        handle.setOrigin(10.f, 10.f);
+        handle.setFillColor(UITheme::Color::SliderHandle);
+
+        label.setFont(font); 
+        label.setCharacterSize(13); 
+        label.setFillColor(UITheme::Color::AVLSpeedSliderText);
+        
         updateTimeInterval(); 
     }
 
     void updateTimeInterval() {
-        if (multiplier > 10) multiplier = 10; if (multiplier < -2) multiplier = -2;
-        inputBox.input = std::to_string(multiplier); inputBox.text.setString(inputBox.input); inputBox.text.setFillColor(sf::Color::Black);
-        *targetTimeInterval = baseTimeInterval * multiplier;
-    }
-
-    void applyTextInput() {
-        if (!inputBox.input.empty() && inputBox.input != "-") {
-            try { multiplier = std::stoi(inputBox.input); } catch (...) { multiplier = 0; }
-        } else { multiplier = 0; }
-        updateTimeInterval();
+        *targetTimeInterval = baseTimeInterval / speedValue;
+        label.setString("Speed: " + std::to_string((int)speedValue) + "x");
     }
 
     void HandleEvent(sf::Event& event, sf::RenderWindow& window) {
-        bool wasSelected = inputBox.isSelected;
-        inputBox.HandleEvent_IB(event, window);
-
+        sf::Vector2f mPos = window.mapPixelToCoords(sf::Mouse::getPosition(window));
         if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
+            sf::FloatRect bounds = track.getGlobalBounds();
+            bounds.top -= 10.f; bounds.height += 20.f; 
+            bounds.left -= 10.f; bounds.width += 20.f;
+            if (bounds.contains(mPos) || handle.getGlobalBounds().contains(mPos)) {
+                isDragging = true;
+            }
+        }
+        if (event.type == sf::Event::MouseButtonReleased && event.mouseButton.button == sf::Mouse::Left) {
+            isDragging = false;
+        }
+    }
+    
+    void update(sf::RenderWindow& window) {
+        if (isDragging) {
             sf::Vector2f mPos = window.mapPixelToCoords(sf::Mouse::getPosition(window));
-            if (minusBtn.isClicked(mPos)) { multiplier--; updateTimeInterval(); } 
-            else if (plusBtn.isClicked(mPos)) { multiplier++; updateTimeInterval(); } 
-            else if (wasSelected && !inputBox.isSelected) { applyTextInput(); }
+            float left = track.getPosition().x;
+            float right = left + track.getSize().x;
+            float clampedX = std::max(left, std::min(mPos.x, right));
+            float ratio = (clampedX - left) / track.getSize().x;
+            speedValue = 0.5f + ratio * 7.5f; 
+            updateTimeInterval();
         }
-        if (inputBox.isSelected && event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Enter) {
-            applyTextInput(); inputBox.isSelected = false; inputBox.box.setOutlineColor(sf::Color::Cyan);
-        }
+        float ratio = (speedValue - 0.5f) / 7.5f;
+        handle.setPosition(track.getPosition().x + ratio * track.getSize().x, track.getPosition().y + 3.f);
     }
+
     void setPosition(sf::Vector2f pos) {
-        label.setPosition(pos.x, pos.y - 20); minusBtn.setPosition(pos);
-        inputBox.setPosition({pos.x + 50, pos.y}); plusBtn.setPosition({pos.x + 110, pos.y});
+        label.setPosition(pos.x, pos.y - 20); 
+        track.setPosition(pos);
+        // Handle position updated dynamically in update()
     }
-    void draw(sf::RenderWindow& window) { window.draw(label); minusBtn.draw(window); inputBox.draw(window); plusBtn.draw(window); }
+    
+    void draw(sf::RenderWindow& window) { 
+        window.draw(label); 
+        
+        sf::RectangleShape filled({handle.getPosition().x - track.getPosition().x, 6.f});
+        filled.setPosition(track.getPosition());
+        filled.setFillColor(UITheme::Color::NodeOutlineColor); // Cyan SLL Accent
+
+        window.draw(track); 
+        window.draw(filled);
+        window.draw(handle); 
+    }
 };
 
 // --- Scene Management ---

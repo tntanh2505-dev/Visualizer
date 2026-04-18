@@ -55,7 +55,7 @@ inline Snapshot TakeSnapshot_SLL(SLLNode* head, std::string desc, int highlighte
 }
 
 inline void ApplySLLLayout(Snapshot& snap, float startX, float startY) {
-    float horizontalSpacing = 140.f; float verticalSpacing = 120.f; int nodesPerRow = 8;             
+    float horizontalSpacing = 140.f; float verticalSpacing = 120.f; int nodesPerRow = 6;             
     for (int i = 0; i < snap.nodes.size(); ++i) {
         int row = i / nodesPerRow; int col = i % nodesPerRow;
         if(row % 2 == 0) snap.nodes[i].targetX = startX + (col * horizontalSpacing);
@@ -167,13 +167,13 @@ private:
     float rightWidth;
     bool leftExpanded;
     bool rightExpanded;
-    const float LEFT_PANEL_WIDTH = 260.f;
+    const float LEFT_PANEL_WIDTH = 300.f;
     const float RIGHT_PANEL_WIDTH = 420.f;
     const float TAB_WIDTH = 35.f;
     const float TAB_HEIGHT = 50.f;
 
     void UpdateVisualsFromFrame() {
-        ApplySLLLayout(timeline[currentFrame], 200.f, 200.f);
+        ApplySLLLayout(timeline[currentFrame], leftWidth + 200.f, 200.f);
         for (const auto& record : timeline[currentFrame].nodes) {
             VisualNode* vn = FindNode(record.UID, nodes);
             if (vn) vn->index = record.index; 
@@ -187,23 +187,48 @@ public:
     {   
         baseWidth = windowWidth;
         baseHeight = windowHeight;
-        fontPtr = &font; pHead = nullptr; currentFrame = 0; isAutoPlaying = true; pendingSearchUID = INT_MIN; timeInterval = 0.005f; dt = 0.001f;
+        fontPtr = &font; pHead = nullptr; currentFrame = 0; isAutoPlaying = true; pendingSearchUID = INT_MIN; timeInterval = 0.5f; dt = 0.001f;
 
-        // Init panel sliding properties
         leftWidth = TAB_WIDTH;
         rightWidth = TAB_WIDTH;
         leftExpanded = false;
         rightExpanded = false;
 
         std::map<std::string, std::vector<std::string>> llSnippets;
-        llSnippets["InsertFront"] = { "SLLNode* newNode = new SLLNode(x);", "newNode->next = head;", "head = newNode;" };
-        llSnippets["InsertBack"] = { "if (head == NULL) { head = new SLLNode(x); return; }", "SLLNode* cur = head;", "while (cur->next != NULL) cur = cur->next;", "cur->next = new SLLNode(x);" };
-        llSnippets["Search"] = { "SLLNode* cur = head;", "while (cur != NULL) {", "    if (cur->val == targetValue) return cur;", "    cur = cur->next;", "}", "return NULL;" };
-        llSnippets["DeleteBack"] = { "if (head == NULL) return;", "if (head->next == NULL) { delete head; return; }", "SLLNode* cur = head;", "while (cur->next->next != NULL) cur = cur->next;", "delete cur->next; cur->next = NULL;" };
-        llSnippets["DeleteFront"] = { "if (head == NULL) return;", "SLLNode* temp = head;", "head = head->next;", "delete temp;" };
+        llSnippets["InsertFront"] = { 
+            "Node* n = new Node(x);", 
+            "n->next = head;", 
+            "head = n;" 
+        };
+        llSnippets["InsertBack"] = { 
+            "if (!head) { head = new Node(x); return; }", 
+            "Node* cur = head;", 
+            "while (cur->next) cur = cur->next;", 
+            "cur->next = new Node(x);" 
+        };
+        llSnippets["Search"] = { 
+            "Node* cur = head;", 
+            "while (cur) {", 
+            "  if (cur->val == target) return cur;", 
+            "  cur = cur->next;", 
+            "}", 
+            "return NULL;" 
+        };
+        llSnippets["DeleteBack"] = { 
+            "if (!head) return;", 
+            "if (!head->next) { delete head; head = NULL; }", 
+            "Node* cur = head;", 
+            "while (cur->next->next) cur = cur->next;", 
+            "delete cur->next; cur->next = NULL;" 
+        };
+        llSnippets["DeleteFront"] = { 
+            "if (!head) return;", 
+            "Node* temp = head;", 
+            "head = head->next;", 
+            "delete temp;" 
+        };
         codePanel.loadSnippets(llSnippets);
 
-        // Size optimized to fit in 260px Left Panel (105 + 10 gap + 105 = 220 total span)
         boxes.emplace_back(TextBox(font, {0, 0}, 220, 40)); boxes[0].placeholder = "Enter value..."; boxes[0].allowNegative = true;
         boxes.emplace_back(TextBox(font, {0, 0}, 220, 40)); boxes[1].allowAllChars = true; boxes[1].placeholder = "Paste path (Ctrl+V)...";
 
@@ -219,7 +244,6 @@ public:
         buttons.emplace_back(Button("SKIP", font, {0, 0}, 70, 40));       // 9
         buttons.emplace_back(Button("BACK", font, {0, 0}, 70, 40));       // 10
         buttons.emplace_back(Button("CLEAR ALL", font, {0, 0}, 220, 40)); // 11
-        buttons[11].shape.setFillColor(UITheme::Color::ButtonDanger); 
         buttons.emplace_back(Button("ADD FILE", font, {0, 0}, 220, 40));  // 12     
 
         timeline.push_back(TakeSnapshot_SLL(pHead, "Initial State", INT_MIN, true));
@@ -245,7 +269,6 @@ public:
             if (mouseInRightTab) { rightExpanded = !rightExpanded; return; }
         }
 
-        // Determine if mouse is over expanded UI panels to block background node dragging
         bool isClickingOnPanel = (mPos.x < leftWidth) || (mPos.x > window.getSize().x - rightWidth);
 
         if (!isClickingOnPanel) {
@@ -312,7 +335,6 @@ public:
             else if (buttons[9].isClicked(mPos)) { isAutoPlaying = false; buttons[3].setText("PLAY"); int target = timeline.size() - 1; for (int i = currentFrame + 1; i < timeline.size(); i++) { if (timeline[i].isKeyStage) { target = i; break; } } if (currentFrame != target) { currentFrame = target; UpdateVisualsFromFrame(); } }
             else if (buttons[10].isClicked(mPos)) { isAutoPlaying = false; buttons[3].setText("PLAY"); int target = 0; for (int i = currentFrame - 1; i >= 0; i--) { if (timeline[i].isKeyStage) { target = i; break; } } if (currentFrame != target) { currentFrame = target; UpdateVisualsFromFrame(); } }
         }
-
     }
 
     void Update(float deltaTime, sf::RenderWindow& window) override {
@@ -327,40 +349,46 @@ public:
         float leftBaseX = leftWidth - LEFT_PANEL_WIDTH; 
         float currentY = 20.f;
         
-        menuBtn.setPosition({leftBaseX + 20.f, currentY}); currentY += 50.f;
-        boxes[0].setPosition({leftBaseX + 20.f, currentY}); currentY += 50.f;
-        buttons[1].setPosition({leftBaseX + 20.f, currentY});  // INS FRONT
-        buttons[0].setPosition({leftBaseX + 135.f, currentY}); currentY += 50.f; // INS BACK
-        buttons[5].setPosition({leftBaseX + 20.f, currentY});  // DEL FRONT
-        buttons[6].setPosition({leftBaseX + 135.f, currentY}); currentY += 50.f; // DEL BACK
-        buttons[8].setPosition({leftBaseX + 20.f, currentY});  // SEARCH
-        buttons[7].setPosition({leftBaseX + 135.f, currentY}); currentY += 50.f; // RANDOM
-        buttons[11].setPosition({leftBaseX + 20.f, currentY}); currentY += 70.f; // CLEAR ALL
+        menuBtn.setPosition({leftBaseX + 60.f, currentY}); currentY += 50.f;
+        boxes[0].setPosition({leftBaseX + 30.f, currentY}); currentY += 50.f;
+        buttons[1].setPosition({leftBaseX + 30.f, currentY});  // INS FRONT
+        buttons[0].setPosition({leftBaseX + 145.f, currentY}); currentY += 50.f; // INS BACK
+        buttons[5].setPosition({leftBaseX + 30.f, currentY});  // DEL FRONT
+        buttons[6].setPosition({leftBaseX + 145.f, currentY}); currentY += 50.f; // DEL BACK
+        buttons[8].setPosition({leftBaseX + 30.f, currentY});  // SEARCH
+        buttons[7].setPosition({leftBaseX + 145.f, currentY}); currentY += 50.f; // RANDOM
+        buttons[11].setPosition({leftBaseX + 30.f, currentY}); currentY += 70.f; // CLEAR ALL
 
         // Play Controls Area
-        buttons[10].setPosition({leftBaseX + 20.f, currentY}); // BACK (Keyframe)
-        buttons[2].setPosition({leftBaseX + 95.f, currentY});  // PREV
-        buttons[3].setPosition({leftBaseX + 170.f, currentY}); currentY += 50.f; // PLAY/PAUSE
-        buttons[4].setPosition({leftBaseX + 20.f, currentY});  // NEXT
-        buttons[9].setPosition({leftBaseX + 95.f, currentY}); currentY += 60.f;  // SKIP (Keyframe)
+        buttons[10].setPosition({leftBaseX + 30.f, currentY}); // BACK (Keyframe)
+        buttons[2].setPosition({leftBaseX + 105.f, currentY});  // PREV
+        buttons[3].setPosition({leftBaseX + 180.f, currentY}); currentY += 50.f; // PLAY/PAUSE
+        buttons[4].setPosition({leftBaseX + 30.f, currentY});  // NEXT
+        buttons[9].setPosition({leftBaseX + 105.f, currentY}); currentY += 60.f;  // SKIP (Keyframe)
 
-        speedCtrl.setPosition({leftBaseX + 20.f, currentY}); currentY += 60.f;
-        boxes[1].setPosition({leftBaseX + 20.f, currentY}); currentY += 50.f;
-        buttons[12].setPosition({leftBaseX + 20.f, currentY}); // ADD FILE
+        speedCtrl.setPosition({leftBaseX + 30.f, currentY}); currentY += 60.f;
+        speedCtrl.update(window);
+        boxes[1].setPosition({leftBaseX + 30.f, currentY}); currentY += 50.f;
+        buttons[12].setPosition({leftBaseX + 30.f, currentY}); // ADD FILE
 
         // --- Right Panel Layout Mathematics ---
         float rightBaseX = window.getSize().x - rightWidth;
         codePanel.setPosition({rightBaseX + TAB_WIDTH + 10.f, 20.f});
         
-        // Node Panel Floats Freely, Timeline Slider stays at bottom
+        // --- Timeline Slider stays at bottom, scales dynamically ---
         slider.setPosition({leftWidth + 20.f, window.getSize().y - 50.f}, window.getSize().x - leftWidth - rightWidth - 40.f);
+
+        if (nodePanel.isVisible) {
+            float npX = rightBaseX - UITheme::Size::PanelDefault.x - 20.f;
+            float npY = window.getSize().y - 230.f; 
+            nodePanel.setPosition({npX, npY});
+        }
 
         // --- Apply Hovers ---
         sf::Vector2f mPos = window.mapPixelToCoords(sf::Mouse::getPosition(window));
         for (auto& btn : buttons) btn.handleHover(mPos);
         menuBtn.handleHover(mPos);
-        speedCtrl.minusBtn.handleHover(mPos);
-        speedCtrl.plusBtn.handleHover(mPos);
+        // NOTE: Old minusBtn and plusBtn hovers removed completely!
 
         if (isAutoPlaying) {
             if (animationClock.getElapsedTime().asSeconds() >= timeInterval) {
@@ -378,9 +406,7 @@ public:
             }
         }
         for (auto& node : nodes) node.update(window, deltaTime);
-        
-        // Nodes will smoothly bounce off the expanded panel edges!
-        ResolveCollisions(nodes, window, leftWidth, window.getSize().x - rightWidth); 
+        ResolveCollisions(nodes, window, leftWidth + 100.0f, window.getSize().x - rightWidth); 
         
         for (auto& line : lines) {
             VisualNode* s = FindNode(line.start_UID, nodes);
