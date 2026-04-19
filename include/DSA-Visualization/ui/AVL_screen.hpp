@@ -8,10 +8,11 @@
 #include <string>
 #include <vector>
 
-enum class OpType { Insert, Delete, Search, Clear };
+enum class OpType { Insert, Delete, Search, Clear, Update };
 struct Operation {
     OpType type;
     int value;
+    int oldValue = -1; // only used for Update
 };
 
 class AVLScreen : public Screen {
@@ -46,6 +47,7 @@ private:
     std::optional<ModernButton> mReturnBtn;
     std::optional<ModernButton> mSkipAnimationBtn;
     std::optional<ModernButton> mLoadFileBtn;
+    std::optional<ModernButton> mUpdateBtn;
 
     std::string           mInputString;
     bool                  mInputActive;
@@ -66,6 +68,8 @@ private:
     float m_rightWidth;
     bool  m_leftExpanded;
     bool  m_rightExpanded;
+
+    int   m_selectedNodeValue;
 
     static const std::vector<std::string> INSERT_CODE;
     static const std::vector<std::string> DELETE_CODE;
