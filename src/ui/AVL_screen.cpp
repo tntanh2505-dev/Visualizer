@@ -528,23 +528,26 @@ void AVLScreen::drawEdges(sf::RenderWindow& window,
 void AVLScreen::drawDescription(sf::RenderWindow& window, const sf::Font& font, float shiftX) {
     if (!mController.hasSteps()) return;
 
+    float boxH = 70.f;
+    float go_up = 70.f;
+
     float boxW = 560.f; 
     float boxX = 640.f + shiftX - boxW/2.f; 
-    float boxY = CANVAS_H + 64.f;
+    float boxY = CANVAS_H + 64.f - go_up;
 
-    sf::RectangleShape shadow({boxW, 54.f});
+    sf::RectangleShape shadow({boxW, boxH});
     shadow.setPosition(boxX + 4.f, boxY + 4.f);
     shadow.setFillColor(sf::Color(0, 0, 0, 90));
     window.draw(shadow);
 
-    sf::RectangleShape bar({boxW, 54.f});
+    sf::RectangleShape bar({boxW, boxH});
     bar.setPosition(boxX, boxY);
     bar.setFillColor(UITheme::Color::AVLPanelBg);
     bar.setOutlineThickness(1.5f);
     bar.setOutlineColor(UITheme::Color::AVLGlowStrong);
     window.draw(bar);
 
-    sf::RectangleShape accent({4.f, 54.f});
+    sf::RectangleShape accent({4.f, boxH});
     accent.setPosition(boxX, boxY);
     accent.setFillColor(UITheme::Color::AVLAccent);
     window.draw(accent);
@@ -552,9 +555,9 @@ void AVLScreen::drawDescription(sf::RenderWindow& window, const sf::Font& font, 
     sf::Text desc;
     desc.setFont(font);
     desc.setString(mController.currentStep()->description);
-    desc.setCharacterSize(18);
+    desc.setCharacterSize(24);
     desc.setLetterSpacing(1.1f);
     desc.setFillColor(sf::Color(240, 245, 255));
-    desc.setPosition(boxX + 18.f, boxY + 15.f);
+    desc.setPosition(boxX + 18.f, boxY + 20.f);
     window.draw(desc);
 }
