@@ -8,22 +8,26 @@ namespace UITheme {
         // =========================================================================
         // 1. GLOBAL BASE VARIABLES (CHANGE THESE TO UPDATE ALL SCREENS AT ONCE)
         // =========================================================================
-        const sf::Color GlobalBg          = sf::Color(15, 15, 20);      // Main background for all screens
-        const sf::Color GlobalPanelBg     = sf::Color(30, 30, 38, 240); // Background for all control panels
-        const sf::Color GlobalPanelBorder = sf::Color(80, 80, 100);     // Borders for all panels/boxes
+        const sf::Color GlobalBg          = sf::Color(15, 15, 20);      
+        const sf::Color GlobalPanelBg     = sf::Color(30, 30, 38, 240); 
+        const sf::Color GlobalPanelBorder = sf::Color(80, 80, 100);     
         
-        const sf::Color GlobalNodeFill    = sf::Color(45, 45, 55);      // Unified inside color for all nodes
-        const sf::Color GlobalNodeOutline = sf::Color(110, 247, 242);   // Unified border color for all nodes (Cyan)
-        const sf::Color GlobalNodeFocus   = sf::Color(255, 215, 0);     // Unified highlight/focus color (Gold)
+        const sf::Color GlobalNodeFill    = sf::Color(45, 45, 55);      
+        const sf::Color GlobalNodeOutline = sf::Color(110, 247, 242);   
+        const sf::Color GlobalNodeFocus   = sf::Color(255, 215, 0);     
         
-        const sf::Color GlobalButtonFill  = sf::Color(40, 40, 50);      // Unified button background
-        const sf::Color GlobalButtonHover = sf::Color(70, 70, 85);      // Unified button hover state
+        // --- BUTTON THEME (Amethyst Dark Mode) ---
+        const sf::Color GlobalButtonFill  = sf::Color(32, 26, 43);      // Amethyst dark
+        const sf::Color GlobalButtonHover = sf::Color(53, 38, 77);      // Amethyst hover
+        const sf::Color GlobalButtonBorder = sf::Color(181, 58, 199, 120); // Neon purple outline
+        const sf::Color GlobalButtonHoverBorder = sf::Color(218, 112, 214); // Bright purple glow
+        const sf::Color GlobalButtonShadow = sf::Color(0, 0, 0, 150);   // Dark, smooth drop shadow
         
-        const sf::Color GlobalTextPrimary = sf::Color(245, 245, 250);   // Standard white/light text
-        const sf::Color GlobalTextMuted   = sf::Color(150, 150, 160);   // Standard grayed-out text
+        const sf::Color GlobalTextPrimary = sf::Color(245, 245, 250);   
+        const sf::Color GlobalTextMuted   = sf::Color(150, 150, 160);   
         
-        const sf::Color GlobalAccent      = sf::Color(181, 58, 199);    // Main theme accent (Purple/Magenta)
-        const sf::Color GlobalGlow        = sf::Color(181, 58, 199, 40);// Translucent variant for glows
+        const sf::Color GlobalAccent      = sf::Color(181, 58, 199);    
+        const sf::Color GlobalGlow        = sf::Color(181, 58, 199, 80); // Intensified Base Glow
 
         // =========================================================================
         // 2. SPECIFIC MAPPINGS (LINKED TO GLOBALS ABOVE)
@@ -47,22 +51,24 @@ namespace UITheme {
         const sf::Color ButtonPrimary        = GlobalButtonFill;
         const sf::Color ButtonDanger         = sf::Color(200, 50, 50);
         const sf::Color ButtonClose          = sf::Color(200, 50, 50);
-        const sf::Color TextBoxBg            = sf::Color(250, 250, 255); // Keep textboxes readable
+        const sf::Color TextBoxBg            = sf::Color(250, 250, 255); 
         const sf::Color TextBoxBorder        = GlobalPanelBorder;
         const sf::Color TextBoxSelected      = GlobalNodeOutline;
 
         // Modern UI / Amethyst Theme (button.cpp)
         const sf::Color ModernBtnTop         = GlobalButtonFill;
-        const sf::Color ModernBtnBottom      = sf::Color(25, 25, 30); // Slight gradient down
+        const sf::Color ModernBtnBottom      = sf::Color(20, 16, 27); 
         const sf::Color ModernBtnHoverT      = GlobalButtonHover;
-        const sf::Color ModernBtnHoverB      = sf::Color(45, 45, 55);
-        const sf::Color ModernBtnBorder      = sf::Color(181, 58, 199, 120);
+        const sf::Color ModernBtnHoverB      = sf::Color(37, 24, 56);
+        const sf::Color ModernBtnBorder      = GlobalButtonBorder;
+        const sf::Color ButtonHoverBorder    = GlobalButtonHoverBorder; 
+        const sf::Color ButtonShadow         = GlobalButtonShadow;
         
         // Code Panel Theme
         const sf::Color CodePanelBg          = GlobalPanelBg;
         const sf::Color CodePanelBorder      = GlobalPanelBorder;
-        const sf::Color CodeTitleBar         = sf::Color(20, 20, 25, 255); // Slightly darker header
-        const sf::Color CodeHighlight        = GlobalGlow;
+        const sf::Color CodeTitleBar         = sf::Color(20, 20, 25, 255); 
+        const sf::Color CodeHighlight        = sf::Color(181, 58, 199, 50); // Code select
         const sf::Color CodeAccent           = GlobalNodeOutline;
         const sf::Color CodeTextDefault      = sf::Color(230, 235, 240);
         const sf::Color CodeKeyword          = GlobalAccent;
@@ -75,7 +81,7 @@ namespace UITheme {
         const sf::Color AVLPanelBg           = GlobalPanelBg;
         const sf::Color AVLAccent            = GlobalAccent;
         const sf::Color AVLGlow              = GlobalGlow;
-        const sf::Color AVLGlowStrong        = sf::Color(181, 58, 199, 60);
+        const sf::Color AVLGlowStrong        = sf::Color(181, 58, 199, 140); // Brightest for hovers
         const sf::Color AVLSliderFill        = GlobalNodeOutline;
         const sf::Color AVLSpeedSliderText   = GlobalTextPrimary;
         
@@ -100,7 +106,7 @@ namespace UITheme {
         const sf::Color GraphProcessed       = sf::Color::Blue;
         const sf::Color GraphProcessing      = sf::Color::Red;
         const sf::Color GraphNodeFill        = GlobalNodeFill;
-        const sf::Color GraphHighlightBg     = GlobalButtonHover; // Re-use hover color for code highlight
+        const sf::Color GraphHighlightBg     = GlobalButtonHover; 
         
         // Sliders & General Screen
         const sf::Color SliderTrack          = GlobalPanelBorder;
@@ -109,17 +115,14 @@ namespace UITheme {
 
     // --- Dimensions & Sizes ---
     namespace Size {
-        // Nodes
         const float NodeRadius           = 28.f;
         const float NodeOutlineThickness = 3.f;
 
-        // Buttons & Boxes
         const sf::Vector2f ButtonDefault = sf::Vector2f(100.f, 40.f);
         const sf::Vector2f TextBoxDefault= sf::Vector2f(140.f, 40.f);
         const sf::Vector2f PanelDefault  = sf::Vector2f(360.f, 160.f);
         const float BoxOutlineThickness  = 2.f;
 
-        // Fonts
         const unsigned int FontCode      = 12;
         const unsigned int FontSmall     = 14;
         const unsigned int FontNormal    = 18;
