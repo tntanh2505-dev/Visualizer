@@ -7,6 +7,9 @@
 #include <functional>
 #include <fstream> 
 
+const float fset = 40.f;//family offset #1
+const float fset2 = 40.f; //family offset #2
+
 const std::vector<std::string> AVLScreen::INSERT_CODE = {
     "insert(value):",
     "  if node == null: return new node",
@@ -98,7 +101,7 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
     
     mInsertBtn.emplace("Insert",  font, sf::Vector2f(100.f, 40.f));
     mDeleteBtn.emplace("Delete",  font, sf::Vector2f(100.f, 40.f));
-    mSearchBtn.emplace("Search",  font, sf::Vector2f(210.f, 40.f));
+    mSearchBtn.emplace("Search",  font, sf::Vector2f(100.f, 40.f));
 
     mRandomBtn.emplace("Random",  font, sf::Vector2f(100.f, 40.f));
     mClearBtn .emplace("Clear",   font, sf::Vector2f(100.f, 40.f));
@@ -106,7 +109,7 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
 
     mPrevBtn  .emplace("< Prev",  font, sf::Vector2f(100.f,  40.f));
     mNextBtn  .emplace("Next >",  font, sf::Vector2f(100.f,  40.f));
-    mSkipAnimationBtn.emplace("Skip Anim", font, sf::Vector2f(210.f, 40.f));
+    mSkipAnimationBtn.emplace("Skip Animation", font, sf::Vector2f(210.f, 40.f));
 
     mReturnBtn.emplace("Return",  font, sf::Vector2f(210.f, 40.f));
     
@@ -294,17 +297,18 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
         // Sync UI positions dynamically 
         mInsertBtn->setPosition(sf::Vector2f(leftBaseX + 85.f, 100.f));
         mDeleteBtn->setPosition(sf::Vector2f(leftBaseX + 195.f, 100.f));
-        mSearchBtn->setPosition(sf::Vector2f(leftBaseX + 140.f, 150.f));
+        mSearchBtn->setPosition(sf::Vector2f(leftBaseX + 85.f, 150.f));
 
-        mRandomBtn->setPosition(sf::Vector2f(leftBaseX + 85.f, 210.f));
-        mClearBtn ->setPosition(sf::Vector2f(leftBaseX + 195.f, 210.f));
-        mLoadFileBtn->setPosition(sf::Vector2f(leftBaseX + 140.f, 260.f));
+        //family offset
+        mRandomBtn->setPosition(sf::Vector2f(leftBaseX + 85.f, 210.f + fset));
+        mClearBtn ->setPosition(sf::Vector2f(leftBaseX + 195.f, 210.f + fset));
+        mLoadFileBtn->setPosition(sf::Vector2f(leftBaseX + 140.f, 260.f + fset));
 
-        mPrevBtn  ->setPosition(sf::Vector2f(leftBaseX + 85.f, 320.f));
-        mNextBtn  ->setPosition(sf::Vector2f(leftBaseX + 195.f, 320.f));
-        mSkipAnimationBtn->setPosition(sf::Vector2f(leftBaseX + 140.f, 370.f));
+        mPrevBtn  ->setPosition(sf::Vector2f(leftBaseX + 85.f, 320.f + fset));
+        mNextBtn  ->setPosition(sf::Vector2f(leftBaseX + 195.f, 320.f + fset));
+        mSkipAnimationBtn->setPosition(sf::Vector2f(leftBaseX + 140.f, 370.f + fset));
 
-        mSliderTrack.setPosition(leftBaseX + 30.f, 430.f);
+        mSliderTrack.setPosition(leftBaseX + 30.f, 430.f + fset);
         
         // Slider Logic updates seamlessly during drag
         if (mSliderDragging) {
@@ -316,10 +320,10 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
             mController.setSpeed(mSpeedValue);
         }
         float ratio = (mSpeedValue - 0.5f) / 7.5f;
-        mSliderHandle.setPosition(leftBaseX + 30.f + ratio * 220.f, 433.f);
+        mSliderHandle.setPosition(leftBaseX + 30.f + ratio * 220.f, 433.f + fset);
 
-        mReturnBtn->setPosition(sf::Vector2f(leftBaseX + 140.f, window.getSize().y - 40.f));
-        mCodePanel.setPosition(sf::Vector2f(rightBaseX + TAB_WIDTH + 10.f, 20.f));
+        mReturnBtn->setPosition(sf::Vector2f(leftBaseX + 140.f, window.getSize().y - 40.f + fset));
+        mCodePanel.setPosition(sf::Vector2f(rightBaseX + TAB_WIDTH + 10.f, 20.f + fset));
 
         // Update hovers
         mInsertBtn->update(mouseRaw); mDeleteBtn->update(mouseRaw); mSearchBtn->update(mouseRaw);
@@ -409,7 +413,7 @@ void AVLScreen::drawLeftPanel(sf::RenderWindow& window, const sf::Font& font, fl
         speedLabel.setCharacterSize(13);
         speedLabel.setFillColor(UITheme::Color::AVLSpeedSliderText);
         speedLabel.setString("Speed: " + std::to_string((int)mSpeedValue) + "x");
-        speedLabel.setPosition(leftBaseX + 30.f, 405.f);
+        speedLabel.setPosition(leftBaseX + 30.f, 405.f + fset);
         window.draw(speedLabel);
 
         sf::RectangleShape filledTrack({mSliderHandle.getPosition().x - mSliderTrack.getPosition().x, 6.f});
@@ -427,7 +431,7 @@ void AVLScreen::drawLeftPanel(sf::RenderWindow& window, const sf::Font& font, fl
         counter.setString(mController.hasSteps()
             ? "Step: " + std::to_string(mController.currentIndex() + 1) + " / " + std::to_string(mController.totalSteps())
             : "Step: 0 / 0");
-        counter.setPosition(leftBaseX + 30.f, 455.f);
+        counter.setPosition(leftBaseX + 30.f, 455.f + fset);
         window.draw(counter);
     }
 }
