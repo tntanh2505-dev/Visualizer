@@ -7,7 +7,8 @@ enum class ActionType {
     SWAP,
     HIGHLIGHT,
     INSERT,
-    REMOVE
+    REMOVE,
+    CHANGE_VALUE
 };
 
 struct Action {
@@ -31,10 +32,9 @@ private:
 
 public:
     MaxHeap() = default;
-
+    void Update(int i, int k);
     void Insert(int k);
     void Delete(int i);
-    int GetMax();
     void BuildHeap(const std::vector<int>& input_array); 
 
     // Safely give SFML a copy of the current array to draw

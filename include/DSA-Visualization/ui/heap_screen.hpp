@@ -32,9 +32,12 @@ private:
     };
     
     void runInsert();
-    void runDeleteRoot();
+    void runDeleteSelected();
     void runBuildHeap();
     void runClear();
+    void runUpdate();
+    void runRandom();
+    void runSkip();
     void togglePlayback();
     void queueOperation(const std::vector<int>& startArray);
     void processNextAction();
@@ -42,8 +45,6 @@ private:
     void processPreviousAction();
     void loadHeapifyCode();
     void loadInsertCode();
-    void runRandom();
-    void runSkip();
 
     void drawPanel(sf::RenderWindow& window) const;
     void drawInputArea(sf::RenderWindow& window) const;
@@ -72,6 +73,7 @@ private:
 
     std::vector<std::string> mCurrentCode;
     int mActiveLine = -1;
+    int mSelectedIndex = -1;
 
     sf::RectangleShape mPanel;
     sf::RectangleShape mInputBox;
@@ -106,6 +108,7 @@ private:
     ModernButton mLoadButton;
     ModernButton mRandomButton;
     ModernButton mSkipButton;
+    ModernButton mUpdateButton;
 
     sf::Texture mBgTexture;
     sf::Sprite mBgSprite;
