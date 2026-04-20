@@ -101,6 +101,7 @@ private:
     ModernButton mPlayPauseButton;
     ModernButton mStepButton;
     ModernButton mPrevButton;
+    ModernButton mLoadButton;
 
     sf::Texture mBgTexture;
     sf::Sprite mBgSprite;

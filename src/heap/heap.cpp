@@ -70,15 +70,13 @@ void MaxHeap::Insert(int k) {
 }
 
 void MaxHeap::Delete(int i) {
-    if (i >= nums.size()) return;
-    actionQueue.push_back({ActionType::SWAP, i, (int)nums.size() - 1});
-    nums[i] = nums.back();
+    if (nums.empty()) return;
+    int lastIdx = (int)nums.size() - 1;
+    actionQueue.push_back({ActionType::SWAP, i, lastIdx, 9});
+    std::swap(nums[i], nums[lastIdx]);
+    actionQueue.push_back({ActionType::REMOVE, lastIdx, nums.back(), 9});
     nums.pop_back();
-    //Fix if violates
-    if (i<nums.size()) {
-        //Bubble up first (if needed)
-        Increase(i, nums[i]);
-        //Then sink down (if needed)
+    if (!nums.empty() && i < nums.size()) {
         MaxHeapify(i);
     }
 }

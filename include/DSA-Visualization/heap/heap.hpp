@@ -6,7 +6,8 @@ enum class ActionType {
     COMPARE,
     SWAP,
     HIGHLIGHT,
-    INSERT
+    INSERT,
+    REMOVE
 };
 
 struct Action {

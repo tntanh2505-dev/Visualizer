@@ -12,26 +12,26 @@ namespace {
     constexpr float PANEL_HEIGHT = 720.f;
 
     // Button
-    constexpr float BUTTON_WIDTH = 90.f;
-    constexpr float BUTTON_HEIGHT = 45.f;
-    constexpr float BUTTON_X = 1030.f;
-    constexpr float BUTTON_GAP_Y = 15.f;
-    constexpr float BUTTON_GAP_X = 10.f;
-    constexpr float BUTTON_START_Y = 400.f; 
+    constexpr float BUTTON_WIDTH = 92.f;
+    constexpr float BUTTON_HEIGHT = 46.f;
+    constexpr float BUTTON_X = 24.f;
+    constexpr float BUTTON_GAP_Y = 14.f;
+    constexpr float BUTTON_GAP_X = 12.f;
+    constexpr float BUTTON_START_Y = 108.f; 
     constexpr float BUTTON_X2 = BUTTON_X + BUTTON_WIDTH + BUTTON_GAP_X;
 
     // Input
-    constexpr float INPUT_X = 40.f;
-    constexpr float INPUT_Y = 620.f;
-    constexpr float INPUT_WIDTH = 300.f;
-    constexpr float INPUT_HEIGHT = 45.f;
+    constexpr float INPUT_X = 24.f;
+    constexpr float INPUT_Y = 24.f;
+    constexpr float INPUT_WIDTH = 176.f;
+    constexpr float INPUT_HEIGHT = 44.f;
 
     // Tree + Array
-    constexpr std::size_t MAX_RENDERED_NODES = 31;
+    constexpr std::size_t MAX_RENDERED_NODES = 16;
     constexpr float NODE_RADIUS = 24.f;
-    constexpr float TREE_WIDTH = 900.f;
-    constexpr float TREE_LEFT_X = 40.f;
-    constexpr float TREE_TOP_Y = 180.f;
+    constexpr float TREE_WIDTH = 760.f;
+    constexpr float TREE_LEFT_X = 260.f;
+    constexpr float TREE_TOP_Y = 150.f;
     constexpr float ARRAY_Y = 40.f;
 
     // Helper
@@ -53,11 +53,11 @@ namespace {
 HeapVisualizer::HeapVisualizer(const sf::Font& font)
     : mFont(font)
     // Input Area
-    , mSpeedLabel(makeText(font, "Speed: 0.60s", 14, sf::Color::White, {BUTTON_X, BUTTON_START_Y + 3 * (BUTTON_HEIGHT + BUTTON_GAP_Y) + 15.f}))
-    , mPlaceholderText(makeText(font, "Enter value (e.g. 10)...", 18, sf::Color(100, 100, 100, 150), {INPUT_X + 14.f, INPUT_Y + 8.f}))
-    , mInputText(makeText(font, "", 22, sf::Color(26, 32, 44), {INPUT_X + 14.f, INPUT_Y + 8.f}))
+    , mSpeedLabel(makeText(font, "Speed: 0.60s", 14, sf::Color::White, {BUTTON_X, BUTTON_START_Y + 4 * (BUTTON_HEIGHT + BUTTON_GAP_Y) + 12.f}))
+    , mPlaceholderText(makeText(font, "Enter value...", 18, sf::Color(120, 112, 138, 190), {INPUT_X + 14.f, INPUT_Y + 8.f}))
+    , mInputText(makeText(font, "", 22, sf::Color::White, {INPUT_X + 14.f, INPUT_Y + 8.f}))
     , mHintText(makeText(font, "Build format: 1, 2, 3...", 14, sf::Color(150, 150, 150), {INPUT_X, INPUT_Y + 55.f}))
-    , mStatusText(makeText(font, "", 16, sf::Color(251, 209, 101), {400.f, 635.f}))
+    , mStatusText(makeText(font, "", 16, sf::Color(251, 209, 101), {420.f, 640.f}))
     
     // Button
     , mInsertButton("Insert", font, {BUTTON_WIDTH, BUTTON_HEIGHT})
@@ -67,25 +67,32 @@ HeapVisualizer::HeapVisualizer(const sf::Font& font)
     , mPrevButton("<", font, {BUTTON_WIDTH / 2.f, BUTTON_HEIGHT})
     , mPlayPauseButton("Pause", font, {BUTTON_WIDTH, BUTTON_HEIGHT})
     , mStepButton(">", font, {BUTTON_WIDTH / 2.f, BUTTON_HEIGHT})
+    , mLoadButton("Load File", font, {BUTTON_WIDTH * 2 + BUTTON_GAP_X, BUTTON_HEIGHT})
     , mReturnButton("Return", font, {BUTTON_WIDTH * 2 + BUTTON_GAP_X, BUTTON_HEIGHT})
 {
     // Panel
-    float cpX = 1020.f;
-    float cpY = 90.f;
-    float cpWidth = 220.f;
-    float cpHeight = 290.f;
+    float cpX = 1058.f;
+    float cpY = 24.f;
+    float cpWidth = 204.f;
+    float cpHeight = 318.f;
     mPanel.setSize({PANEL_WIDTH, PANEL_HEIGHT});
     mPanel.setFillColor(sf::Color(10, 10, 15));
     mCodePanel = CodePanel(font, {cpX, cpY}, {cpWidth, cpHeight});
     loadHeapifyCode();
-    mControlPanelBg.setSize({240.f, 620.f});
-    mControlPanelBg.setPosition({1010.f, 80.f});
+    mControlPanelBg.setSize({240.f, 720.f});
+    mControlPanelBg.setPosition({1040.f, 0.f});
     mControlPanelBg.setFillColor(sf::Color(25, 25, 35, 200));
     mControlPanelBg.setOutlineThickness(1.f);
     mControlPanelBg.setOutlineColor(sf::Color(80, 80, 100));
 
+    mCodeBox.setSize({240.f, 720.f});
+    mCodeBox.setPosition({0.f, 0.f});
+    mCodeBox.setFillColor(sf::Color(25, 25, 35, 200));
+    mCodeBox.setOutlineThickness(1.f);
+    mCodeBox.setOutlineColor(sf::Color(80, 80, 100));
+
     // Speed Slider
-    float sliderY = BUTTON_START_Y + 3 * (BUTTON_HEIGHT + BUTTON_GAP_Y) + 40.f;
+    float sliderY = BUTTON_START_Y + 5 * (BUTTON_HEIGHT + BUTTON_GAP_Y) + 10.f;
     float sliderWidth = BUTTON_WIDTH * 2 + BUTTON_GAP_X;
     mSliderTrack.setSize({sliderWidth, 6.f});
     mSliderTrack.setPosition({BUTTON_X, sliderY});
@@ -102,19 +109,20 @@ HeapVisualizer::HeapVisualizer(const sf::Font& font)
     //Input area
     mInputBox.setPosition({INPUT_X, INPUT_Y});
     mInputBox.setSize({INPUT_WIDTH, INPUT_HEIGHT});
-    mInputBox.setFillColor(sf::Color::White);
+    mInputBox.setFillColor(sf::Color(32, 26, 43));
     mInputBox.setOutlineThickness(2.f);
-    mInputBox.setOutlineColor(sf::Color(181, 58, 199, 100));
+    mInputBox.setOutlineColor(sf::Color(181, 58, 199, 120));
 
     // ModernButton uses centered transforms, so convert the existing top-left layout into center positions.
     mInsertButton.setPosition({BUTTON_X + BUTTON_WIDTH / 2.f, BUTTON_START_Y + BUTTON_HEIGHT / 2.f});
     mDeleteButton.setPosition({BUTTON_X2 + BUTTON_WIDTH / 2.f, BUTTON_START_Y + BUTTON_HEIGHT / 2.f});
     mBuildButton.setPosition({BUTTON_X + BUTTON_WIDTH / 2.f, BUTTON_START_Y + (BUTTON_HEIGHT + BUTTON_GAP_Y) + BUTTON_HEIGHT / 2.f});
     mClearButton.setPosition({BUTTON_X2 + BUTTON_WIDTH / 2.f, BUTTON_START_Y + (BUTTON_HEIGHT + BUTTON_GAP_Y) + BUTTON_HEIGHT / 2.f});
-    mPrevButton.setPosition({BUTTON_X + (BUTTON_WIDTH / 4.f), BUTTON_START_Y + 2 * (BUTTON_HEIGHT + BUTTON_GAP_Y) + BUTTON_HEIGHT / 2.f});
-    mPlayPauseButton.setPosition({BUTTON_X + BUTTON_WIDTH + BUTTON_GAP_X / 2.f, BUTTON_START_Y + 2 * (BUTTON_HEIGHT + BUTTON_GAP_Y) + BUTTON_HEIGHT / 2.f});
-    mStepButton.setPosition({BUTTON_X + 1.75f * BUTTON_WIDTH + BUTTON_GAP_X, BUTTON_START_Y + 2 * (BUTTON_HEIGHT + BUTTON_GAP_Y) + BUTTON_HEIGHT / 2.f});
-    mReturnButton.setPosition({BUTTON_X + (BUTTON_WIDTH * 2 + BUTTON_GAP_X) / 2.f, 650.f + BUTTON_HEIGHT / 2.f});
+    mLoadButton.setPosition({BUTTON_X + (BUTTON_WIDTH * 2 + BUTTON_GAP_X) / 2.f, BUTTON_START_Y + 2 * (BUTTON_HEIGHT + BUTTON_GAP_Y) + BUTTON_HEIGHT / 2.f});
+    mPrevButton.setPosition({BUTTON_X + (BUTTON_WIDTH / 4.f), BUTTON_START_Y + 3 * (BUTTON_HEIGHT + BUTTON_GAP_Y) + BUTTON_HEIGHT / 2.f});
+    mPlayPauseButton.setPosition({BUTTON_X + BUTTON_WIDTH + BUTTON_GAP_X / 2.f, BUTTON_START_Y + 3 * (BUTTON_HEIGHT + BUTTON_GAP_Y) + BUTTON_HEIGHT / 2.f});
+    mStepButton.setPosition({BUTTON_X + 1.75f * BUTTON_WIDTH + BUTTON_GAP_X, BUTTON_START_Y + 3 * (BUTTON_HEIGHT + BUTTON_GAP_Y) + BUTTON_HEIGHT / 2.f});
+    mReturnButton.setPosition({BUTTON_X + (BUTTON_WIDTH * 2 + BUTTON_GAP_X) / 2.f, 626.f + BUTTON_HEIGHT / 2.f});
 
     setStatus("Ready.");
 }
@@ -162,6 +170,7 @@ void HeapVisualizer::handleEvent(const sf::Event& event, const sf::RenderWindow&
         mPlayPauseButton.update(mouse);
         mStepButton.update(mouse);
         mPrevButton.update(mouse);
+        mLoadButton.update(mouse);
 
         if (mInsertButton.isClicked(mouse, true)) {
             runInsert();
@@ -173,6 +182,9 @@ void HeapVisualizer::handleEvent(const sf::Event& event, const sf::RenderWindow&
             runBuildHeap();
         }
         if (mClearButton.isClicked(mouse, true)) {
+        if (mLoadButton.isClicked(mouse, true)) {
+            setStatus("Load from file is not implemented yet.");
+        }
             runClear();
         }
         if (mPlayPauseButton.isClicked(mouse, true)) {
@@ -224,9 +236,10 @@ void HeapVisualizer::update(float deltaTime, const sf::RenderWindow& window) {
     mPlayPauseButton.update(mouse);
     mStepButton.update(mouse);
     mPrevButton.update(mouse);
+    mLoadButton.update(mouse);
     mReturnButton.update(mouse);
 
-    mInputBox.setOutlineColor(mInputFocused ? sf::Color(255, 187, 76) : sf::Color(113, 139, 178));
+    mInputBox.setOutlineColor(mInputFocused ? sf::Color(181, 58, 199, 200) : sf::Color(181, 58, 199, 120));
     mInputText.setString(mInputBuffer + (mInputFocused ? "|" : ""));
     mRootText.setString(mDisplayArray.empty() ? "Root: --" : "Root: " + std::to_string(mDisplayArray.front()));
 
@@ -284,8 +297,8 @@ void HeapVisualizer::runInsert() {
     }
     loadInsertCode();
     const std::vector<int> startArray = mPendingActions.empty() ? mDisplayArray : mHeap.getArray();
-    if (startArray.size() >= MAX_RENDERED_NODES) {
-        setStatus("Limit reached. Clear or use fewer than 31 nodes.");
+    if (startArray.size() >= 15) {
+        setStatus("Limit reached. Clear or use fewer than 16 nodes.");
         return;
     }
 
@@ -324,7 +337,7 @@ void HeapVisualizer::runBuildHeap() {
     loadHeapifyCode();
     if (values.size() > MAX_RENDERED_NODES) {
         values.resize(MAX_RENDERED_NODES);
-        setStatus("Build input trimmed to 31 nodes for rendering.");
+        setStatus("Build input trimmed to 16 nodes for rendering.");
     } else if (values.empty()) {
         setStatus("Heap cleared.");
     } else {
@@ -437,6 +450,14 @@ void HeapVisualizer::processNextAction() {
         mHighlight.firstColor = sf::Color(248, 196, 76);
         mHighlight.label = "Focus";
         break;
+        
+    case ActionType::REMOVE:
+    if (action.index1 >= 0 && static_cast<std::size_t>(action.index1) < mDisplayArray.size()) {
+        mDisplayArray.erase(mDisplayArray.begin() + action.index1);
+        mHighlight = {};
+        mHighlight.label = "Removed " + std::to_string(action.index2);
+    }
+    break;
     }
 }
 
@@ -476,6 +497,14 @@ void HeapVisualizer::processPreviousAction() {
     case ActionType::HIGHLIGHT:
         mHighlight.label = "Undo " + std::string(action.type == ActionType::COMPARE ? "Compare" : "Focus");
         break;
+
+    case ActionType::REMOVE:
+    if (action.index1 >= 0 && static_cast<std::size_t>(action.index1) <= mDisplayArray.size()) {
+        mDisplayArray.insert(mDisplayArray.begin() + action.index1, action.index2);
+        mHighlight.first = action.index1;
+        mHighlight.label = "Undo Remove";
+    }
+    break;
     }
 
     mCodePanel.highlight(action.lineIdx);
@@ -520,6 +549,7 @@ void HeapVisualizer::loadInsertCode() {
 // Draws the full-screen translucent backdrop and the status texts pinned to it.
 void HeapVisualizer::drawPanel(sf::RenderWindow& window) const {
     window.draw(mPanel);
+    window.draw(mCodeBox);
     window.draw(mControlPanelBg);
     window.draw(mStatusText);
 }
@@ -541,6 +571,7 @@ void HeapVisualizer::drawButtons(sf::RenderWindow& window) const {
     window.draw(mDeleteButton); 
     window.draw(mBuildButton);
     window.draw(mClearButton);
+    window.draw(mLoadButton);
     window.draw(mReturnButton);
     window.draw(mPlayPauseButton);
     window.draw(mStepButton);
@@ -555,13 +586,13 @@ void HeapVisualizer::drawArray(sf::RenderWindow& window) const {
     const std::size_t visibleNodes = std::min(mDisplayArray.size(), MAX_RENDERED_NODES);
     if (visibleNodes == 0) return;
 
-    const float maxTotalWidth = 1200.f;
+    const float maxTotalWidth = 760.f;
     const float gap = 4.f;
     const float cellWidth = std::min(48.f, (maxTotalWidth - (visibleNodes * gap)) / visibleNodes);
     
     for (std::size_t i = 0; i < visibleNodes; ++i) {
         sf::RectangleShape cell({cellWidth, cellWidth});
-        cell.setPosition({40.f + i * (cellWidth + gap), ARRAY_Y});
+        cell.setPosition({260.f + i * (cellWidth + gap), ARRAY_Y});
         cell.setFillColor(sf::Color(247, 250, 255, 230));
         cell.setOutlineThickness(2.f);
         cell.setOutlineColor(nodeColor(i));
@@ -652,8 +683,8 @@ void HeapVisualizer::drawLegend(sf::RenderWindow& window) const {
 void HeapVisualizer::drawCodeSnippet(sf::RenderWindow& window) const {
     if (mCurrentCode.empty()) return;
 
-    float boxX = BUTTON_X - 15.f; 
-    float boxWidth = (BUTTON_WIDTH * 2) + BUTTON_GAP_X + 25.f; 
+    float boxX = 1048.f; 
+    float boxWidth = 224.f; 
 
     sf::RectangleShape codeBg({boxWidth, 280.f});
     codeBg.setPosition({boxX, 100.f});
@@ -703,7 +734,7 @@ void HeapVisualizer::backspaceInput() {
 void HeapVisualizer::setStatus(const std::string& status) {
     mStatusMessage = status;
     mStatusText.setString(status);
-    float row3Y = BUTTON_START_Y + 2 * (BUTTON_HEIGHT + BUTTON_GAP_Y);
+    float row3Y = BUTTON_START_Y + 3 * (BUTTON_HEIGHT + BUTTON_GAP_Y);
     float playCenterX = BUTTON_X + BUTTON_WIDTH + BUTTON_GAP_X / 2.f;
     mPlayPauseButton = ModernButton(mIsPlaying ? "Pause" : "Play", mFont, {BUTTON_WIDTH, BUTTON_HEIGHT});
     mPlayPauseButton.setPosition({playCenterX, row3Y + BUTTON_HEIGHT / 2.f});
