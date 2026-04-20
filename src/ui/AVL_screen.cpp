@@ -1,9 +1,14 @@
 #include "DSA-Visualization/ui/AVL_Screen.hpp"
+#include "DSA-Visualization/ui/UI_Theme.hpp"
 #include "DSA-Visualization/ui/components/graphic_node.hpp"
 #include <iostream>
 #include <cmath>
 #include <map>
 #include <functional>
+#include <fstream> 
+
+const float fset = 40.f;//family offset #1
+const float fset2 = 40.f; //family offset #2
 
 const std::vector<std::string> AVLScreen::INSERT_CODE = {
     "insert(value):",
@@ -37,11 +42,8 @@ const std::vector<std::string> AVLScreen::SEARCH_CODE = {
     "  else: return found"
 };
 
-static const float NODE_RADIUS   = 28.f;
-static const float CANVAS_X      = 230.f;
-static const float CANVAS_Y      = 20.f;
-static const float CANVAS_W      = 760.f;
-static const float CANVAS_H      = 560.f;
+static const float NODE_RADIUS   = UITheme::Size::NodeRadius;
+static const float CANVAS_H      = 560.f; // Base height reference for description box
 
 AVLScreen::AVLScreen()
 : mInputActive(false)
@@ -49,26 +51,35 @@ AVLScreen::AVLScreen()
 , mSpeedValue(2.f)
 , mSliderDragging(false)
 , mHistoryIndex(0)
+, m_leftWidth(35.f)
+, m_rightWidth(35.f)
+, m_leftExpanded(false)
+, m_rightExpanded(false)
+, m_selectedNodeValue(-1)
 {}
 
 void AVLScreen::buildSteps(Operation op) {
     std::vector<AnimationStep> steps;
     if (op.type == OpType::Insert) {
-        mCodePanel.setCode(INSERT_CODE);
+        mCodePanel.update("insert", -1);
         mTree.insert(op.value, &steps);
     } else if (op.type == OpType::Delete) {
-        mCodePanel.setCode(DELETE_CODE);
+        mCodePanel.update("remove", -1);
         mTree.remove(op.value, &steps);
     } else if (op.type == OpType::Search) {
-        mCodePanel.setCode(SEARCH_CODE);
+        mCodePanel.update("search", -1);
         mTree.search(op.value, &steps);
     } else if (op.type == OpType::Clear) {
-        mCodePanel.setCode({});
+        mCodePanel.update("", -1);
         mTree.clear();
         AnimationStep step;
         step.description = "Tree cleared.";
         step.codeLineIndex = -1;
         steps.push_back(step);
+    } else if (op.type == OpType::Update) {
+        mCodePanel.update("insert", -1);
+        mTree.remove(op.oldValue, nullptr);  // silent delete
+        mTree.insert(op.value, &steps);       // insert with animation
     }
     mController.loadSteps(steps);
 }
@@ -78,64 +89,62 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
         std::cerr << "Failed to load background.png\n";
     sf::Vector2u sz = mBgTexture.getSize();
     mBgSprite.setTexture(mBgTexture);
-    mBgSprite.setScale(1280.f / sz.x, 720.f / sz.y);
-    mBgSprite.setColor(sf::Color(255, 255, 255, 20)); // ultra-dimmed for the clean look
-
-    mCodePanel = CodePanel(font, sf::Vector2f(8.f, 16.f), sf::Vector2f(240.f, 280.f));
-    mCodePanel.setCode(INSERT_CODE);
+    mBgSprite.setScale(static_cast<float>(window.getSize().x) / sz.x, 
+                       static_cast<float>(window.getSize().y) / sz.y);
     
-    float ver_align = 1115.f; // Centered in the control panel
-    mInsertBtn.emplace("Insert",  font, sf::Vector2f(120.f, 40.f));
-    mInsertBtn->setPosition(ver_align,  70.f);
-    mDeleteBtn.emplace("Delete",  font, sf::Vector2f(120.f, 40.f));
-    mDeleteBtn->setPosition(ver_align, 120.f);
-    mSearchBtn.emplace("Search",  font, sf::Vector2f(120.f, 40.f));
-    mSearchBtn->setPosition(ver_align, 170.f);
-    mRandomBtn.emplace("Random",  font, sf::Vector2f(120.f, 40.f));
-    mRandomBtn->setPosition(ver_align, 220.f);
-    mClearBtn .emplace("Clear",   font, sf::Vector2f(120.f, 40.f));
-    mClearBtn ->setPosition(ver_align, 270.f);
-    mPrevBtn  .emplace("< Prev",  font, sf::Vector2f(80.f,  40.f));
-    mPrevBtn  ->setPosition(1070.f, 320.f);
-    mNextBtn  .emplace("Next >",  font, sf::Vector2f(80.f,  40.f));
-    mNextBtn  ->setPosition(1160.f, 320.f);
-    mReturnBtn.emplace("Return",  font, sf::Vector2f(120.f, 40.f));
-    mReturnBtn->setPosition(ver_align, 660.f);
+    mBgSprite.setColor(UITheme::Color::AVLBackground);
 
-    // Speed slider track
-    mSliderTrack = sf::RectangleShape({180.f, 8.f});
-    mSliderTrack.setPosition(1025.f, 385.f);
-    mSliderTrack.setFillColor(sf::Color(30, 25, 40));
+    // Initialize UI Components dynamically
+    mCodePanel = CodePanel(font, sf::Vector2f(0.f, 0.f), sf::Vector2f(330.f, 350.f));
+    
+    std::map<std::string, std::vector<std::string>> avlSnippets;
+    avlSnippets["insert"] = INSERT_CODE;
+    avlSnippets["remove"] = DELETE_CODE;
+    avlSnippets["search"] = SEARCH_CODE;
+    mCodePanel.loadSnippets(avlSnippets);
+    mCodePanel.update("insert", -1);
+    
+    mInsertBtn.emplace("Insert",  font, sf::Vector2f(100.f, 40.f));
+    mDeleteBtn.emplace("Delete",  font, sf::Vector2f(100.f, 40.f));
+    mSearchBtn.emplace("Search",  font, sf::Vector2f(100.f, 40.f));
+    mUpdateBtn.emplace("Update",  font, sf::Vector2f(100.f,40.f));
+
+    mRandomBtn.emplace("Random",  font, sf::Vector2f(100.f, 40.f));
+    mClearBtn .emplace("Clear",   font, sf::Vector2f(100.f, 40.f));
+    mLoadFileBtn.emplace("Load File", font, sf::Vector2f(210.f, 40.f));
+
+    mPrevBtn  .emplace("< Prev",  font, sf::Vector2f(100.f,  40.f));
+    mNextBtn  .emplace("Next >",  font, sf::Vector2f(100.f,  40.f));
+    mSkipAnimationBtn.emplace("Skip Animation", font, sf::Vector2f(210.f, 40.f));
+
+    mReturnBtn.emplace("Return",  font, sf::Vector2f(210.f, 40.f));
+    
+    mSliderTrack = sf::RectangleShape({220.f, 6.f});
+    mSliderTrack.setFillColor(UITheme::Color::SliderTrack);
     mSliderTrack.setOutlineThickness(1.f);
-    mSliderTrack.setOutlineColor(sf::Color(181, 58, 199, 50));
+    mSliderTrack.setOutlineColor(UITheme::Color::AVLGlow);
 
     mSliderHandle = sf::CircleShape(10.f);
     mSliderHandle.setOrigin(10.f, 10.f);
-    mSliderHandle.setFillColor(sf::Color::White); // Sleek white handle
-    updateSliderHandle();
+    mSliderHandle.setFillColor(UITheme::Color::SliderHandle); 
 
-    // 1. Initialize dot grid VertexArray for clean background
     sf::VertexArray dotGrid(sf::Points);
-    for (int x = 0; x <= 1280; x += 30) {
-        for (int y = 0; y <= 720; y += 30) {
-            dotGrid.append(sf::Vertex(sf::Vector2f(x, y), sf::Color(181, 58, 199, 30)));
+    for (int x = 0; x <= window.getSize().x; x += 30) {
+        for (int y = 0; y <= window.getSize().y; y += 30) {
+            dotGrid.append(sf::Vertex(sf::Vector2f(x, y), UITheme::Color::AVLGlow));
         }
     }
+
+    const float LEFT_PANEL_WIDTH = 280.f;
+    const float RIGHT_PANEL_WIDTH = 380.f;
+    const float TAB_WIDTH = 35.f;
+    const float TAB_HEIGHT = 50.f;
 
     sf::Clock clock;
 
     while (window.isOpen()) {
         float dt = clock.restart().asSeconds();
         sf::Vector2f mouseRaw = window.mapPixelToCoords(sf::Mouse::getPosition(window));
-
-        mInsertBtn->update(mouseRaw);
-        mDeleteBtn->update(mouseRaw);
-        mSearchBtn->update(mouseRaw);
-        mRandomBtn->update(mouseRaw);
-        mClearBtn->update(mouseRaw);
-        mPrevBtn->update(mouseRaw);
-        mNextBtn->update(mouseRaw);
-        mReturnBtn->update(mouseRaw);
 
         sf::Event event;
         while (window.pollEvent(event)) {
@@ -145,197 +154,416 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
             }
 
             bool leftPressed = (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left);
+            
             if (leftPressed) {
+                float centerY = window.getSize().y / 2.f;
+                float winW = window.getSize().x;
+                
+                bool mouseInLeftTab = (mouseRaw.x >= m_leftWidth - TAB_WIDTH && mouseRaw.x <= m_leftWidth &&
+                                       mouseRaw.y >= centerY - TAB_HEIGHT / 2.f && mouseRaw.y <= centerY + TAB_HEIGHT / 2.f);
+                if (mouseInLeftTab) { m_leftExpanded = !m_leftExpanded; continue; }
+
+                bool mouseInRightTab = (mouseRaw.x >= winW - m_rightWidth && mouseRaw.x <= winW - m_rightWidth + TAB_WIDTH &&
+                                        mouseRaw.y >= centerY - TAB_HEIGHT / 2.f && mouseRaw.y <= centerY + TAB_HEIGHT / 2.f);
+                if (mouseInRightTab) { m_rightExpanded = !m_rightExpanded; continue; }
+            }
+
+            bool isClickingOnPanel = (mouseRaw.x < m_leftWidth) || (mouseRaw.x > window.getSize().x - m_rightWidth);
+
+            if (leftPressed && isClickingOnPanel) {
                 if (mReturnBtn->isClicked(mouseRaw, true)) return 0;
 
-                sf::FloatRect inputBox(CANVAS_X + 10.f, CANVAS_H + 10.f, 150.f, 42.f);
+                float leftBaseX = m_leftWidth - LEFT_PANEL_WIDTH;
+                sf::FloatRect inputBox(leftBaseX + 30.f, 30.f, 220.f, 42.f);
                 mInputActive = inputBox.contains(mouseRaw);
 
-                if (mSliderHandle.getGlobalBounds().contains(mouseRaw))
+                if (mSliderHandle.getGlobalBounds().contains(mouseRaw) || mSliderTrack.getGlobalBounds().contains(mouseRaw))
                     mSliderDragging = true;
 
                 if (mInsertBtn->isClicked(mouseRaw, true) && !mInputString.empty()) {
                     int val = std::stoi(mInputString);
-                    if (mHistoryIndex < (int)mHistory.size()) {
-                        mHistory.erase(mHistory.begin() + mHistoryIndex, mHistory.end());
-                    }
+                    if (mHistoryIndex < (int)mHistory.size()) mHistory.erase(mHistory.begin() + mHistoryIndex, mHistory.end());
                     Operation op{OpType::Insert, val};
-                    mHistory.push_back(op);
-                    mHistoryIndex++;
-                    buildSteps(op);
-                    mInputString.clear();
+                    mHistory.push_back(op); mHistoryIndex++;
+                    buildSteps(op); mInputString.clear();
+                    m_selectedNodeValue = -1;
                 }
 
                 if (mDeleteBtn->isClicked(mouseRaw, true) && !mInputString.empty()) {
                     int val = std::stoi(mInputString);
-                    if (mHistoryIndex < (int)mHistory.size()) {
-                        mHistory.erase(mHistory.begin() + mHistoryIndex, mHistory.end());
-                    }
+                    if (mHistoryIndex < (int)mHistory.size()) mHistory.erase(mHistory.begin() + mHistoryIndex, mHistory.end());
                     Operation op{OpType::Delete, val};
-                    mHistory.push_back(op);
-                    mHistoryIndex++;
-                    buildSteps(op);
-                    mInputString.clear();
+                    mHistory.push_back(op); mHistoryIndex++;
+                    buildSteps(op); mInputString.clear();
+                    m_selectedNodeValue = -1;
                 }
 
                 if (mSearchBtn->isClicked(mouseRaw, true) && !mInputString.empty()) {
                     int val = std::stoi(mInputString);
-                    if (mHistoryIndex < (int)mHistory.size())
-                        mHistory.erase(mHistory.begin() + mHistoryIndex, mHistory.end());
+                    if (mHistoryIndex < (int)mHistory.size()) mHistory.erase(mHistory.begin() + mHistoryIndex, mHistory.end());
                     Operation op{OpType::Search, val};
-                    mHistory.push_back(op);
-                    mHistoryIndex++;
+                    mHistory.push_back(op); mHistoryIndex++;
+                    buildSteps(op); mInputString.clear();
+                    m_selectedNodeValue = -1;
+                }
+
+                if (mUpdateBtn->isClicked(mouseRaw, true) && !mInputString.empty() && m_selectedNodeValue != -1) {
+                    int newVal = std::stoi(mInputString);
+                    int oldVal = m_selectedNodeValue;
+                    if (mHistoryIndex < (int)mHistory.size()) mHistory.erase(mHistory.begin() + mHistoryIndex, mHistory.end());
+                    Operation op{OpType::Update, newVal, oldVal};
+                    mHistory.push_back(op); mHistoryIndex++;
                     buildSteps(op);
+                    mController.skipToEnd();
                     mInputString.clear();
+                    m_selectedNodeValue = -1;
                 }
 
                 if (mClearBtn->isClicked(mouseRaw, true)) {
-                    if (mHistoryIndex < (int)mHistory.size())
-                        mHistory.erase(mHistory.begin() + mHistoryIndex, mHistory.end());
+                    if (mHistoryIndex < (int)mHistory.size()) mHistory.erase(mHistory.begin() + mHistoryIndex, mHistory.end());
                     Operation op{OpType::Clear, 0};
-                    mHistory.push_back(op);
-                    mHistoryIndex++;
-                    buildSteps(op);
-                    mInputString.clear();
+                    mHistory.push_back(op); mHistoryIndex++;
+                    buildSteps(op); mInputString.clear();
+                    m_selectedNodeValue = -1;
                 }
 
                 if (mRandomBtn->isClicked(mouseRaw, true)) {
-                    if (mHistoryIndex < (int)mHistory.size())
-                        mHistory.erase(mHistory.begin() + mHistoryIndex, mHistory.end());
-                    
-                    mHistory.push_back({OpType::Clear, 0});
-                    mHistoryIndex++;
+                    if (mHistoryIndex < (int)mHistory.size()) mHistory.erase(mHistory.begin() + mHistoryIndex, mHistory.end());
+                    mHistory.push_back({OpType::Clear, 0}); mHistoryIndex++;
                     
                     int count = 5 + (rand() % 6);
                     for (int i = 0; i < count; ++i) {
-                        int val = rand() % 100;
-                        mHistory.push_back({OpType::Insert, val});
-                        mHistoryIndex++;
+                        mHistory.push_back({OpType::Insert, rand() % 100}); mHistoryIndex++;
                     }
                     
-                    mTree.clear();
-                    mController.clear();
+                    mTree.clear(); mController.clear();
                     for(int i = 0; i < mHistoryIndex - 1; ++i) {
                         if (mHistory[i].type == OpType::Insert)       mTree.insert(mHistory[i].value, nullptr);
                         else if (mHistory[i].type == OpType::Delete)  mTree.remove(mHistory[i].value, nullptr);
                         else if (mHistory[i].type == OpType::Clear)   mTree.clear();
+                        else if (mHistory[i].type == OpType::Update) { mTree.remove(mHistory[i].oldValue, nullptr); mTree.insert(mHistory[i].value, nullptr); }
                     }
                     buildSteps(mHistory[mHistoryIndex - 1]);
-                    mController.skipToEnd();
-                    mInputString.clear();
+                    mController.skipToEnd(); mInputString.clear();
+                    m_selectedNodeValue = -1;
                 }
 
                 if (mPrevBtn->isClicked(mouseRaw, true)) {
                     if (mHistoryIndex > 0) {
                         mHistoryIndex--;
-                        mTree.clear();
-                        mController.clear();
+                        mTree.clear(); mController.clear();
                         for(int i = 0; i < mHistoryIndex - 1; ++i) {
-                            if (mHistory[i].type == OpType::Insert)
-                                mTree.insert(mHistory[i].value, nullptr);
-                            else if (mHistory[i].type == OpType::Delete)
-                                mTree.remove(mHistory[i].value, nullptr);
-                            else if (mHistory[i].type == OpType::Clear)
-                                mTree.clear();
+                            if (mHistory[i].type == OpType::Insert)       mTree.insert(mHistory[i].value, nullptr);
+                            else if (mHistory[i].type == OpType::Delete)  mTree.remove(mHistory[i].value, nullptr);
+                            else if (mHistory[i].type == OpType::Clear)   mTree.clear();
+                            else if (mHistory[i].type == OpType::Update) { mTree.remove(mHistory[i].oldValue, nullptr); mTree.insert(mHistory[i].value, nullptr); }
                         }
                         if (mHistoryIndex > 0) {
-                            buildSteps(mHistory[mHistoryIndex - 1]);
-                            mController.skipToEnd();
+                            buildSteps(mHistory[mHistoryIndex - 1]); mController.skipToEnd();
                         }
+                        m_selectedNodeValue = -1;
                     }
                 }
+                
                 if (mNextBtn->isClicked(mouseRaw, true)) {
                     if (mHistoryIndex < (int)mHistory.size()) {
-                        Operation op = mHistory[mHistoryIndex];
-                        mHistoryIndex++;
+                        Operation op = mHistory[mHistoryIndex]; mHistoryIndex++;
                         buildSteps(op);
+                        m_selectedNodeValue = -1;
+                    }
+                }
+
+                if (mSkipAnimationBtn->isClicked(mouseRaw, true)){
+                    if (mHistoryIndex > 0) {
+                        buildSteps(mHistory[mHistoryIndex - 1]); mController.skipToEnd();
+                    }
+                }
+
+                if (mLoadFileBtn->isClicked(mouseRaw, true)) {
+                    std::ifstream file("data/AVL_tree.txt");
+                    if (file.is_open()) {
+                        if (mHistoryIndex < (int)mHistory.size()) mHistory.erase(mHistory.begin() + mHistoryIndex, mHistory.end());
+                        mHistory.push_back({OpType::Clear, 0}); mHistoryIndex++;
+                        int val;
+                        while (file >> val) { mHistory.push_back({OpType::Insert, val}); mHistoryIndex++; }
+                        
+                        mTree.clear(); mController.clear();
+                        for(int i = 0; i < mHistoryIndex - 1; ++i) {
+                            if (mHistory[i].type == OpType::Insert)       mTree.insert(mHistory[i].value, nullptr);
+                            else if (mHistory[i].type == OpType::Delete)  mTree.remove(mHistory[i].value, nullptr);
+                            else if (mHistory[i].type == OpType::Clear)   mTree.clear();
+                            else if (mHistory[i].type == OpType::Update) { mTree.remove(mHistory[i].oldValue, nullptr); mTree.insert(mHistory[i].value, nullptr); }
+                        }
+                        if (mHistoryIndex > 0) {
+                            buildSteps(mHistory[mHistoryIndex - 1]); mController.skipToEnd();
+                        }
+                        mInputString.clear();
+                        m_selectedNodeValue = -1;
                     }
                 }
             }
-            
-            if (event.type == sf::Event::MouseButtonReleased)
-                mSliderDragging = false;
 
-            if (mSliderDragging && event.type == sf::Event::MouseMoved) {
-                sf::Vector2f mouse = window.mapPixelToCoords(
-                    sf::Vector2i(event.mouseMove.x, event.mouseMove.y));
-                float trackLeft  = 1025.f;
-                float trackRight = 1205.f;
-                float ratio = (mouse.x - trackLeft) / (trackRight - trackLeft);
-                ratio = std::max(0.f, std::min(1.f, ratio));
-                mSpeedValue = 0.5f + ratio * 7.5f; // range 0.5x to 5x
-                mController.setSpeed(mSpeedValue);
-                updateSliderHandle();
+            // --- Node click detection on the canvas ---
+            if (leftPressed && !isClickingOnPanel && mController.hasSteps()) {
+                float canvasCenter = m_leftWidth + (window.getSize().x - m_leftWidth - m_rightWidth) / 2.f;
+                float hitShiftX = canvasCenter - 610.f;
+                float curT = mController.t();
+                const auto* step = mController.currentStep();
+
+                int hitNode = -1;
+                for (const auto& ns : step->nodes) {
+                    sf::Vector2f pos = ns.startPos + (ns.targetPos - ns.startPos) * curT;
+                    pos.x += hitShiftX;
+                    float dx = mouseRaw.x - pos.x;
+                    float dy = mouseRaw.y - pos.y;
+                    if (dx * dx + dy * dy <= NODE_RADIUS * NODE_RADIUS) {
+                        hitNode = ns.value;
+                        break;
+                    }
+                }
+                m_selectedNodeValue = hitNode;
             }
+            
+            if (event.type == sf::Event::MouseButtonReleased) mSliderDragging = false;
 
             if (mInputActive && event.type == sf::Event::TextEntered) {
                 if (event.text.unicode == 8 && !mInputString.empty())
                     mInputString.pop_back();
-                else if (event.text.unicode >= '0' && event.text.unicode <= '9'
-                         && mInputString.size() < 4)
+                else if ((event.text.unicode >= '0' && event.text.unicode <= '9' || event.text.unicode == '-') && mInputString.size() < 4)
                     mInputString += static_cast<char>(event.text.unicode);
             }
         }
+        
+        // --- Smooth Layout Mathematics ---
+        float targetLeft = m_leftExpanded ? LEFT_PANEL_WIDTH : TAB_WIDTH;
+        m_leftWidth += (targetLeft - m_leftWidth) * 12.f * dt;
+        
+        float targetRight = m_rightExpanded ? RIGHT_PANEL_WIDTH : TAB_WIDTH;
+        m_rightWidth += (targetRight - m_rightWidth) * 12.f * dt;
+
+        float leftBaseX = m_leftWidth - LEFT_PANEL_WIDTH;
+        float rightBaseX = window.getSize().x - m_rightWidth;
+
+        // Sync UI positions dynamically 
+        mInsertBtn->setPosition(sf::Vector2f(leftBaseX + 85.f, 100.f));
+        mDeleteBtn->setPosition(sf::Vector2f(leftBaseX + 195.f, 100.f));
+        mSearchBtn->setPosition(sf::Vector2f(leftBaseX + 85.f, 150.f));
+        mUpdateBtn->setPosition(sf::Vector2f(leftBaseX + 195.f,150.f));
+
+        //family offset
+        mRandomBtn->setPosition(sf::Vector2f(leftBaseX + 85.f, 210.f + fset));
+        mClearBtn ->setPosition(sf::Vector2f(leftBaseX + 195.f, 210.f + fset));
+        mLoadFileBtn->setPosition(sf::Vector2f(leftBaseX + 140.f, 260.f + fset));
+
+        mPrevBtn  ->setPosition(sf::Vector2f(leftBaseX + 85.f, 320.f + fset));
+        mNextBtn  ->setPosition(sf::Vector2f(leftBaseX + 195.f, 320.f + fset));
+        mSkipAnimationBtn->setPosition(sf::Vector2f(leftBaseX + 140.f, 370.f + fset));
+
+        mSliderTrack.setPosition(leftBaseX + 30.f, 430.f + fset);
+        
+        // Slider Logic updates seamlessly during drag
+        if (mSliderDragging) {
+            float trackLeft  = leftBaseX + 30.f;
+            float trackRight = leftBaseX + 250.f;
+            float ratio = (mouseRaw.x - trackLeft) / (trackRight - trackLeft);
+            ratio = std::max(0.f, std::min(1.f, ratio));
+            mSpeedValue = 0.5f + ratio * 7.5f; 
+            mController.setSpeed(mSpeedValue);
+        }
+        float ratio = (mSpeedValue - 0.5f) / 7.5f;
+        mSliderHandle.setPosition(leftBaseX + 30.f + ratio * 220.f, 433.f + fset);
+
+        mReturnBtn->setPosition(sf::Vector2f(leftBaseX + 140.f, window.getSize().y - 40.f));
+        mCodePanel.setPosition(sf::Vector2f(rightBaseX + TAB_WIDTH + 10.f, 20.f + fset));
+
+        // Update hovers
+        mInsertBtn->update(mouseRaw); mDeleteBtn->update(mouseRaw); mSearchBtn->update(mouseRaw);
+        mUpdateBtn->update(mouseRaw);
+
+        mRandomBtn->update(mouseRaw); mClearBtn->update(mouseRaw); mLoadFileBtn->update(mouseRaw);
+        mPrevBtn->update(mouseRaw); mNextBtn->update(mouseRaw); mSkipAnimationBtn->update(mouseRaw);
+        mReturnBtn->update(mouseRaw);
 
         mController.update(dt);
 
-        // 3. Render everything in the correct order
-        window.clear(sf::Color(13, 11, 15)); // Charcoal
-
+        window.clear(UITheme::Color::AVLBackground); 
         window.draw(mBgSprite); 
         window.draw(dotGrid); 
 
-        mCodePanel.highlight(mController.hasSteps()
-            ? mController.currentStep()->codeLineIndex : -1);
-        mCodePanel.draw(window);
-        drawTree(window, font);
-        drawControls(window, font);
-        drawInputBox(window, font);
-        drawDescription(window, font);
-        drawSpeedSlider(window, font);
+        // Dynamic Tree Centering
+        float newCenter = m_leftWidth + (window.getSize().x - m_leftWidth - m_rightWidth) / 2.f;
+        float shiftX = newCenter - 610.f; // Base 610 represents center of old 760w layout
+
+        drawTree(window, font, shiftX);
+        drawDescription(window, font, shiftX);
+
+        drawLeftPanel(window, font, leftBaseX);
+        drawRightPanel(window, font, rightBaseX);
         
         window.display();
     }
     return -1;
 }
 
-void AVLScreen::updateSliderHandle() {
-    float trackLeft  = 1025.f;
-    float trackRight = 1205.f;
-    float ratio = (mSpeedValue - 0.5f) / 7.5f;
-    mSliderHandle.setPosition(trackLeft + ratio * (trackRight - trackLeft), 389.f);
+void AVLScreen::drawLeftPanel(sf::RenderWindow& window, const sf::Font& font, float leftBaseX) {
+    sf::RectangleShape leftMenu(sf::Vector2f(m_leftWidth, window.getSize().y));
+    leftMenu.setFillColor(UITheme::Color::AVLPanelBg);
+    window.draw(leftMenu);
+
+    float centerY = window.getSize().y / 2.f;
+    sf::RectangleShape leftTab(sf::Vector2f(35.f, 50.f));
+    leftTab.setFillColor(UITheme::Color::GraphTabBg);
+    leftTab.setPosition(m_leftWidth - 35.f, centerY - 25.f);
+    window.draw(leftTab);
+
+    sf::Text lIcon(m_leftExpanded ? "<<" : ">>", font, 18);
+    sf::FloatRect lb = lIcon.getLocalBounds();
+    lIcon.setOrigin(lb.left + lb.width/2.f, lb.top + lb.height/2.f);
+    lIcon.setPosition(m_leftWidth - 17.5f, centerY - 2.f);
+    lIcon.setFillColor(UITheme::Color::NodeOutlineColor);
+    window.draw(lIcon);
+
+    if (m_leftWidth > 50.f) {
+        // Dynamic Input Box inside panel
+        sf::RectangleShape box({220.f, 42.f});
+        box.setPosition(leftBaseX + 30.f, 30.f);
+        box.setFillColor(UITheme::Color::CodePanelBg);
+        box.setOutlineThickness(1.5f);
+        box.setOutlineColor(mInputActive ? UITheme::Color::AVLAccent : UITheme::Color::ModernBtnBorder);
+        window.draw(box);
+
+        if (mInputActive) {
+            sf::RectangleShape glowBox({220.f, 42.f});
+            glowBox.setPosition(leftBaseX + 30.f, 30.f);
+            glowBox.setFillColor(sf::Color::Transparent);
+            glowBox.setOutlineThickness(3.f);
+            glowBox.setOutlineColor(UITheme::Color::AVLGlow);
+            window.draw(glowBox);
+        }
+
+        sf::Text inputText;
+        inputText.setFont(font);
+        inputText.setString(mInputString.empty() ? "value..." : mInputString + (mInputActive ? "|" : ""));
+        inputText.setCharacterSize(16);
+        inputText.setLetterSpacing(1.2f);
+        inputText.setFillColor(mInputString.empty() ? sf::Color(100, 110, 130) : sf::Color::White);
+        inputText.setPosition(leftBaseX + 40.f, 40.f);
+        window.draw(inputText);
+
+        window.draw(*mInsertBtn);
+        window.draw(*mDeleteBtn);
+        window.draw(*mSearchBtn);
+        window.draw(*mUpdateBtn);
+
+        window.draw(*mRandomBtn);
+        window.draw(*mClearBtn);
+        window.draw(*mLoadFileBtn);
+
+        window.draw(*mPrevBtn);
+        window.draw(*mNextBtn);
+        window.draw(*mSkipAnimationBtn);
+        
+        window.draw(*mReturnBtn);
+
+        sf::Text speedLabel;
+        speedLabel.setFont(font);
+        speedLabel.setCharacterSize(13);
+        speedLabel.setFillColor(UITheme::Color::AVLSpeedSliderText);
+        speedLabel.setString("Speed: " + std::to_string((int)mSpeedValue) + "x");
+        speedLabel.setPosition(leftBaseX + 30.f, 405.f + fset);
+        window.draw(speedLabel);
+
+        sf::RectangleShape filledTrack({mSliderHandle.getPosition().x - mSliderTrack.getPosition().x, 6.f});
+        filledTrack.setPosition(mSliderTrack.getPosition());
+        filledTrack.setFillColor(UITheme::Color::AVLSliderFill);
+
+        window.draw(mSliderTrack);
+        window.draw(filledTrack);
+        window.draw(mSliderHandle);
+
+        sf::Text counter;
+        counter.setFont(font);
+        counter.setCharacterSize(13);
+        counter.setFillColor(sf::Color(180, 190, 200));
+        counter.setString(mController.hasSteps()
+            ? "Step: " + std::to_string(mController.currentIndex() + 1) + " / " + std::to_string(mController.totalSteps())
+            : "Step: 0 / 0");
+        counter.setPosition(leftBaseX + 30.f, 455.f + fset);
+        window.draw(counter);
+    }
 }
 
-void AVLScreen::drawTree(sf::RenderWindow& window, const sf::Font& font) {
+void AVLScreen::drawRightPanel(sf::RenderWindow& window, const sf::Font& font, float rightBaseX) {
+    float winW = window.getSize().x;
+    
+    sf::RectangleShape rightMenu(sf::Vector2f(m_rightWidth, window.getSize().y));
+    rightMenu.setFillColor(UITheme::Color::AVLPanelBg);
+    rightMenu.setPosition(winW - m_rightWidth, 0);
+    window.draw(rightMenu);
+
+    float centerY = window.getSize().y / 2.f;
+    sf::RectangleShape rightTab(sf::Vector2f(35.f, 50.f));
+    rightTab.setFillColor(UITheme::Color::GraphTabBg);
+    rightTab.setPosition(winW - m_rightWidth, centerY - 25.f);
+    window.draw(rightTab);
+
+    sf::Text rIcon(m_rightExpanded ? ">>" : "<<", font, 18);
+    sf::FloatRect rb = rIcon.getLocalBounds();
+    rIcon.setOrigin(rb.left + rb.width/2.f, rb.top + rb.height/2.f);
+    rIcon.setPosition(winW - m_rightWidth + 17.5f, centerY - 2.f);
+    rIcon.setFillColor(UITheme::Color::NodeHighlightColor);
+    window.draw(rIcon);
+
+    mCodePanel.highlight(mController.hasSteps() ? mController.currentStep()->codeLineIndex : -1);
+    const_cast<CodePanel&>(mCodePanel).draw(window);
+}
+
+void AVLScreen::drawTree(sf::RenderWindow& window, const sf::Font& font, float shiftX) {
     if (!mController.hasSteps()) return;
     const AnimationStep* step = mController.currentStep();
     float t = mController.t();
-    drawEdges(window, step->nodes, t);
+    drawEdges(window, step->nodes, t, shiftX);
     for (const auto& ns : step->nodes)
-        drawNode(window, font, ns, t);
+        drawNode(window, font, ns, t, shiftX);
 }
 
 void AVLScreen::drawNode(sf::RenderWindow& window, const sf::Font& font,
-                          const NodeState& ns, float t)
+                          const NodeState& ns, float t, float shiftX)
 {
     sf::Vector2f pos = ns.startPos + (ns.targetPos - ns.startPos) * t;
+    pos.x += shiftX;
+
+    // Faint glow behind the selected node
+    if (ns.value == m_selectedNodeValue) {
+        sf::CircleShape glow(NODE_RADIUS + 8.f);
+        glow.setOrigin(NODE_RADIUS + 8.f, NODE_RADIUS + 8.f);
+        glow.setPosition(pos);
+        glow.setFillColor(sf::Color(181, 58, 199, 55));
+        window.draw(glow);
+
+        sf::CircleShape glowInner(NODE_RADIUS + 4.f);
+        glowInner.setOrigin(NODE_RADIUS + 4.f, NODE_RADIUS + 4.f);
+        glowInner.setPosition(pos);
+        glowInner.setFillColor(sf::Color(181, 58, 199, 35));
+        window.draw(glowInner);
+    }
 
     GraphicNode node(NODE_RADIUS, std::to_string(ns.value), font);
     node.setPosition(pos);
-    
-    // Apply dynamic controller interpolated colors
     node.setFillColor(ns.fillColor);
     node.setOutlineColor(ns.outlineColor);
-
     window.draw(node);
 }
 
 void AVLScreen::drawEdges(sf::RenderWindow& window,
-                           const std::vector<NodeState>& nodes, float t)
+                           const std::vector<NodeState>& nodes, float t, float shiftX)
 {
     std::map<int, sf::Vector2f> posMap;
-    for (const auto& ns : nodes)
-        posMap[ns.value] = ns.startPos + (ns.targetPos - ns.startPos) * t;
+    for (const auto& ns : nodes) {
+        sf::Vector2f pos = ns.startPos + (ns.targetPos - ns.startPos) * t;
+        pos.x += shiftX;
+        posMap[ns.value] = pos;
+    }
 
     auto drawThickLine = [&](sf::Vector2f p1, sf::Vector2f p2) {
         sf::Vector2f dir = p2 - p1;
@@ -343,19 +571,17 @@ void AVLScreen::drawEdges(sf::RenderWindow& window,
         if (len < 0.1f) return;
         float angle = std::atan2(dir.y, dir.x) * 180.f / 3.14159f;
 
-        // Glow Line
         sf::RectangleShape glow(sf::Vector2f(len, 7.f));
         glow.setOrigin(0, 3.5f);
         glow.setPosition(p1);
-        glow.setFillColor(sf::Color(181, 58, 199, 30));
+        glow.setFillColor(UITheme::Color::AVLGlow);
         glow.setRotation(angle);
         window.draw(glow);
 
-        // Core Line
         sf::RectangleShape line(sf::Vector2f(len, 2.5f));
         line.setOrigin(0, 1.25f);
         line.setPosition(p1);
-        line.setFillColor(sf::Color(218, 112, 214, 200));
+        line.setFillColor(UITheme::Color::AVLAccent); 
         line.setRotation(angle);
         window.draw(line);
     };
@@ -371,142 +597,47 @@ void AVLScreen::drawEdges(sf::RenderWindow& window,
     }
 }
 
-void AVLScreen::drawControls(sf::RenderWindow& window, const sf::Font& font) {
-    // --- Unified Control Panel Background ---
-    sf::ConvexShape bgBox(40); 
-    
-    bgBox.setFillColor(sf::Color(22, 18, 28, 230));  // Dark glass plum
-    bgBox.setOutlineThickness(1.5f);
-    bgBox.setOutlineColor(sf::Color(181, 58, 199, 40));
-
-    float boxX = 990.f;  
-    float boxY = 35.f;   
-    float boxW = 250.f;  
-    float boxH = 430.f;  
-    float radius = 18.f; 
-
-    const float pi = 3.141592654f;
-    for (int i = 0; i < 10; ++i) {
-        float step = i * (pi / 2.f) / 9.f;
-        bgBox.setPoint(i, sf::Vector2f(
-            boxX + boxW - radius + radius * std::cos(step), 
-            boxY + radius - radius * std::sin(step)));
-        bgBox.setPoint(10 + i, sf::Vector2f(
-            boxX + radius + radius * std::cos(step + pi / 2.f), 
-            boxY + radius - radius * std::sin(step + pi / 2.f)));
-        bgBox.setPoint(20 + i, sf::Vector2f(
-            boxX + radius + radius * std::cos(step + pi), 
-            boxY + boxH - radius - radius * std::sin(step + pi)));
-        bgBox.setPoint(30 + i, sf::Vector2f(
-            boxX + boxW - radius + radius * std::cos(step + 3.f * pi / 2.f), 
-            boxY + boxH - radius - radius * std::sin(step + 3.f * pi / 2.f)));
-    }
-    
-    window.draw(bgBox);
-
-    window.draw(*mInsertBtn);
-    window.draw(*mDeleteBtn);
-    window.draw(*mSearchBtn);
-    window.draw(*mRandomBtn);
-    window.draw(*mClearBtn);
-    window.draw(*mPrevBtn);
-    window.draw(*mNextBtn);
-    window.draw(*mReturnBtn);
-
-    sf::Text counter;
-    counter.setFont(font);
-    counter.setCharacterSize(13);
-    counter.setFillColor(sf::Color(180, 190, 200));
-    counter.setString(mController.hasSteps()
-        ? std::to_string(mController.currentIndex() + 1) + " / "
-          + std::to_string(mController.totalSteps())
-        : "0 / 0");
-    counter.setPosition(1025.f, 355.f);
-    window.draw(counter);
-}
-
-void AVLScreen::drawSpeedSlider(sf::RenderWindow& window, const sf::Font& font) {
-    sf::Text label;
-    label.setFont(font);
-    label.setCharacterSize(13);
-    label.setLetterSpacing(1.1f);
-    label.setFillColor(sf::Color(200, 210, 220));
-    label.setString("Speed: " + std::to_string((int)mSpeedValue) + "x");
-    label.setPosition(1025.f, 405.f);
-    window.draw(label);
-
-    sf::RectangleShape filledTrack({mSliderHandle.getPosition().x - mSliderTrack.getPosition().x, 8.f});
-    filledTrack.setPosition(mSliderTrack.getPosition());
-    filledTrack.setFillColor(sf::Color(110, 247, 242));
-
-    window.draw(mSliderTrack);
-    window.draw(filledTrack);
-
-    sf::CircleShape shadow(10.f);
-    shadow.setOrigin(10.f, 10.f);
-    shadow.setPosition(mSliderHandle.getPosition() + sf::Vector2f(2.f, 3.f));
-    shadow.setFillColor(sf::Color(0, 0, 0, 120));
-
-    window.draw(shadow);
-    window.draw(mSliderHandle);
-}
-
-void AVLScreen::drawInputBox(sf::RenderWindow& window, const sf::Font& font) {
-    sf::RectangleShape box({150.f, 42.f});
-    box.setPosition(CANVAS_X + 10.f, CANVAS_H + 10.f);
-    box.setFillColor(sf::Color(22, 18, 28, 230));
-    box.setOutlineThickness(1.5f);
-    box.setOutlineColor(mInputActive ? sf::Color(218, 112, 214) : sf::Color(80, 60, 90));
-    window.draw(box);
-
-    // Subtle glow if active
-    if (mInputActive) {
-        sf::RectangleShape glowBox({150.f, 42.f});
-        glowBox.setPosition(CANVAS_X + 10.f, CANVAS_H + 10.f);
-        glowBox.setFillColor(sf::Color::Transparent);
-        glowBox.setOutlineThickness(4.f);
-        glowBox.setOutlineColor(sf::Color(218, 112, 214, 40));
-        window.draw(glowBox);
+void AVLScreen::drawDescription(sf::RenderWindow& window, const sf::Font& font, float shiftX) {
+    // Determine description text
+    std::string descText;
+    if (m_selectedNodeValue != -1) {
+        descText = "Node " + std::to_string(m_selectedNodeValue) + " selected";
+    } else if (mController.hasSteps()) {
+        descText = mController.currentStep()->description;
+    } else {
+        return;
     }
 
-    sf::Text inputText;
-    inputText.setFont(font);
-    inputText.setString(mInputString.empty() ? "value..." : mInputString);
-    inputText.setCharacterSize(16);
-    inputText.setLetterSpacing(1.2f);
-    inputText.setFillColor(mInputString.empty()
-        ? sf::Color(100, 110, 130) : sf::Color::White);
-    inputText.setPosition(CANVAS_X + 24.f, CANVAS_H + 20.f);
-    window.draw(inputText);
-}
+    float boxH = 70.f;
+    float go_up = 70.f;
 
-void AVLScreen::drawDescription(sf::RenderWindow& window, const sf::Font& font) {
-    if (!mController.hasSteps()) return;
+    float boxW = 700.f; 
+    float boxX = 640.f + shiftX - boxW/2.f; 
+    float boxY = CANVAS_H + 64.f - go_up;
 
-    sf::RectangleShape shadow({CANVAS_W - 30.f, 54.f});
-    shadow.setPosition(CANVAS_X + 24.f, CANVAS_H + 68.f);
+    sf::RectangleShape shadow({boxW, boxH});
+    shadow.setPosition(boxX + 4.f, boxY + 4.f);
     shadow.setFillColor(sf::Color(0, 0, 0, 90));
     window.draw(shadow);
 
-    sf::RectangleShape bar({CANVAS_W - 30.f, 54.f});
-    bar.setPosition(CANVAS_X + 20.f, CANVAS_H + 64.f);
-    bar.setFillColor(sf::Color(22, 18, 28, 240));
+    sf::RectangleShape bar({boxW, boxH});
+    bar.setPosition(boxX, boxY);
+    bar.setFillColor(UITheme::Color::AVLPanelBg);
     bar.setOutlineThickness(1.5f);
-    bar.setOutlineColor(sf::Color(181, 58, 199, 60));
+    bar.setOutlineColor(m_selectedNodeValue != -1 ? UITheme::Color::AVLAccent : UITheme::Color::AVLGlowStrong);
     window.draw(bar);
 
-    // Accent line
-    sf::RectangleShape accent({4.f, 54.f});
-    accent.setPosition(CANVAS_X + 20.f, CANVAS_H + 64.f);
-    accent.setFillColor(sf::Color(218, 112, 214));
+    sf::RectangleShape accent({4.f, boxH});
+    accent.setPosition(boxX, boxY);
+    accent.setFillColor(UITheme::Color::AVLAccent);
     window.draw(accent);
 
     sf::Text desc;
     desc.setFont(font);
-    desc.setString(mController.currentStep()->description);
-    desc.setCharacterSize(18);
+    desc.setString(descText);
+    desc.setCharacterSize(24);
     desc.setLetterSpacing(1.1f);
     desc.setFillColor(sf::Color(240, 245, 255));
-    desc.setPosition(CANVAS_X + 38.f, CANVAS_H + 79.f);
+    desc.setPosition(boxX + 18.f, boxY + 20.f);
     window.draw(desc);
 }

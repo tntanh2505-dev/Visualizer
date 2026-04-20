@@ -1,18 +1,19 @@
 #include "DSA-Visualization/ui/components/graphic_node.hpp"
+#include "DSA-Visualization/ui/UI_Theme.hpp"
 
 GraphicNode::GraphicNode(float radius, const std::string& label, const sf::Font& font)
     : m_isHovered(false), m_isSelected(false) {
 
     // 1. Setup the "Outline" Shape (This fixes the pixelated edges)
-    float outlineThickness = 3.f;
+    float outlineThickness = UITheme::Size::NodeOutlineThickness;
     m_outlineShape.setRadius(radius + outlineThickness);
     m_outlineShape.setOrigin(radius + outlineThickness, radius + outlineThickness);
-    m_outlineShape.setFillColor(sf::Color(200, 200, 200)); // Standard grey border
+    m_outlineShape.setFillColor(UITheme::Color::NodeOutlineColor); // Standard grey border
 
     // 2. Setup Main Inner Shape
     m_shape.setRadius(radius);
     m_shape.setOrigin(radius, radius); 
-    m_baseColor = sf::Color(45, 45, 45); // Monochrome Dark Grey
+    m_baseColor = UITheme::Color::NodeFillColor; // Monochrome Dark Grey
     m_shape.setFillColor(m_baseColor);
     // Notice: We no longer use m_shape.setOutlineThickness()!
 
@@ -26,7 +27,7 @@ GraphicNode::GraphicNode(float radius, const std::string& label, const sf::Font&
     m_text.setFont(font);
     m_text.setString(label);
     m_text.setCharacterSize(static_cast<unsigned int>(radius * 0.8f));
-    m_text.setFillColor(sf::Color::White);
+    m_text.setFillColor(UITheme::Color::TextWhite);
     
     centerText();
 }

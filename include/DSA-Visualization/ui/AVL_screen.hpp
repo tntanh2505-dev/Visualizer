@@ -1,6 +1,6 @@
 #pragma once
 #include "DSA-Visualization/ui/Screen.hpp"
-#include "DSA-Visualization/ui/Button.hpp"
+#include "DSA-Visualization/ui/button.hpp"
 #include "DSA-Visualization/ui/CodePanel.hpp"
 #include "DSA-Visualization/avl_tree/AVL_tree.hpp"
 #include "DSA-Visualization/animation/AnimationController.hpp"
@@ -8,10 +8,11 @@
 #include <string>
 #include <vector>
 
-enum class OpType { Insert, Delete, Search, Clear };
+enum class OpType { Insert, Delete, Search, Clear, Update };
 struct Operation {
     OpType type;
     int value;
+    int oldValue = -1; // only used for Update
 };
 
 class AVLScreen : public Screen {
@@ -22,16 +23,15 @@ public:
 private:
 
     void buildSteps(Operation op);
-    void drawTree(sf::RenderWindow& window, const sf::Font& font);
+    void drawTree(sf::RenderWindow& window, const sf::Font& font, float shiftX);
     void drawNode(sf::RenderWindow& window, const sf::Font& font,
-                  const NodeState& ns, float t);
+                  const NodeState& ns, float t, float shiftX);
     void drawEdges(sf::RenderWindow& window,
-                   const std::vector<NodeState>& nodes, float t);
-    void drawControls(sf::RenderWindow& window, const sf::Font& font);
-    void drawInputBox(sf::RenderWindow& window, const sf::Font& font);
-    void drawDescription(sf::RenderWindow& window, const sf::Font& font);
-    void drawSpeedSlider(sf::RenderWindow& window, const sf::Font& font);
-    void updateSliderHandle();
+                   const std::vector<NodeState>& nodes, float t, float shiftX);
+                   
+    void drawLeftPanel(sf::RenderWindow& window, const sf::Font& font, float leftBaseX);
+    void drawRightPanel(sf::RenderWindow& window, const sf::Font& font, float rightBaseX);
+    void drawDescription(sf::RenderWindow& window, const sf::Font& font, float shiftX);
 
     AVLTree             mTree;
     AnimationController mController;
@@ -45,6 +45,9 @@ private:
     std::optional<ModernButton> mPrevBtn;
     std::optional<ModernButton> mNextBtn;
     std::optional<ModernButton> mReturnBtn;
+    std::optional<ModernButton> mSkipAnimationBtn;
+    std::optional<ModernButton> mLoadFileBtn;
+    std::optional<ModernButton> mUpdateBtn;
 
     std::string           mInputString;
     bool                  mInputActive;
@@ -59,6 +62,14 @@ private:
 
     std::vector<Operation> mHistory;
     int                    mHistoryIndex;
+
+    // --- Sliding Panels Architecture ---
+    float m_leftWidth;
+    float m_rightWidth;
+    bool  m_leftExpanded;
+    bool  m_rightExpanded;
+
+    int   m_selectedNodeValue;
 
     static const std::vector<std::string> INSERT_CODE;
     static const std::vector<std::string> DELETE_CODE;

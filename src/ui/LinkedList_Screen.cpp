@@ -1,4 +1,5 @@
 #include "DSA-Visualization/ui/LinkedList_Screen.hpp"
+#include "DSA-Visualization/ui/UI_Theme.hpp"
 
 int LL_screen::run(sf::RenderWindow &window, sf::Font &font) {
     SLL::LinkedListScene scene(font, window.getSize().x, window.getSize().y);
@@ -22,20 +23,19 @@ int LL_screen::run(sf::RenderWindow &window, sf::Font &font) {
         }
 
         if (nextScene != SLL::SceneType::NONE) {
-            if (nextScene == SLL::SceneType::MAIN_MENU) {
-                return 0; // Return to main menu
-            }
+            if (nextScene == SLL::SceneType::MAIN_MENU) return 0; 
             if (nextScene == SLL::SceneType::QUIT) {
                 window.close();
                 return -1;
             }
-            // Ignore other scenes (Heap, AVL, Graph) since Game class manages those
             nextScene = SLL::SceneType::NONE;
         }
+        
 
         scene.Update(dt, window);
 
-        window.clear(sf::Color(20, 20, 20)); 
+        // --- Used UITheme PanelBg instead of sf::Color(20, 20, 20) ---
+        window.clear(UITheme::Color::PanelBg); 
         scene.Draw(window);
         window.display();
     }

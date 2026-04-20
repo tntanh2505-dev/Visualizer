@@ -26,6 +26,7 @@ target_link_libraries(${PROJECT_NAME}
 
 # Copy assets to build folder
 file(COPY assets DESTINATION ${CMAKE_BINARY_DIR})
+file(COPY data DESTINATION ${CMAKE_BINARY_DIR})	
 
 # Copy SFML DLLs to build folder (add this before or after the executable is created)
 file(GLOB SFML_DLLS "${CMAKE_SOURCE_DIR}/lib/bin/*.dll")
