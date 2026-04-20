@@ -93,14 +93,14 @@ private:
     sf::Text mRootText;
     sf::Text mLegendText;
 
-    Button mInsertButton;
-    Button mDeleteButton;
-    Button mBuildButton;
-    Button mClearButton;
-    Button mReturnButton;
-    Button mPlayPauseButton;
-    Button mStepButton;
-    Button mPrevButton;
+    ModernButton mInsertButton;
+    ModernButton mDeleteButton;
+    ModernButton mBuildButton;
+    ModernButton mClearButton;
+    ModernButton mReturnButton;
+    ModernButton mPlayPauseButton;
+    ModernButton mStepButton;
+    ModernButton mPrevButton;
 
     sf::Texture mBgTexture;
     sf::Sprite mBgSprite;

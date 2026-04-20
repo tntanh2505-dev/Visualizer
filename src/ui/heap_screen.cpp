@@ -60,14 +60,14 @@ HeapVisualizer::HeapVisualizer(const sf::Font& font)
     , mStatusText(makeText(font, "", 16, sf::Color(251, 209, 101), {400.f, 635.f}))
     
     // Button
-    , mInsertButton("Insert", font, {BUTTON_X, BUTTON_START_Y}, {BUTTON_WIDTH, BUTTON_HEIGHT})
-    , mDeleteButton("Delete", font, {BUTTON_X2, BUTTON_START_Y}, {BUTTON_WIDTH, BUTTON_HEIGHT})
-    , mBuildButton("Build", font, {BUTTON_X, BUTTON_START_Y + (BUTTON_HEIGHT + BUTTON_GAP_Y)}, {BUTTON_WIDTH, BUTTON_HEIGHT})
-    , mClearButton("Clear", font, {BUTTON_X2, BUTTON_START_Y + (BUTTON_HEIGHT + BUTTON_GAP_Y)}, {BUTTON_WIDTH, BUTTON_HEIGHT})
-    , mPrevButton("<", font, {BUTTON_X, BUTTON_START_Y + 2 * (BUTTON_HEIGHT + BUTTON_GAP_Y)}, {BUTTON_WIDTH / 2.f, BUTTON_HEIGHT})
-    , mPlayPauseButton("Pause", font, {BUTTON_X + (BUTTON_WIDTH / 2.f) + (BUTTON_GAP_X / 2.f), BUTTON_START_Y + 2 * (BUTTON_HEIGHT + BUTTON_GAP_Y)}, {BUTTON_WIDTH, BUTTON_HEIGHT})
-    , mStepButton(">", font, {BUTTON_X + (BUTTON_WIDTH / 2.f) + (BUTTON_GAP_X / 2.f) + BUTTON_WIDTH + (BUTTON_GAP_X / 2.f), BUTTON_START_Y + 2 * (BUTTON_HEIGHT + BUTTON_GAP_Y)}, {BUTTON_WIDTH / 2.f, BUTTON_HEIGHT})
-    , mReturnButton("Return", font, {BUTTON_X, 650.f}, {BUTTON_WIDTH * 2 + BUTTON_GAP_X, BUTTON_HEIGHT})
+    , mInsertButton("Insert", font, {BUTTON_WIDTH, BUTTON_HEIGHT})
+    , mDeleteButton("Delete", font, {BUTTON_WIDTH, BUTTON_HEIGHT})
+    , mBuildButton("Build", font, {BUTTON_WIDTH, BUTTON_HEIGHT})
+    , mClearButton("Clear", font, {BUTTON_WIDTH, BUTTON_HEIGHT})
+    , mPrevButton("<", font, {BUTTON_WIDTH / 2.f, BUTTON_HEIGHT})
+    , mPlayPauseButton("Pause", font, {BUTTON_WIDTH, BUTTON_HEIGHT})
+    , mStepButton(">", font, {BUTTON_WIDTH / 2.f, BUTTON_HEIGHT})
+    , mReturnButton("Return", font, {BUTTON_WIDTH * 2 + BUTTON_GAP_X, BUTTON_HEIGHT})
 {
     // Panel
     float cpX = 1020.f;
@@ -105,6 +105,16 @@ HeapVisualizer::HeapVisualizer(const sf::Font& font)
     mInputBox.setFillColor(sf::Color::White);
     mInputBox.setOutlineThickness(2.f);
     mInputBox.setOutlineColor(sf::Color(181, 58, 199, 100));
+
+    // ModernButton uses centered transforms, so convert the existing top-left layout into center positions.
+    mInsertButton.setPosition({BUTTON_X + BUTTON_WIDTH / 2.f, BUTTON_START_Y + BUTTON_HEIGHT / 2.f});
+    mDeleteButton.setPosition({BUTTON_X2 + BUTTON_WIDTH / 2.f, BUTTON_START_Y + BUTTON_HEIGHT / 2.f});
+    mBuildButton.setPosition({BUTTON_X + BUTTON_WIDTH / 2.f, BUTTON_START_Y + (BUTTON_HEIGHT + BUTTON_GAP_Y) + BUTTON_HEIGHT / 2.f});
+    mClearButton.setPosition({BUTTON_X2 + BUTTON_WIDTH / 2.f, BUTTON_START_Y + (BUTTON_HEIGHT + BUTTON_GAP_Y) + BUTTON_HEIGHT / 2.f});
+    mPrevButton.setPosition({BUTTON_X + (BUTTON_WIDTH / 4.f), BUTTON_START_Y + 2 * (BUTTON_HEIGHT + BUTTON_GAP_Y) + BUTTON_HEIGHT / 2.f});
+    mPlayPauseButton.setPosition({BUTTON_X + BUTTON_WIDTH + BUTTON_GAP_X / 2.f, BUTTON_START_Y + 2 * (BUTTON_HEIGHT + BUTTON_GAP_Y) + BUTTON_HEIGHT / 2.f});
+    mStepButton.setPosition({BUTTON_X + 1.75f * BUTTON_WIDTH + BUTTON_GAP_X, BUTTON_START_Y + 2 * (BUTTON_HEIGHT + BUTTON_GAP_Y) + BUTTON_HEIGHT / 2.f});
+    mReturnButton.setPosition({BUTTON_X + (BUTTON_WIDTH * 2 + BUTTON_GAP_X) / 2.f, 650.f + BUTTON_HEIGHT / 2.f});
 
     setStatus("Ready.");
 }
@@ -144,36 +154,46 @@ void HeapVisualizer::handleEvent(const sf::Event& event, const sf::RenderWindow&
         }
     }
 
-    if (mInsertButton.isClicked(event, window)) {
-        runInsert();
-    }
-    if (mDeleteButton.isClicked(event, window)) {
-        runDeleteRoot();
-    }
-    if (mBuildButton.isClicked(event, window)) {
-        runBuildHeap();
-    }
-    if (mClearButton.isClicked(event, window)) {
-        runClear();
-    }
-    if (mPlayPauseButton.isClicked(event, window)) {
-        togglePlayback();
-    }
-    if (mStepButton.isClicked(event, window)) {
-        mIsPlaying = false;
-        if (!mPendingActions.empty()) {
-            processNextAction();
-        } else {
-            setStatus("No pending animation steps.");
+    if (event.type == sf::Event::MouseButtonReleased && event.mouseButton.button == sf::Mouse::Left) {
+        mInsertButton.update(mouse);
+        mDeleteButton.update(mouse);
+        mBuildButton.update(mouse);
+        mClearButton.update(mouse);
+        mPlayPauseButton.update(mouse);
+        mStepButton.update(mouse);
+        mPrevButton.update(mouse);
+
+        if (mInsertButton.isClicked(mouse, true)) {
+            runInsert();
         }
-    }
-    if (mPrevButton.isClicked(event, window)) {
-        mIsPlaying = false;
-        if (!mHistory.empty()) {
-            processPreviousAction();
-            setStatus("Stepped back."); 
-        } else {
-            setStatus("Already at the start of operation.");
+        if (mDeleteButton.isClicked(mouse, true)) {
+            runDeleteRoot();
+        }
+        if (mBuildButton.isClicked(mouse, true)) {
+            runBuildHeap();
+        }
+        if (mClearButton.isClicked(mouse, true)) {
+            runClear();
+        }
+        if (mPlayPauseButton.isClicked(mouse, true)) {
+            togglePlayback();
+        }
+        if (mStepButton.isClicked(mouse, true)) {
+            mIsPlaying = false;
+            if (!mPendingActions.empty()) {
+                processNextAction();
+            } else {
+                setStatus("No pending animation steps.");
+            }
+        }
+        if (mPrevButton.isClicked(mouse, true)) {
+            mIsPlaying = false;
+            if (!mHistory.empty()) {
+                processPreviousAction();
+                setStatus("Stepped back.");
+            } else {
+                setStatus("Already at the start of operation.");
+            }
         }
     }
 
@@ -197,13 +217,14 @@ void HeapVisualizer::handleEvent(const sf::Event& event, const sf::RenderWindow&
 // Refreshes hover states, visible text, and advances the animation timer when autoplay is enabled.
 void HeapVisualizer::update(float deltaTime, const sf::RenderWindow& window) {
     const sf::Vector2f mouse = window.mapPixelToCoords(sf::Mouse::getPosition(window));
-    mInsertButton.setHighlight(mInsertButton.getGlobalBounds().contains(mouse));
-    mDeleteButton.setHighlight(mDeleteButton.getGlobalBounds().contains(mouse));
-    mBuildButton.setHighlight(mBuildButton.getGlobalBounds().contains(mouse));
-    mClearButton.setHighlight(mClearButton.getGlobalBounds().contains(mouse));
-    mPlayPauseButton.setHighlight(mPlayPauseButton.getGlobalBounds().contains(mouse));
-    mStepButton.setHighlight(mStepButton.getGlobalBounds().contains(mouse));
-    mPrevButton.setHighlight(mPrevButton.getGlobalBounds().contains(mouse));
+    mInsertButton.update(mouse);
+    mDeleteButton.update(mouse);
+    mBuildButton.update(mouse);
+    mClearButton.update(mouse);
+    mPlayPauseButton.update(mouse);
+    mStepButton.update(mouse);
+    mPrevButton.update(mouse);
+    mReturnButton.update(mouse);
 
     mInputBox.setOutlineColor(mInputFocused ? sf::Color(255, 187, 76) : sf::Color(113, 139, 178));
     mInputText.setString(mInputBuffer + (mInputFocused ? "|" : ""));
@@ -516,14 +537,14 @@ void HeapVisualizer::drawInputArea(sf::RenderWindow& window) const {
 
 // Draws the button cluster used to control heap operations and animation playback.
 void HeapVisualizer::drawButtons(sf::RenderWindow& window) const {
-    mInsertButton.draw(window);
-    mDeleteButton.draw(window); 
-    mBuildButton.draw(window);
-    mClearButton.draw(window);
-    mReturnButton.draw(window);
-    mPlayPauseButton.draw(window);
-    mStepButton.draw(window);
-    mPrevButton.draw(window);
+    window.draw(mInsertButton);
+    window.draw(mDeleteButton); 
+    window.draw(mBuildButton);
+    window.draw(mClearButton);
+    window.draw(mReturnButton);
+    window.draw(mPlayPauseButton);
+    window.draw(mStepButton);
+    window.draw(mPrevButton);
     window.draw(mSpeedLabel);
     window.draw(mSliderTrack);
     window.draw(mSliderKnob);
@@ -683,13 +704,9 @@ void HeapVisualizer::setStatus(const std::string& status) {
     mStatusMessage = status;
     mStatusText.setString(status);
     float row3Y = BUTTON_START_Y + 2 * (BUTTON_HEIGHT + BUTTON_GAP_Y);
-    float playX = BUTTON_X + (BUTTON_WIDTH / 2.f) + (BUTTON_GAP_X / 2.f);
-    mPlayPauseButton = Button(
-        mIsPlaying ? "Pause" : "Play",
-        mFont,
-        {playX, row3Y},
-        {BUTTON_WIDTH, BUTTON_HEIGHT}
-    );
+    float playCenterX = BUTTON_X + BUTTON_WIDTH + BUTTON_GAP_X / 2.f;
+    mPlayPauseButton = ModernButton(mIsPlaying ? "Pause" : "Play", mFont, {BUTTON_WIDTH, BUTTON_HEIGHT});
+    mPlayPauseButton.setPosition({playCenterX, row3Y + BUTTON_HEIGHT / 2.f});
 }
 
 // Parses the input as exactly one integer, used by the Insert action.
@@ -770,7 +787,11 @@ int HeapVisualizer::run(sf::RenderWindow& window, sf::Font& font) {
                 return -1;
             }
 
-            if (mReturnButton.isClicked(event, window)) {
+            const sf::Vector2f mouse = window.mapPixelToCoords(sf::Mouse::getPosition(window));
+            mReturnButton.update(mouse);
+            if (event.type == sf::Event::MouseButtonReleased &&
+                event.mouseButton.button == sf::Mouse::Left &&
+                mReturnButton.isClicked(mouse, true)) {
                 return 0;
             }
 
