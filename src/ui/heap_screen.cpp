@@ -71,7 +71,7 @@ HeapVisualizer::HeapVisualizer(const sf::Font& font)
     , mReturnButton("Return", font, {BUTTON_WIDTH * 2 + BUTTON_GAP_X, BUTTON_HEIGHT})
     , mRandomButton("Random", font, {BUTTON_WIDTH, BUTTON_HEIGHT})
     , mSkipButton("Skip", font, {BUTTON_WIDTH, BUTTON_HEIGHT})
-    , mUpdateButton("Update", font, {BUTTON_WIDTH, BUTTON_HEIGHT})
+    , mUpdateButton("Update", font, {BUTTON_WIDTH * 2 + BUTTON_GAP_X, BUTTON_HEIGHT})
 {
     // Panel
     float cpX = 1058.f;
@@ -121,7 +121,7 @@ HeapVisualizer::HeapVisualizer(const sf::Font& font)
     mDeleteButton.setPosition({BUTTON_X2 + BUTTON_WIDTH / 2.f, BUTTON_START_Y + BUTTON_HEIGHT / 2.f});
     mBuildButton.setPosition({BUTTON_X + BUTTON_WIDTH / 2.f, BUTTON_START_Y + (BUTTON_HEIGHT + BUTTON_GAP_Y) + BUTTON_HEIGHT / 2.f});
     mClearButton.setPosition({BUTTON_X2 + BUTTON_WIDTH / 2.f, BUTTON_START_Y + (BUTTON_HEIGHT + BUTTON_GAP_Y) + BUTTON_HEIGHT / 2.f});
-    mUpdateButton.setPosition({BUTTON_X + BUTTON_WIDTH / 2.f, BUTTON_START_Y + 2 *(BUTTON_HEIGHT + BUTTON_GAP_Y) + BUTTON_HEIGHT / 2.f});
+    mUpdateButton.setPosition({BUTTON_X + (BUTTON_WIDTH * 2 + BUTTON_GAP_X) / 2.f, BUTTON_START_Y + 2 *(BUTTON_HEIGHT + BUTTON_GAP_Y) + BUTTON_HEIGHT / 2.f});
     mRandomButton.setPosition({BUTTON_X + BUTTON_WIDTH / 2.f, BUTTON_START_Y + 3 * (BUTTON_HEIGHT + BUTTON_GAP_Y) + BUTTON_HEIGHT / 2.f});
     mSkipButton.setPosition({BUTTON_X2 + BUTTON_WIDTH / 2.f, BUTTON_START_Y + 3 * (BUTTON_HEIGHT + BUTTON_GAP_Y) + BUTTON_HEIGHT / 2.f});
     mLoadButton.setPosition({BUTTON_X + (BUTTON_WIDTH * 2 + BUTTON_GAP_X) / 2.f, BUTTON_START_Y + 4 * (BUTTON_HEIGHT + BUTTON_GAP_Y) + BUTTON_HEIGHT / 2.f});
@@ -464,7 +464,7 @@ void HeapVisualizer::runRandom() {
     clearInput();
     mPendingActions.clear();
 
-    int n = std::rand() % 6 + 10; 
+    int n = std::rand() % (MAX_RENDERED_NODES - 16) + 16; 
     std::vector<int> randomValues;
     for (int i = 0; i < n; ++i) {
         randomValues.push_back(std::rand() % 100);
@@ -489,8 +489,6 @@ void HeapVisualizer::runSkip() {
         processNextAction();
     }
 
-    mIsPlaying = false; 
-    mActionTimer = 0.f;
     setStatus("Skipped to final state.");
 }
 
@@ -551,8 +549,8 @@ void HeapVisualizer::processNextAction() {
         case ActionType::COMPARE:
             mHighlight.first = action.index1;
             mHighlight.second = action.index2;
-            mHighlight.firstColor = sf::Color(87, 190, 255);
-            mHighlight.secondColor = sf::Color(87, 190, 255);
+            mHighlight.firstColor = sf::Color(0, 255, 255);
+            mHighlight.secondColor = sf::Color(0, 255, 255);
             mHighlight.label = "Compare";
             break;
 
@@ -625,6 +623,9 @@ void HeapVisualizer::processPreviousAction() {
             break;
 
         case ActionType::COMPARE:
+            mHighlight.firstColor = sf::Color(0, 255, 255);
+            mHighlight.secondColor = sf::Color(0, 255, 255);
+            break;
 
         case ActionType::HIGHLIGHT:
             mHighlight.label = "Undo " + std::string(action.type == ActionType::COMPARE ? "Compare" : "Focus");
@@ -813,7 +814,7 @@ void HeapVisualizer::drawLegend(sf::RenderWindow& window) const {
 
     // Compare
     sf::CircleShape compare(8.f);
-    compare.setFillColor(sf::Color(87, 190, 255));
+    compare.setFillColor(sf::Color(0, 255, 255));
     compare.setPosition({itemX, LEGEND_Y + 4.f});
     window.draw(compare);
     window.draw(makeText(mFont, "Compare", 15, sf::Color::White, {itemX + 25.f, LEGEND_Y}));
