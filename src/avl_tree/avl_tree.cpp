@@ -156,7 +156,7 @@ AVLNode* AVLTree::balance(AVLNode*& node, std::vector<AnimationStep>* steps, boo
         node = rotateRight(node);
 
         snapshotStep(
-            "Right rotation — rebalanced at " + std::to_string(node->value),
+            "Right rotation and rebalanced at " + std::to_string(node->value),
             isDelete ? 8 : 5, steps, before, node->value);
 
         return node;
@@ -173,7 +173,7 @@ AVLNode* AVLTree::balance(AVLNode*& node, std::vector<AnimationStep>* steps, boo
         node = rotateLeft(node);
 
         snapshotStep(
-            "Left rotation — rebalanced at " + std::to_string(node->value),
+            "Left rotation and rebalanced at " + std::to_string(node->value),
             isDelete ? 8 : 6, steps, before, node->value);
 
         return node;
