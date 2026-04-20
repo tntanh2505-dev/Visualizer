@@ -8,6 +8,9 @@ public:
     void update(sf::Vector2f mousePos);
     bool isClicked(sf::Vector2f mousePos, bool mousePressed);
 
+    //Get button boundary coordinates
+    sf::FloatRect getGlobalBounds() const;
+
 protected:
     virtual void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
 

@@ -51,7 +51,13 @@ bool ModernButton::isClicked(sf::Vector2f mousePos, bool mousePressed) {
     return false;
 }
 
-void ModernButton::draw(sf::RenderTarget& target, sf::RenderStates states) const {
+sf::FloatRect ModernButton::getGlobalBounds() const {
+    sf::FloatRect localBounds(0.f, 0.f, m_size.x, m_size.y);
+    return getTransform().transformRect(localBounds);
+}
+
+void ModernButton::draw(sf::RenderTarget& target, sf::RenderStates states) const
+{
     states.transform *= getTransform();
     
     // --- NEW: Drop Shadow for Modern Buttons ---

@@ -32,9 +32,12 @@ private:
     };
     
     void runInsert();
-    void runDeleteRoot();
+    void runDeleteSelected();
     void runBuildHeap();
     void runClear();
+    void runUpdate();
+    void runRandom();
+    void runSkip();
     void togglePlayback();
     void queueOperation(const std::vector<int>& startArray);
     void processNextAction();
@@ -70,6 +73,7 @@ private:
 
     std::vector<std::string> mCurrentCode;
     int mActiveLine = -1;
+    int mSelectedIndex = -1;
 
     sf::RectangleShape mPanel;
     sf::RectangleShape mInputBox;
@@ -93,14 +97,18 @@ private:
     sf::Text mRootText;
     sf::Text mLegendText;
 
-    Button mInsertButton;
-    Button mDeleteButton;
-    Button mBuildButton;
-    Button mClearButton;
-    Button mReturnButton;
-    Button mPlayPauseButton;
-    Button mStepButton;
-    Button mPrevButton;
+    ModernButton mInsertButton;
+    ModernButton mDeleteButton;
+    ModernButton mBuildButton;
+    ModernButton mClearButton;
+    ModernButton mReturnButton;
+    ModernButton mPlayPauseButton;
+    ModernButton mStepButton;
+    ModernButton mPrevButton;
+    ModernButton mLoadButton;
+    ModernButton mRandomButton;
+    ModernButton mSkipButton;
+    ModernButton mUpdateButton;
 
     sf::Texture mBgTexture;
     sf::Sprite mBgSprite;

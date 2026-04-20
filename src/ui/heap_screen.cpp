@@ -93,6 +93,25 @@ HeapVisualizer::HeapVisualizer(const sf::Font& font)
 
 void HeapVisualizer::handleEvent(const sf::Event& event, const sf::RenderWindow& window) {
     sf::Vector2f mouse = window.mapPixelToCoords(sf::Mouse::getPosition(window));
+    bool mouseOverButtons = mDeleteButton.getGlobalBounds().contains(mouse) || mUpdateButton.getGlobalBounds().contains(mouse);
+    bool mouseOverInput = mInputBox.getGlobalBounds().contains(mouse);
+    bool mouseOverSlider = mSliderTrack.getGlobalBounds().contains(mouse) || mSliderKnob.getGlobalBounds().contains(mouse);
+
+    if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
+        if (mPendingActions.empty()) {
+            const std::size_t visibleNodes = std::min(mDisplayArray.size(), MAX_RENDERED_NODES);
+            for (std::size_t i = 0; i < visibleNodes; ++i) {
+                sf::FloatRect nodeBounds(nodePosition(i).x - NODE_RADIUS, nodePosition(i).y - NODE_RADIUS, NODE_RADIUS * 2, NODE_RADIUS * 2);
+                if (nodeBounds.contains(mouse)) {
+                    mSelectedIndex = static_cast<int>(i);
+                    mInputFocused = true;
+                    mInputBuffer.clear();
+                    mInputText.setString("");
+                    setStatus("Node " + std::to_string(i) + " (value " + std::to_string(mDisplayArray[i]) + ") selected.");
+                    return;
+                }
+            }
+        }
 
     // --- Tab Slide Interaction ---
     if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
@@ -339,8 +358,8 @@ void HeapVisualizer::runInsert() {
     }
     loadInsertCode();
     const std::vector<int> startArray = mPendingActions.empty() ? mDisplayArray : mHeap.getArray();
-    if (startArray.size() >= MAX_RENDERED_NODES) {
-        setStatus("Limit reached. Clear or use fewer than 31 nodes.");
+    if (startArray.size() >= MAX_RENDERED_NODES - 1) {
+        setStatus("Limit reached. Clear or use fewer than " + std::to_string(MAX_RENDERED_NODES) + " nodes.");
         return;
     }
 
@@ -358,13 +377,21 @@ void HeapVisualizer::runDeleteRoot() {
         setStatus("Heap is empty.");
         return;
     }
+
     loadHeapifyCode();
-    const int rootValue = startArray.front();
+    
+    int targetIdx = mSelectedIndex;
+    int targetValue = startArray[targetIdx];
     mHeap.BuildHeap(startArray);
+
     mHeap.flushActions();
-    mHeap.Delete(0);
+    mHeap.Delete(targetIdx);
     queueOperation(startArray);
-    setStatus("Deleted root " + std::to_string(rootValue) + ".");
+
+    setStatus("Deleted node " + std::to_string(targetIdx) + " (Value: " + std::to_string(targetValue) + ").");
+    mSelectedIndex = -1;
+    mInputFocused = false;
+    clearInput();
 }
 
 void HeapVisualizer::runBuildHeap() {
@@ -377,7 +404,7 @@ void HeapVisualizer::runBuildHeap() {
     loadHeapifyCode();
     if (values.size() > MAX_RENDERED_NODES) {
         values.resize(MAX_RENDERED_NODES);
-        setStatus("Build input trimmed to 31 nodes for rendering.");
+        setStatus("Build input trimmed to 16 nodes for rendering.");
     } else if (values.empty()) {
         setStatus("Heap cleared.");
     } else {
@@ -570,7 +597,13 @@ void HeapVisualizer::drawArray(sf::RenderWindow& window) const {
         cell.setPosition({startX + i * (cellWidth + gap), ARRAY_Y});
         cell.setFillColor(UITheme::Color::HeapNodeFill);
         cell.setOutlineThickness(2.f);
-        cell.setOutlineColor(nodeColor(i));
+
+        sf::Color currentOutlineColor = nodeColor(i);
+        if (mSelectedIndex == static_cast<int>(i)) {
+            currentOutlineColor = sf::Color(34, 139, 34);
+            cell.setOutlineThickness(3.f);
+        }
+        cell.setOutlineColor(currentOutlineColor);
         window.draw(cell);
 
         unsigned int fontSize = cellWidth < 35.f ? 12 : 18;
@@ -602,12 +635,20 @@ void HeapVisualizer::drawTree(sf::RenderWindow& window) const {
     }
 
     for (std::size_t i = 0; i < visibleNodes; ++i) {
-        sf::CircleShape node(NODE_RADIUS);
-        node.setOrigin({NODE_RADIUS, NODE_RADIUS});
+        float Radius = (i >= 15) ? NODE_RADIUS - 5.0f : NODE_RADIUS;
+        sf::CircleShape node(Radius);
+        node.setOrigin({Radius, Radius});
         node.setPosition(nodePosition(i));
         node.setFillColor(UITheme::Color::HeapNodeFill);
         node.setOutlineThickness(4.f);
-        node.setOutlineColor(nodeColor(i));
+
+        sf::Color currentOutlineColor = nodeColor(i);
+        if (mSelectedIndex == static_cast<int>(i)) {
+            currentOutlineColor = sf::Color(34, 139, 34);
+            node.setOutlineThickness(6.f);
+        }
+        node.setOutlineColor(currentOutlineColor);
+
         window.draw(node);
 
         sf::Text valueText = makeText(mFont, std::to_string(mDisplayArray[i]), 18, UITheme::Color::TextWhite, {0.f, 0.f});
