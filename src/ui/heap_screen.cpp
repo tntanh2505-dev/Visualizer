@@ -69,6 +69,8 @@ HeapVisualizer::HeapVisualizer(const sf::Font& font)
     , mStepButton(">", font, {BUTTON_WIDTH / 2.f, BUTTON_HEIGHT})
     , mLoadButton("Load File", font, {BUTTON_WIDTH * 2 + BUTTON_GAP_X, BUTTON_HEIGHT})
     , mReturnButton("Return", font, {BUTTON_WIDTH * 2 + BUTTON_GAP_X, BUTTON_HEIGHT})
+    , mRandomButton("Random", font, {BUTTON_WIDTH, BUTTON_HEIGHT})
+    , mSkipButton("Skip", font, {BUTTON_WIDTH, BUTTON_HEIGHT})
 {
     // Panel
     float cpX = 1058.f;
@@ -92,7 +94,7 @@ HeapVisualizer::HeapVisualizer(const sf::Font& font)
     mCodeBox.setOutlineColor(sf::Color(80, 80, 100));
 
     // Speed Slider
-    float sliderY = BUTTON_START_Y + 5 * (BUTTON_HEIGHT + BUTTON_GAP_Y) + 10.f;
+    float sliderY = BUTTON_START_Y + 5 * (BUTTON_HEIGHT + BUTTON_GAP_Y) + 20.f;
     float sliderWidth = BUTTON_WIDTH * 2 + BUTTON_GAP_X;
     mSliderTrack.setSize({sliderWidth, 6.f});
     mSliderTrack.setPosition({BUTTON_X, sliderY});
@@ -102,9 +104,9 @@ HeapVisualizer::HeapVisualizer(const sf::Font& font)
     mSliderKnob.setRadius(10.f);
     mSliderKnob.setFillColor(sf::Color(181, 58, 199));
     mSliderKnob.setOrigin(10.f, 10.f);
-    float t = 1.0f - (mActionInterval - 0.1f) / (2.0f - 0.1f);
-    mSliderKnob.setPosition({BUTTON_X + t * sliderWidth, sliderY + 3.f});
-    mIsDraggingSlider = false;
+    float initialT = 1.0f - (mActionInterval - 0.1f) / (2.0f - 0.1f);
+    mSliderKnob.setPosition({BUTTON_X + initialT * sliderWidth, sliderY + 3.f});
+    mSpeedLabel.setPosition({BUTTON_X, sliderY - 22.f});
 
     //Input area
     mInputBox.setPosition({INPUT_X, INPUT_Y});
@@ -118,12 +120,14 @@ HeapVisualizer::HeapVisualizer(const sf::Font& font)
     mDeleteButton.setPosition({BUTTON_X2 + BUTTON_WIDTH / 2.f, BUTTON_START_Y + BUTTON_HEIGHT / 2.f});
     mBuildButton.setPosition({BUTTON_X + BUTTON_WIDTH / 2.f, BUTTON_START_Y + (BUTTON_HEIGHT + BUTTON_GAP_Y) + BUTTON_HEIGHT / 2.f});
     mClearButton.setPosition({BUTTON_X2 + BUTTON_WIDTH / 2.f, BUTTON_START_Y + (BUTTON_HEIGHT + BUTTON_GAP_Y) + BUTTON_HEIGHT / 2.f});
-    mLoadButton.setPosition({BUTTON_X + (BUTTON_WIDTH * 2 + BUTTON_GAP_X) / 2.f, BUTTON_START_Y + 2 * (BUTTON_HEIGHT + BUTTON_GAP_Y) + BUTTON_HEIGHT / 2.f});
-    mPrevButton.setPosition({BUTTON_X + (BUTTON_WIDTH / 4.f), BUTTON_START_Y + 3 * (BUTTON_HEIGHT + BUTTON_GAP_Y) + BUTTON_HEIGHT / 2.f});
-    mPlayPauseButton.setPosition({BUTTON_X + BUTTON_WIDTH + BUTTON_GAP_X / 2.f, BUTTON_START_Y + 3 * (BUTTON_HEIGHT + BUTTON_GAP_Y) + BUTTON_HEIGHT / 2.f});
-    mStepButton.setPosition({BUTTON_X + 1.75f * BUTTON_WIDTH + BUTTON_GAP_X, BUTTON_START_Y + 3 * (BUTTON_HEIGHT + BUTTON_GAP_Y) + BUTTON_HEIGHT / 2.f});
+    mRandomButton.setPosition({BUTTON_X + BUTTON_WIDTH / 2.f, BUTTON_START_Y + 2 * (BUTTON_HEIGHT + BUTTON_GAP_Y) + BUTTON_HEIGHT / 2.f});
+    mSkipButton.setPosition({BUTTON_X2 + BUTTON_WIDTH / 2.f, BUTTON_START_Y + 2 * (BUTTON_HEIGHT + BUTTON_GAP_Y) + BUTTON_HEIGHT / 2.f});
+    mLoadButton.setPosition({BUTTON_X + (BUTTON_WIDTH * 2 + BUTTON_GAP_X) / 2.f, BUTTON_START_Y + 3 * (BUTTON_HEIGHT + BUTTON_GAP_Y) + BUTTON_HEIGHT / 2.f});
+    mPrevButton.setPosition({BUTTON_X + (BUTTON_WIDTH / 4.f), BUTTON_START_Y + 4 * (BUTTON_HEIGHT + BUTTON_GAP_Y) + BUTTON_HEIGHT / 2.f});
+    mPlayPauseButton.setPosition({BUTTON_X + BUTTON_WIDTH + BUTTON_GAP_X / 2.f, BUTTON_START_Y + 4 * (BUTTON_HEIGHT + BUTTON_GAP_Y) + BUTTON_HEIGHT / 2.f});
+    mStepButton.setPosition({BUTTON_X + 1.75f * BUTTON_WIDTH + BUTTON_GAP_X, BUTTON_START_Y + 4 * (BUTTON_HEIGHT + BUTTON_GAP_Y) + BUTTON_HEIGHT / 2.f});
     mReturnButton.setPosition({BUTTON_X + (BUTTON_WIDTH * 2 + BUTTON_GAP_X) / 2.f, 626.f + BUTTON_HEIGHT / 2.f});
-
+    
     setStatus("Ready.");
 }
 
@@ -187,6 +191,12 @@ void HeapVisualizer::handleEvent(const sf::Event& event, const sf::RenderWindow&
         }
             runClear();
         }
+        if (mRandomButton.isClicked(mouse, true)) {
+            runRandom();
+        }
+        if (mSkipButton.isClicked(mouse, true)) {
+            runSkip();
+        }
         if (mPlayPauseButton.isClicked(mouse, true)) {
             togglePlayback();
         }
@@ -238,6 +248,8 @@ void HeapVisualizer::update(float deltaTime, const sf::RenderWindow& window) {
     mPrevButton.update(mouse);
     mLoadButton.update(mouse);
     mReturnButton.update(mouse);
+    mRandomButton.update(mouse);
+    mSkipButton.update(mouse);
 
     mInputBox.setOutlineColor(mInputFocused ? sf::Color(181, 58, 199, 200) : sf::Color(181, 58, 199, 120));
     mInputText.setString(mInputBuffer + (mInputFocused ? "|" : ""));
@@ -369,6 +381,40 @@ void HeapVisualizer::runClear() {
     setStatus("Heap cleared.");
 }
 
+void HeapVisualizer::runRandom() {
+    clearInput();
+    mPendingActions.clear();
+
+    int n = std::rand() % 6 + 10; 
+    std::vector<int> randomValues;
+    for (int i = 0; i < n; ++i) {
+        randomValues.push_back(std::rand() % 100);
+    }
+
+    mDisplayArray = randomValues; 
+    mHeap.BuildHeap(randomValues);
+    queueOperation(randomValues); 
+    
+    mIsPlaying = true;
+    loadHeapifyCode();
+    setStatus("Randomized " + std::to_string(n) + " nodes. Starting Build...");
+}
+
+void HeapVisualizer::runSkip() {
+    if (mPendingActions.empty()) {
+        setStatus("Nothing to skip.");
+        return;
+    }
+
+    while (!mPendingActions.empty()) {
+        processNextAction();
+    }
+
+    mIsPlaying = false; 
+    mActionTimer = 0.f;
+    setStatus("Skipped to final state.");
+}
+
 // Switches between automatic playback and manual stepping.
 void HeapVisualizer::togglePlayback() {
     mIsPlaying = !mIsPlaying;
@@ -450,7 +496,7 @@ void HeapVisualizer::processNextAction() {
         mHighlight.firstColor = sf::Color(248, 196, 76);
         mHighlight.label = "Focus";
         break;
-        
+
     case ActionType::REMOVE:
     if (action.index1 >= 0 && static_cast<std::size_t>(action.index1) < mDisplayArray.size()) {
         mDisplayArray.erase(mDisplayArray.begin() + action.index1);
@@ -571,6 +617,8 @@ void HeapVisualizer::drawButtons(sf::RenderWindow& window) const {
     window.draw(mDeleteButton); 
     window.draw(mBuildButton);
     window.draw(mClearButton);
+    window.draw(mRandomButton);
+    window.draw(mSkipButton);
     window.draw(mLoadButton);
     window.draw(mReturnButton);
     window.draw(mPlayPauseButton);
@@ -734,10 +782,10 @@ void HeapVisualizer::backspaceInput() {
 void HeapVisualizer::setStatus(const std::string& status) {
     mStatusMessage = status;
     mStatusText.setString(status);
-    float row3Y = BUTTON_START_Y + 3 * (BUTTON_HEIGHT + BUTTON_GAP_Y);
+    float row4Y = BUTTON_START_Y + 4 * (BUTTON_HEIGHT + BUTTON_GAP_Y);
     float playCenterX = BUTTON_X + BUTTON_WIDTH + BUTTON_GAP_X / 2.f;
     mPlayPauseButton = ModernButton(mIsPlaying ? "Pause" : "Play", mFont, {BUTTON_WIDTH, BUTTON_HEIGHT});
-    mPlayPauseButton.setPosition({playCenterX, row3Y + BUTTON_HEIGHT / 2.f});
+    mPlayPauseButton.setPosition({playCenterX, row4Y + BUTTON_HEIGHT / 2.f});
 }
 
 // Parses the input as exactly one integer, used by the Insert action.

@@ -42,6 +42,8 @@ private:
     void processPreviousAction();
     void loadHeapifyCode();
     void loadInsertCode();
+    void runRandom();
+    void runSkip();
 
     void drawPanel(sf::RenderWindow& window) const;
     void drawInputArea(sf::RenderWindow& window) const;
@@ -102,6 +104,8 @@ private:
     ModernButton mStepButton;
     ModernButton mPrevButton;
     ModernButton mLoadButton;
+    ModernButton mRandomButton;
+    ModernButton mSkipButton;
 
     sf::Texture mBgTexture;
     sf::Sprite mBgSprite;
