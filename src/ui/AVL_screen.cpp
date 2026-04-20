@@ -375,7 +375,7 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
         float ratio = (mSpeedValue - 0.5f) / 7.5f;
         mSliderHandle.setPosition(leftBaseX + 30.f + ratio * 220.f, 433.f + fset);
 
-        mReturnBtn->setPosition(sf::Vector2f(leftBaseX + 140.f, window.getSize().y - 40.f + fset));
+        mReturnBtn->setPosition(sf::Vector2f(leftBaseX + 140.f, window.getSize().y - 40.f));
         mCodePanel.setPosition(sf::Vector2f(rightBaseX + TAB_WIDTH + 10.f, 20.f + fset));
 
         // Update hovers
