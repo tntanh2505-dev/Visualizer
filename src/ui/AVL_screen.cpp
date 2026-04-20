@@ -168,9 +168,7 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
                 if (mouseInRightTab) { m_rightExpanded = !m_rightExpanded; continue; }
             }
 
-            float rightPanelHeight = std::max(window.getSize().y / 2.f + 25.f, 20.f + fset + 350.f + 20.f);
-            bool isClickingOnPanel = (mouseRaw.x < m_leftWidth) || 
-                                     (mouseRaw.x > window.getSize().x - m_rightWidth && mouseRaw.y < rightPanelHeight);
+            bool isClickingOnPanel = (mouseRaw.x < m_leftWidth) || (mouseRaw.x > window.getSize().x - m_rightWidth);
 
             if (leftPressed && isClickingOnPanel) {
                 if (mReturnBtn->isClicked(mouseRaw, true)) return 0;
@@ -498,14 +496,12 @@ void AVLScreen::drawLeftPanel(sf::RenderWindow& window, const sf::Font& font, fl
 void AVLScreen::drawRightPanel(sf::RenderWindow& window, const sf::Font& font, float rightBaseX) {
     float winW = window.getSize().x;
     
-    float centerY = window.getSize().y / 2.f;
-    float panelHeight = std::max(centerY + 25.f, 20.f + fset + 350.f + 20.f);
-    
-    sf::RectangleShape rightMenu(sf::Vector2f(m_rightWidth, panelHeight));
+    sf::RectangleShape rightMenu(sf::Vector2f(m_rightWidth, window.getSize().y));
     rightMenu.setFillColor(UITheme::Color::AVLPanelBg);
     rightMenu.setPosition(winW - m_rightWidth, 0);
     window.draw(rightMenu);
 
+    float centerY = window.getSize().y / 2.f;
     sf::RectangleShape rightTab(sf::Vector2f(35.f, 50.f));
     rightTab.setFillColor(UITheme::Color::GraphTabBg);
     rightTab.setPosition(winW - m_rightWidth, centerY - 25.f);
