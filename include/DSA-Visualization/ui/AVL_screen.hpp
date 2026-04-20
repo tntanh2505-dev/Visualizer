@@ -68,8 +68,11 @@ private:
     float m_rightWidth;
     bool  m_leftExpanded;
     bool  m_rightExpanded;
-
     int   m_selectedNodeValue;
+
+    bool  mStepMode = false;
+    bool  mStepAnimatingNext = false;
+    bool  mStepAnimatingPrev = false;
 
     static const std::vector<std::string> INSERT_CODE;
     static const std::vector<std::string> DELETE_CODE;
