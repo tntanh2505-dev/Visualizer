@@ -1,6 +1,6 @@
 #include "DSA-Visualization/ui/heap_screen.hpp"
+#include "DSA-Visualization/ui/UI_Theme.hpp"
 #include <iostream>
-
 #include <algorithm>
 #include <cmath>
 #include <sstream>
@@ -35,18 +35,8 @@ namespace {
     constexpr float ARRAY_Y = 40.f;
 
     // Helper
-    sf::Text makeText(const sf::Font& font,
-                    const std::string& value,
-                    unsigned int size,
-                    sf::Color color,
-                    sf::Vector2f position) {
-        sf::Text text;
-        text.setFont(font);
-        text.setString(value);
-        text.setCharacterSize(size);
-        text.setFillColor(color);
-        text.setPosition(position);
-        return text;
+    sf::Text makeText(const sf::Font& font, const std::string& value, unsigned int size, sf::Color color, sf::Vector2f position) {
+        sf::Text text; text.setFont(font); text.setString(value); text.setCharacterSize(size); text.setFillColor(color); text.setPosition(position); return text;
     }
 }
 
@@ -101,16 +91,16 @@ HeapVisualizer::HeapVisualizer(const sf::Font& font)
     mSliderTrack.setPosition({BUTTON_X, sliderY});
     mSliderTrack.setFillColor(sf::Color(60, 60, 80));
     mSliderTrack.setOutlineThickness(1.f);
-    mSliderTrack.setOutlineColor(sf::Color(100, 100, 150));
+    mSliderTrack.setOutlineColor(UITheme::Color::AVLGlow); // Glow border for track
+
     mSliderKnob.setRadius(10.f);
-    mSliderKnob.setFillColor(sf::Color(181, 58, 199));
+    mSliderKnob.setFillColor(UITheme::Color::SliderHandle);
     mSliderKnob.setOrigin(10.f, 10.f);
     float initialT = 1.0f - (mActionInterval - 0.1f) / (2.0f - 0.1f);
     mSliderKnob.setPosition({BUTTON_X + initialT * sliderWidth, sliderY + 3.f});
     mSpeedLabel.setPosition({BUTTON_X, sliderY - 22.f});
 
-    //Input area
-    mInputBox.setPosition({INPUT_X, INPUT_Y});
+    // Input area setup
     mInputBox.setSize({INPUT_WIDTH, INPUT_HEIGHT});
     mInputBox.setFillColor(sf::Color(32, 26, 43));
     mInputBox.setOutlineThickness(2.f);
@@ -133,7 +123,6 @@ HeapVisualizer::HeapVisualizer(const sf::Font& font)
     setStatus("Ready.");
 }
 
-// Routes mouse and keyboard input to the correct heap action or text field update.
 void HeapVisualizer::handleEvent(const sf::Event& event, const sf::RenderWindow& window) {
     sf::Vector2f mouse = window.mapPixelToCoords(sf::Mouse::getPosition(window));
     bool mouseOverButtons = mDeleteButton.getGlobalBounds().contains(mouse) || mUpdateButton.getGlobalBounds().contains(mouse);
@@ -262,8 +251,74 @@ void HeapVisualizer::handleEvent(const sf::Event& event, const sf::RenderWindow&
     }
 }
 
-// Refreshes hover states, visible text, and advances the animation timer when autoplay is enabled.
 void HeapVisualizer::update(float deltaTime, const sf::RenderWindow& window) {
+    // --- Smooth Panel Transitions ---
+    float targetLeft = g_leftExpanded ? LEFT_PANEL_WIDTH : TAB_WIDTH;
+    g_leftWidth += (targetLeft - g_leftWidth) * 12.f * deltaTime;
+    
+    float targetRight = g_rightExpanded ? RIGHT_PANEL_WIDTH : TAB_WIDTH;
+    g_rightWidth += (targetRight - g_rightWidth) * 12.f * deltaTime;
+
+    // --- Left Panel Layout ---
+    float leftBaseX = g_leftWidth - LEFT_PANEL_WIDTH; 
+    float currentY = 40.f;
+    
+    mInputBox.setPosition({leftBaseX + 30.f, currentY});
+    mPlaceholderText.setPosition({leftBaseX + 36.f, currentY + 10.f});
+    mInputText.setPosition({leftBaseX + 36.f, currentY + 8.f});
+    mHintText.setPosition({leftBaseX + 30.f, currentY + 45.f});
+
+    currentY += 80.f;
+    mInsertButton.setPosition({leftBaseX + 30.f, currentY});
+    mDeleteButton.setPosition({leftBaseX + 140.f, currentY});
+
+    currentY += 60.f;
+    mBuildButton.setPosition({leftBaseX + 30.f, currentY});
+    mClearButton.setPosition({leftBaseX + 140.f, currentY});
+
+    currentY += 60.f;
+    mPrevButton.setPosition({leftBaseX + 30.f, currentY});
+    mPlayPauseButton.setPosition({leftBaseX + 85.f, currentY});
+    mStepButton.setPosition({leftBaseX + 190.f, currentY}); 
+
+    currentY += 70.f;
+    mSpeedLabel.setPosition({leftBaseX + 30.f, currentY - 20.f});
+    mSliderTrack.setPosition({leftBaseX + 30.f, currentY});
+    mPanel.setSize({(float)window.getSize().x, (float)window.getSize().y});
+
+    // Handle Dragging Logic and dynamic label multiplier mapping!
+    if (mIsDraggingSlider) {
+        const sf::Vector2f mouse = window.mapPixelToCoords(sf::Mouse::getPosition(window));
+        const float left = mSliderTrack.getPosition().x;
+        const float width = mSliderTrack.getSize().x;
+        
+        float newX = std::max(left, std::min(mouse.x, left + width));
+        mSliderKnob.setPosition(newX, currentY + 3.f);
+
+        float ratio = (newX - left) / width;
+        float speedMult = 0.5f + ratio * 7.5f; 
+        
+        mActionInterval = 1.0f / speedMult; // Map 0.5x to 2.0s, 8.0x to 0.125s
+        mSpeedLabel.setString("Speed: " + std::to_string((int)speedMult) + "x");
+    } else {
+        float speedMult = 1.0f / mActionInterval;
+        float ratio = (speedMult - 0.5f) / 7.5f;
+        mSliderKnob.setPosition({leftBaseX + 30.f + ratio * mSliderTrack.getSize().x, currentY + 3.f});
+    }
+
+    currentY += 60.f;
+    mReturnButton.setPosition({leftBaseX + 30.f, currentY});
+
+    // --- Right Panel Layout ---
+    float rightBaseX = window.getSize().x - g_rightWidth;
+    mCodePanel.setPosition({rightBaseX + TAB_WIDTH + 10.f, 20.f});
+
+    // --- Dynamic Resizing for Tree and Array ---
+    g_TreeLeftX = g_leftWidth + 20.f;
+    g_TreeWidth = window.getSize().x - g_leftWidth - g_rightWidth - 40.f;
+    mStatusText.setPosition({g_TreeLeftX + (g_TreeWidth / 2.f) - 100.f, window.getSize().y - 120.f});
+
+    // --- Hover Logic ---
     const sf::Vector2f mouse = window.mapPixelToCoords(sf::Mouse::getPosition(window));
     mInsertButton.update(mouse);
     mDeleteButton.update(mouse);
@@ -280,16 +335,6 @@ void HeapVisualizer::update(float deltaTime, const sf::RenderWindow& window) {
 
     mInputBox.setOutlineColor(mInputFocused ? sf::Color(181, 58, 199, 200) : sf::Color(181, 58, 199, 120));
     mInputText.setString(mInputBuffer + (mInputFocused ? "|" : ""));
-    mRootText.setString(mDisplayArray.empty() ? "Root: --" : "Root: " + std::to_string(mDisplayArray.front()));
-
-    if (mIsDraggingSlider) {
-        const float left = mSliderTrack.getPosition().x;
-        const float width = mSliderTrack.getSize().x;
-        const float newX = std::max(left, std::min(mouse.x, left + width));
-        mSliderKnob.setPosition(newX, mSliderKnob.getPosition().y);
-
-        const float t = (newX - left) / width;
-        mActionInterval = MAX_INTERVAL - t * (MAX_INTERVAL - MIN_INTERVAL);
 
         std::stringstream ss;
         ss << "Speed: " << std::fixed << std::setprecision(2) << mActionInterval << "s";
@@ -315,7 +360,6 @@ void HeapVisualizer::update(float deltaTime, const sf::RenderWindow& window) {
     }
 }
 
-// Draws the heap screen in layers so the panel, controls, and visualization stay separated.
 void HeapVisualizer::render(sf::RenderWindow& window) const {
     drawPanel(window);
     drawTree(window);
@@ -323,11 +367,74 @@ void HeapVisualizer::render(sf::RenderWindow& window) const {
     drawInputArea(window);
     drawButtons(window);
     drawLegend(window);
-    drawCodeSnippet(window);
+    window.draw(mStatusText);
+    
+    // --- Draw Left Panel ---
+    sf::RectangleShape leftMenu(sf::Vector2f(g_leftWidth, window.getSize().y));
+    leftMenu.setFillColor(UITheme::Color::GraphPanelBg);
+    window.draw(leftMenu);
+
+    sf::RectangleShape leftTab(sf::Vector2f(TAB_WIDTH, TAB_HEIGHT));
+    leftTab.setFillColor(UITheme::Color::GraphTabBg);
+    leftTab.setPosition(g_leftWidth - TAB_WIDTH, window.getSize().y / 2.f - TAB_HEIGHT / 2.f);
+    window.draw(leftTab);
+
+    sf::Text lIcon(g_leftExpanded ? "<<" : ">>", mFont, 18);
+    sf::FloatRect lb = lIcon.getLocalBounds();
+    lIcon.setOrigin(lb.left + lb.width/2.f, lb.top + lb.height/2.f);
+    lIcon.setPosition(g_leftWidth - TAB_WIDTH/2.f, window.getSize().y / 2.f - 2.f);
+    lIcon.setFillColor(UITheme::Color::NodeOutlineColor);
+    window.draw(lIcon);
+
+    // Left Content
+    drawInputArea(window);
+    drawButtons(window);
+
+    // --- Draw Right Panel ---
+    float winW = window.getSize().x;
+    sf::RectangleShape rightMenu(sf::Vector2f(g_rightWidth, window.getSize().y));
+    rightMenu.setFillColor(UITheme::Color::GraphPanelBg);
+    rightMenu.setPosition(winW - g_rightWidth, 0);
+    window.draw(rightMenu);
+
+    sf::RectangleShape rightTab(sf::Vector2f(TAB_WIDTH, TAB_HEIGHT));
+    rightTab.setFillColor(UITheme::Color::GraphTabBg);
+    rightTab.setPosition(winW - g_rightWidth, window.getSize().y / 2.f - TAB_HEIGHT / 2.f);
+    window.draw(rightTab);
+
+    sf::Text rIcon(g_rightExpanded ? ">>" : "<<", mFont, 18);
+    sf::FloatRect rb = rIcon.getLocalBounds();
+    rIcon.setOrigin(rb.left + rb.width/2.f, rb.top + rb.height/2.f);
+    rIcon.setPosition(winW - g_rightWidth + TAB_WIDTH/2.f, window.getSize().y / 2.f - 2.f);
+    rIcon.setFillColor(UITheme::Color::NodeHighlightColor);
+    window.draw(rIcon);
+
+    // Right Content
     const_cast<CodePanel&>(mCodePanel).draw(window);
 }
 
-// Clears temporary UI state when the user leaves and re-enters the heap screen.
+void HeapVisualizer::drawButtons(sf::RenderWindow& window) const {
+    mInsertButton.draw(window);
+    mDeleteButton.draw(window); 
+    mBuildButton.draw(window);
+    mClearButton.draw(window);
+    mReturnButton.draw(window);
+    mPlayPauseButton.draw(window);
+    mStepButton.draw(window);
+    mPrevButton.draw(window);
+    window.draw(mSpeedLabel);
+    
+    // --- Render Filled Track specifically for Heap ---
+    sf::RectangleShape filledTrack({mSliderKnob.getPosition().x - mSliderTrack.getPosition().x, 6.f});
+    filledTrack.setPosition(mSliderTrack.getPosition());
+    filledTrack.setFillColor(UITheme::Color::HeapAccent); 
+
+    window.draw(mSliderTrack);
+    window.draw(filledTrack);
+    window.draw(mSliderKnob);
+}
+
+// ... [The rest of the heap_screen.cpp implementation remains exactly the same as previously provided]
 void HeapVisualizer::reset() {
     mInputFocused = false;
     mPendingActions.clear();
@@ -335,7 +442,8 @@ void HeapVisualizer::reset() {
     mActionTimer = 0.f;
 }
 
-// Inserts a single value into the current heap and converts the heap's action log into animation steps.
+// ... [runInsert, runDeleteRoot, runBuildHeap, runClear, togglePlayback, queueOperation, processNextAction, processPreviousAction remain unchanged] ...
+
 void HeapVisualizer::runInsert() {
     int value = 0;
     if (!tryParseSingleValue(value)) {
@@ -386,12 +494,11 @@ void HeapVisualizer::runDeleteSelected() {
     clearInput();
 }
 
-// Builds a heap from a typed sequence and keeps the original order on screen so heapify can animate into place.
 void HeapVisualizer::runBuildHeap() {
     bool ok = false;
     std::vector<int> values = parseSequence(ok);
     if (!ok) {
-        setStatus("Build Heap expects integers separated by spaces or commas.");
+        setStatus("Build expects integers separated by spaces or commas.");
         return;
     }
     loadHeapifyCode();
@@ -412,12 +519,9 @@ void HeapVisualizer::runBuildHeap() {
     clearInput();
 
     const std::vector<Action> actions = mHeap.flushActions();
-    for (const Action& action : actions) {
-        mPendingActions.push_back(action);
-    }
+    for (const Action& action : actions) mPendingActions.push_back(action);
 }
 
-// Resets both the heap model and the visual state to an empty screen.
 void HeapVisualizer::runClear() {
     mHeap.BuildHeap({});
     mHeap.flushActions();
@@ -498,7 +602,6 @@ void HeapVisualizer::togglePlayback() {
     setStatus(mIsPlaying ? "Animation resumed." : "Animation paused.");
 }
 
-// Starts a new animation by resetting the displayed heap to its pre-operation state.
 void HeapVisualizer::queueOperation(const std::vector<int>& startArray) {
     mDisplayArray = startArray;
     mPendingActions.clear();
@@ -506,20 +609,13 @@ void HeapVisualizer::queueOperation(const std::vector<int>& startArray) {
     mHighlight = {};
     mActionTimer = 0.f;
 
-    // The heap model records actions while mutating; the UI replays that log against mDisplayArray.
     const std::vector<Action> actions = mHeap.flushActions();
-    for (const Action& action : actions) {
-        mPendingActions.push_back(action);
-    }
+    for (const Action& action : actions) mPendingActions.push_back(action);
 
-    if (mPendingActions.empty()) {
-        mDisplayArray = mHeap.getArray();
-    } else if (!mIsPlaying) {
-        processNextAction();
-    }
+    if (mPendingActions.empty()) mDisplayArray = mHeap.getArray();
+    else if (!mIsPlaying) processNextAction();
 }
 
-// Applies one recorded heap action to the currently displayed array and updates highlight colors.
 void HeapVisualizer::processNextAction() {
     if (mPendingActions.empty()) {
         mActiveLine = -1;
@@ -600,7 +696,6 @@ void HeapVisualizer::processPreviousAction() {
 
     Action action = mHistory.back();
     mHistory.pop_back();
-
     mHighlight = {};
 
     switch (action.type) {
@@ -648,18 +743,13 @@ void HeapVisualizer::processPreviousAction() {
     }
 
     mCodePanel.highlight(action.lineIdx);
-
-    if (mHistory.empty()) {
-        mActiveLine = -1;
-    } else {
-        mActiveLine = mHistory.back().lineIdx;
-    }
-
+    mActiveLine = mHistory.empty() ? -1 : mHistory.back().lineIdx;
     mPendingActions.push_front(action);
 }
 
 void HeapVisualizer::loadHeapifyCode() {
-    std::vector<std::string> code = {
+    std::map<std::string, std::vector<std::string>> snippets;
+    snippets["heapify"] = {
         "heapify(i):",
         "  l = 2i + 1, r = 2i + 2",
         "  lar = i",
@@ -671,11 +761,13 @@ void HeapVisualizer::loadHeapifyCode() {
         "    swap(A[i], A[lar])",
         "    heapify(lar)"
     };
-    mCodePanel.setCode(code);
+    mCodePanel.loadSnippets(snippets);
+    mCodePanel.update("heapify", -1);
 }
 
 void HeapVisualizer::loadInsertCode() {
-    std::vector<std::string> code = {
+    std::map<std::string, std::vector<std::string>> snippets;
+    snippets["insert"] = {
         "insert(val):",
         "  A.push(val)",
         "  i = last_idx",
@@ -683,7 +775,8 @@ void HeapVisualizer::loadInsertCode() {
         "    swap(A[i], A[p])",
         "    i = parent(i)"
     };
-    mCodePanel.setCode(code);
+    mCodePanel.loadSnippets(snippets);
+    mCodePanel.update("insert", -1);
 }
 
 // Draws the full-screen translucent backdrop and the status texts pinned to it.
@@ -694,14 +787,10 @@ void HeapVisualizer::drawPanel(sf::RenderWindow& window) const {
     window.draw(mStatusText);
 }
 
-// Draws the input label, box, current text, and usage hint.
 void HeapVisualizer::drawInputArea(sf::RenderWindow& window) const {
     window.draw(mInputBox);
-    if (mInputBuffer.empty()) {
-        window.draw(mPlaceholderText);
-    } else {
-        window.draw(mInputText);
-    }
+    if (mInputBuffer.empty()) window.draw(mPlaceholderText);
+    else window.draw(mInputText);
     window.draw(mHintText);
 }
 
@@ -731,7 +820,8 @@ void HeapVisualizer::drawArray(sf::RenderWindow& window) const {
 
     const float maxTotalWidth = 760.f;
     const float gap = 4.f;
-    const float cellWidth = std::min(48.f, (maxTotalWidth - (visibleNodes * gap)) / visibleNodes);
+    const float cellWidth = std::min(48.f, (g_TreeWidth - (visibleNodes * gap)) / visibleNodes);
+    const float startX = g_TreeLeftX + (g_TreeWidth - (visibleNodes * (cellWidth + gap))) / 2.f; 
     
     for (std::size_t i = 0; i < visibleNodes; ++i) {
         sf::RectangleShape cell({cellWidth, cellWidth});
@@ -748,13 +838,13 @@ void HeapVisualizer::drawArray(sf::RenderWindow& window) const {
         window.draw(cell);
 
         unsigned int fontSize = cellWidth < 35.f ? 12 : 18;
-        sf::Text valueText = makeText(mFont, std::to_string(mDisplayArray[i]), fontSize, sf::Color(20, 28, 40), {0.f, 0.f});
+        sf::Text valueText = makeText(mFont, std::to_string(mDisplayArray[i]), fontSize, UITheme::Color::TextDark, {0.f, 0.f});
         sf::FloatRect bounds = valueText.getLocalBounds();
         valueText.setOrigin(bounds.left + bounds.width / 2.f, bounds.top + bounds.height / 2.f);
         valueText.setPosition({cell.getPosition().x + cellWidth / 2.f, cell.getPosition().y + cellWidth / 2.f - 2.f});
         window.draw(valueText);
 
-        sf::Text indexText = makeText(mFont, std::to_string(i), 12, sf::Color(189, 198, 214), {0.f, 0.f});
+        sf::Text indexText = makeText(mFont, std::to_string(i), 12, UITheme::Color::TextMuted, {0.f, 0.f});
         sf::FloatRect idxBounds = indexText.getLocalBounds();
         indexText.setOrigin(idxBounds.left + idxBounds.width / 2.f, 0.f);
         indexText.setPosition({cell.getPosition().x + cellWidth / 2.f, cell.getPosition().y - 18.f});
@@ -762,7 +852,6 @@ void HeapVisualizer::drawArray(sf::RenderWindow& window) const {
     }
 }
 
-// Draws the node-link tree representation using heap indices to derive parent-child edges.
 void HeapVisualizer::drawTree(sf::RenderWindow& window) const {
     const std::size_t visibleNodes = std::min(mDisplayArray.size(), MAX_RENDERED_NODES);
     for (std::size_t i = 1; i < visibleNodes; ++i) {
@@ -770,8 +859,8 @@ void HeapVisualizer::drawTree(sf::RenderWindow& window) const {
         const sf::Vector2f start = nodePosition(parent);
         const sf::Vector2f end = nodePosition(i);
         sf::Vertex line[] = {
-            sf::Vertex(start, sf::Color(136, 155, 184)),
-            sf::Vertex(end, sf::Color(136, 155, 184))
+            sf::Vertex(start, UITheme::Color::HeapNodeOutline),
+            sf::Vertex(end, UITheme::Color::HeapNodeOutline)
         };
         window.draw(line, 2, sf::Lines);
     }
@@ -781,7 +870,7 @@ void HeapVisualizer::drawTree(sf::RenderWindow& window) const {
         sf::CircleShape node(Radius);
         node.setOrigin({Radius, Radius});
         node.setPosition(nodePosition(i));
-        node.setFillColor(sf::Color(245, 249, 255));
+        node.setFillColor(UITheme::Color::HeapNodeFill);
         node.setOutlineThickness(4.f);
 
         sf::Color currentOutlineColor = nodeColor(i);
@@ -793,7 +882,7 @@ void HeapVisualizer::drawTree(sf::RenderWindow& window) const {
 
         window.draw(node);
 
-        sf::Text valueText = makeText(mFont, std::to_string(mDisplayArray[i]), 18, sf::Color(20, 28, 40), {0.f, 0.f});
+        sf::Text valueText = makeText(mFont, std::to_string(mDisplayArray[i]), 18, UITheme::Color::TextWhite, {0.f, 0.f});
         sf::FloatRect bounds = valueText.getLocalBounds();
         valueText.setOrigin(bounds.left + bounds.width / 2.f, bounds.top + bounds.height / 2.f);
         valueText.setPosition({node.getPosition().x, node.getPosition().y - 1.f});
@@ -801,36 +890,33 @@ void HeapVisualizer::drawTree(sf::RenderWindow& window) const {
     }
 }
 
-// Draws the animation status and the color legend for compare, swap, and focus states.
 void HeapVisualizer::drawLegend(sf::RenderWindow& window) const {
-    // Step
-    constexpr float LEGEND_Y = 570.f;
+    const float LEGEND_Y = window.getSize().y - 60.f;
+    
     if (!mHighlight.label.empty()) {
-        sf::Text stepText = makeText(mFont, "Step: " + mHighlight.label, 16, sf::Color(251, 209, 101), {40.f, LEGEND_Y});
+        sf::Text stepText = makeText(mFont, "Step: " + mHighlight.label, 16, UITheme::Color::HeapTextHighlight, {g_TreeLeftX, LEGEND_Y});
         window.draw(stepText);
     }
 
-    float itemX = 600.f; 
+    float itemX = g_TreeLeftX + (g_TreeWidth / 2.f) - 150.f; 
 
-    // Compare
     sf::CircleShape compare(8.f);
     compare.setFillColor(sf::Color(0, 255, 255));
     compare.setPosition({itemX, LEGEND_Y + 4.f});
     window.draw(compare);
-    window.draw(makeText(mFont, "Compare", 15, sf::Color::White, {itemX + 25.f, LEGEND_Y}));
+    window.draw(makeText(mFont, "Compare", 15, UITheme::Color::TextWhite, {itemX + 25.f, LEGEND_Y}));
 
-    // Swap
     itemX += 120.f;
     sf::CircleShape swap(8.f);
-    swap.setFillColor(sf::Color(255, 124, 124));
+    swap.setFillColor(UITheme::Color::HeapSwap);
     swap.setPosition({itemX, LEGEND_Y + 4.f});
     window.draw(swap);
-    window.draw(makeText(mFont, "Swap", 15, sf::Color::White, {itemX + 25.f, LEGEND_Y}));
+    window.draw(makeText(mFont, "Swap", 15, UITheme::Color::TextWhite, {itemX + 25.f, LEGEND_Y}));
 
     // Focused
     itemX += 90.f;
     sf::CircleShape focus(8.f);
-    focus.setFillColor(sf::Color(248, 196, 76));
+    focus.setFillColor(UITheme::Color::HeapFocus);
     focus.setPosition({itemX, LEGEND_Y + 4.f});
     window.draw(focus);
     window.draw(makeText(mFont, "Focused", 15, sf::Color::White, {itemX + 25.f, LEGEND_Y}));
@@ -857,44 +943,18 @@ void HeapVisualizer::drawCodeSnippet(sf::RenderWindow& window) const {
     codeBg.setOutlineColor(sf::Color(100, 100, 255, 150));
     window.draw(codeBg);
 
-    for (int i = 0; i < (int)mCurrentCode.size(); ++i) {
-        sf::Text text = makeText(mFont, mCurrentCode[i], 12, sf::Color(190, 190, 200), {boxX + 15.f, 120.f + i * 22.f});
-        
-        if (i == mActiveLine) {
-            text.setFillColor(sf::Color(255, 105, 180));
-            
-            sf::RectangleShape bar({3.f, 16.f});
-            bar.setPosition({boxX + 5.f, 124.f + i * 22.f});
-            bar.setFillColor(sf::Color(255, 105, 180));
-            window.draw(bar);
-        }
-        window.draw(text);
-    }
-}
-
-// Adds a character to the input buffer while keeping the field length bounded.
 void HeapVisualizer::appendDigit(char digit) {
-    if (mInputBuffer.size() < 60) {
-        mInputBuffer.push_back(digit);
-    }
+    if (mInputBuffer.size() < 60) mInputBuffer.push_back(digit);
 }
 
-// Only accepts characters that make sense for integer and integer-list input.
 void HeapVisualizer::appendCharacter(char character) {
-    if ((character >= '0' && character <= '9') || character == '-' || character == ',' || character == ' ') {
-        appendDigit(character);
-    }
+    if ((character >= '0' && character <= '9') || character == '-' || character == ',' || character == ' ') appendDigit(character);
 }
 
-// Removes the last typed character from the input field.
 void HeapVisualizer::backspaceInput() {
-    if (!mInputBuffer.empty()) {
-        mInputBuffer.pop_back();
-        mInputText.setString(mInputBuffer);
-    }
+    if (!mInputBuffer.empty()) { mInputBuffer.pop_back(); mInputText.setString(mInputBuffer); }
 }
 
-// Updates the status line and rebuilds the play/pause button label to match the current mode.
 void HeapVisualizer::setStatus(const std::string& status) {
     mStatusMessage = status;
     mStatusText.setString(status);
@@ -904,74 +964,54 @@ void HeapVisualizer::setStatus(const std::string& status) {
     mPlayPauseButton.setPosition({playCenterX, row5Y + BUTTON_HEIGHT / 2.f});
 }
 
-// Parses the input as exactly one integer, used by the Insert action.
 bool HeapVisualizer::tryParseSingleValue(int& value) const {
-    std::stringstream stream(mInputBuffer);
-    stream >> value;
-    return !stream.fail() && stream.eof();
+    std::stringstream stream(mInputBuffer); stream >> value; return !stream.fail() && stream.eof();
 }
 
-// Parses a list of integers for heap construction, accepting both spaces and commas as separators.
 std::vector<int> HeapVisualizer::parseSequence(bool& ok) const {
     std::vector<int> values;
     ok = true;
-
     std::string normalized = mInputBuffer;
     std::replace(normalized.begin(), normalized.end(), ',', ' ');
-
     std::stringstream stream(normalized);
     int value = 0;
-    while (stream >> value) {
-        values.push_back(value);
-    }
-
-    if (!stream.eof()) {
-        ok = false;
-    }
-
+    while (stream >> value) values.push_back(value);
+    if (!stream.eof()) ok = false;
     return values;
 }
 
-// Converts an array index into a tree position by grouping nodes by heap level.
 sf::Vector2f HeapVisualizer::nodePosition(std::size_t index) const {
     const int level = static_cast<int>(std::floor(std::log2(static_cast<float>(index + 1))));
     const std::size_t firstIndexInLevel = (1u << level) - 1u;
     const std::size_t positionInLevel = index - firstIndexInLevel;
     const std::size_t nodesInLevel = 1u << level;
-    const float horizontalGap = TREE_WIDTH / static_cast<float>(nodesInLevel);
-    const float x = TREE_LEFT_X + horizontalGap * (static_cast<float>(positionInLevel) + 0.5f);
+    
+    // Scales the tree width dynamically based on open panels
+    const float horizontalGap = g_TreeWidth / static_cast<float>(nodesInLevel);
+    const float x = g_TreeLeftX + horizontalGap * (static_cast<float>(positionInLevel) + 0.5f);
     const float y = TREE_TOP_Y + level * 60.f;
     return {x, y};
 }
 
-// Resolves the outline color for a node based on the active animation highlight state.
 sf::Color HeapVisualizer::nodeColor(std::size_t index) const {
-    if (static_cast<int>(index) == mHighlight.first) {
-        return mHighlight.firstColor;
-    }
-    if (static_cast<int>(index) == mHighlight.second) {
-        return mHighlight.secondColor;
-    }
-    return sf::Color(106, 133, 176);
+    if (static_cast<int>(index) == mHighlight.first)  return mHighlight.firstColor;
+    if (static_cast<int>(index) == mHighlight.second) return mHighlight.secondColor;
+    return UITheme::Color::HeapNodeOutline;
 }
 
-void HeapVisualizer::clearInput() {
-    mInputBuffer.clear(); 
-    mInputText.setString(""); 
-}
+void HeapVisualizer::clearInput() { mInputBuffer.clear(); mInputText.setString(""); }
 
 int HeapVisualizer::run(sf::RenderWindow& window, sf::Font& font) {
-    // 1. Load texture
-    if (!mBgTexture.loadFromFile("assets/textures/avl_background.png")) {
-        std::cerr << "Failed to load background.png\n";
-    }
+    if (!mBgTexture.loadFromFile("assets/textures/avl_background.png")) std::cerr << "Failed to load background.png\n";
     mBgSprite.setTexture(mBgTexture);
     
-    mBgSprite.setScale(1280.f / mBgTexture.getSize().x, 720.f / mBgTexture.getSize().y);
+    mBgSprite.setScale(static_cast<float>(window.getSize().x) / mBgTexture.getSize().x, 
+                       static_cast<float>(window.getSize().y) / mBgTexture.getSize().y);
+                       
+    mBgSprite.setColor(UITheme::Color::HeapBackground);
 
     sf::Clock clock;
 
-    // 2. Event Loop
     while (window.isOpen()) {
         float deltaTime = clock.restart().asSeconds();
         sf::Event event;
@@ -997,18 +1037,12 @@ int HeapVisualizer::run(sf::RenderWindow& window, sf::Font& font) {
             handleEvent(event, window);
         }
 
-        // 3. Update logic (animation, hover effect...)
         update(deltaTime, window);
 
-        // 4. Render
-        window.clear();
-        
-        window.draw(mBgSprite); // background
-        render(window);         // render tree, array, buttons...
-        
+        window.clear(UITheme::Color::HeapBackground);
+        window.draw(mBgSprite);
+        render(window);         
         window.display();
     }
-
     return -1;
 }
-

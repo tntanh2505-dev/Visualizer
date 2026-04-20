@@ -1,5 +1,6 @@
 #pragma once
 #include "DSA-Visualization/linked_list/SLL_UI.hpp"
+#include "DSA-Visualization/ui/UI_Theme.hpp"
 
 namespace SLL {
 struct SLLNode {
@@ -54,7 +55,7 @@ inline Snapshot TakeSnapshot_SLL(SLLNode* head, std::string desc, int highlighte
 }
 
 inline void ApplySLLLayout(Snapshot& snap, float startX, float startY) {
-    float horizontalSpacing = 140.f; float verticalSpacing = 120.f; int nodesPerRow = 8;             
+    float horizontalSpacing = 140.f; float verticalSpacing = 120.f; int nodesPerRow = 6;             
     for (int i = 0; i < snap.nodes.size(); ++i) {
         int row = i / nodesPerRow; int col = i % nodesPerRow;
         if(row % 2 == 0) snap.nodes[i].targetX = startX + (col * horizontalSpacing);
@@ -147,6 +148,8 @@ inline int Search_Visual(SLLNode* head, int targetValue, std::vector<Snapshot>& 
 // --- SLL Scene ---
 class LinkedListScene : public Scene {
 private:
+    float baseWidth;
+    float baseHeight;
     SLLNode* pHead;
     std::vector<VisualNode> nodes;
     std::vector<Connector> lines;
@@ -159,26 +162,18 @@ private:
     std::vector<Button> buttons; std::vector<TextBox> boxes;
     NodePanel nodePanel; CodePanel codePanel; TimelineSlider slider; SpeedController speedCtrl;
 
-    void updateUIPositions(float width, float height) {
-        float margin = 100.f;
-        slider.setPosition({margin, height - margin}, width - (margin * 2));
-        nodePanel.setPosition({width - margin - 360.f, height - margin - 180.f});
-        codePanel.setPosition({width - margin - 360.f, height - margin - 180.f - 200.f});
+    // --- Sliding Panel Layout Properties ---
+    float leftWidth;
+    float rightWidth;
+    bool leftExpanded;
+    bool rightExpanded;
+    const float LEFT_PANEL_WIDTH = 300.f;
+    const float RIGHT_PANEL_WIDTH = 420.f;
+    const float TAB_WIDTH = 35.f;
+    const float TAB_HEIGHT = 50.f;
 
-        float startX = margin; float row0Y = height - margin + 25.f; float row2Y = height - margin - 70.f; float row1Y = height - margin - 130.f;
-        if (!boxes.empty() && buttons.size() >= 13) {
-            boxes[0].setPosition({startX, row1Y}); 
-            buttons[0].setPosition({startX + 150, row1Y}); buttons[1].setPosition({startX + 320, row1Y}); buttons[2].setPosition({startX + 490, row1Y}); 
-            buttons[3].setPosition({startX + 590, row1Y}); buttons[4].setPosition({startX + 690, row1Y});
-            buttons[8].setPosition({startX, row2Y});       buttons[5].setPosition({startX + 150, row2Y}); buttons[6].setPosition({startX + 320, row2Y}); 
-            buttons[7].setPosition({startX + 490, row2Y}); buttons[9].setPosition({startX + 590, row2Y}); buttons[10].setPosition({startX + 690, row2Y});
-            buttons[11].setPosition({startX , row0Y});     boxes[1].setPosition({startX + 180, row0Y});    buttons[12].setPosition({startX + 450, row0Y}); 
-            speedCtrl.setPosition({startX + 800, row2Y});
-        }
-    }
-    
     void UpdateVisualsFromFrame() {
-        ApplySLLLayout(timeline[currentFrame], 200.f, 200.f);
+        ApplySLLLayout(timeline[currentFrame], leftWidth + 200.f, 200.f);
         for (const auto& record : timeline[currentFrame].nodes) {
             VisualNode* vn = FindNode(record.UID, nodes);
             if (vn) vn->index = record.index; 
@@ -190,29 +185,67 @@ public:
     LinkedListScene(sf::Font& font, float windowWidth, float windowHeight) 
     : nodePanel(font), codePanel(font), slider({200.f, 750.f}, 1000.f), speedCtrl(font, &timeInterval), menuBtn("MENU", font, {20.f, 20.f}, 80, 40)
     {   
-        fontPtr = &font; pHead = nullptr; currentFrame = 0; isAutoPlaying = true; pendingSearchUID = INT_MIN; timeInterval = 0.005f; dt = 0.001f;
+        baseWidth = windowWidth;
+        baseHeight = windowHeight;
+        fontPtr = &font; pHead = nullptr; currentFrame = 0; isAutoPlaying = true; pendingSearchUID = INT_MIN; timeInterval = 0.5f; dt = 0.001f;
+
+        leftWidth = TAB_WIDTH;
+        rightWidth = TAB_WIDTH;
+        leftExpanded = false;
+        rightExpanded = false;
 
         std::map<std::string, std::vector<std::string>> llSnippets;
-        llSnippets["InsertFront"] = { "SLLNode* newNode = new SLLNode(x);", "newNode->next = head;", "head = newNode;" };
-        llSnippets["InsertBack"] = { "if (head == NULL) { head = new SLLNode(x); return; }", "SLLNode* cur = head;", "while (cur->next != NULL) cur = cur->next;", "cur->next = new SLLNode(x);" };
-        llSnippets["Search"] = { "SLLNode* cur = head;", "while (cur != NULL) {", "    if (cur->val == targetValue) return cur;", "    cur = cur->next;", "}", "return NULL;" };
-        llSnippets["DeleteBack"] = { "if (head == NULL) return;", "if (head->next == NULL) { delete head; return; }", "SLLNode* cur = head;", "while (cur->next->next != NULL) cur = cur->next;", "delete cur->next; cur->next = NULL;" };
-        llSnippets["DeleteFront"] = { "if (head == NULL) return;", "SLLNode* temp = head;", "head = head->next;", "delete temp;" };
+        llSnippets["InsertFront"] = { 
+            "Node* n = new Node(x);", 
+            "n->next = head;", 
+            "head = n;" 
+        };
+        llSnippets["InsertBack"] = { 
+            "if (!head) { head = new Node(x); return; }", 
+            "Node* cur = head;", 
+            "while (cur->next) cur = cur->next;", 
+            "cur->next = new Node(x);" 
+        };
+        llSnippets["Search"] = { 
+            "Node* cur = head;", 
+            "while (cur) {", 
+            "  if (cur->val == target) return cur;", 
+            "  cur = cur->next;", 
+            "}", 
+            "return NULL;" 
+        };
+        llSnippets["DeleteBack"] = { 
+            "if (!head) return;", 
+            "if (!head->next) { delete head; head = NULL; }", 
+            "Node* cur = head;", 
+            "while (cur->next->next) cur = cur->next;", 
+            "delete cur->next; cur->next = NULL;" 
+        };
+        llSnippets["DeleteFront"] = { 
+            "if (!head) return;", 
+            "Node* temp = head;", 
+            "head = head->next;", 
+            "delete temp;" 
+        };
         codePanel.loadSnippets(llSnippets);
 
-        boxes.emplace_back(TextBox(font, {50, 600})); boxes[0].placeholder = "Enter value..."; boxes[0].allowNegative = true;
-        boxes.emplace_back(TextBox(font, {0, 0}, 250, 40)); boxes[1].allowAllChars = true; boxes[1].placeholder = "Paste path (Ctrl+V)...";
+        boxes.emplace_back(TextBox(font, {0, 0}, 220, 40)); boxes[0].placeholder = "Enter value..."; boxes[0].allowNegative = true;
+        boxes.emplace_back(TextBox(font, {0, 0}, 220, 40)); boxes[1].allowAllChars = true; boxes[1].placeholder = "Paste path (Ctrl+V)...";
 
-        buttons.emplace_back(Button("INSERT BACK", font, {0, 0}, 160, 50));  buttons.emplace_back(Button("INSERT FRONT", font, {0, 0}, 160, 50)); 
-        buttons.emplace_back(Button("PREV", font, {0, 0}, 90, 50));          buttons.emplace_back(Button("PAUSE", font, {0, 0}, 90, 50));         
-        buttons.emplace_back(Button("NEXT", font, {0, 0}, 90, 50));          buttons.emplace_back(Button("DELETE FRONT", font, {0, 0}, 160, 40)); 
-        buttons.emplace_back(Button("DELETE BACK", font, {0, 0}, 160, 40));  buttons.emplace_back(Button("RANDOM", font, {0, 0}, 90, 40));        
-        buttons.emplace_back(Button("SEARCH", font, {0, 0}, 90, 40));        buttons.emplace_back(Button("SKIP", font, {0, 0}, 90, 40));          
-        buttons.emplace_back(Button("BACK", font, {0, 0}, 90, 40));          buttons.emplace_back(Button("CLEAR ALL", font, {0, 0}, 160, 40));    
-        buttons[11].shape.setFillColor(sf::Color(200, 0, 0)); 
-        buttons.emplace_back(Button("ADD FILE", font, {0, 0}, 160, 40));     
+        buttons.emplace_back(Button("INS BACK", font, {0, 0}, 105, 40));  // 0
+        buttons.emplace_back(Button("INS FRONT", font, {0, 0}, 105, 40)); // 1
+        buttons.emplace_back(Button("PREV", font, {0, 0}, 70, 40));       // 2
+        buttons.emplace_back(Button("PAUSE", font, {0, 0}, 70, 40));      // 3
+        buttons.emplace_back(Button("NEXT", font, {0, 0}, 70, 40));       // 4
+        buttons.emplace_back(Button("DEL FRONT", font, {0, 0}, 105, 40)); // 5
+        buttons.emplace_back(Button("DEL BACK", font, {0, 0}, 105, 40));  // 6
+        buttons.emplace_back(Button("RANDOM", font, {0, 0}, 105, 40));    // 7
+        buttons.emplace_back(Button("SEARCH", font, {0, 0}, 105, 40));    // 8
+        buttons.emplace_back(Button("SKIP", font, {0, 0}, 70, 40));       // 9
+        buttons.emplace_back(Button("BACK", font, {0, 0}, 70, 40));       // 10
+        buttons.emplace_back(Button("CLEAR ALL", font, {0, 0}, 220, 40)); // 11
+        buttons.emplace_back(Button("ADD FILE", font, {0, 0}, 220, 40));  // 12     
 
-        updateUIPositions(windowWidth, windowHeight);
         timeline.push_back(TakeSnapshot_SLL(pHead, "Initial State", INT_MIN, true));
         SyncToFrame(timeline[currentFrame], nodes, lines, font);
     }
@@ -220,7 +253,28 @@ public:
     ~LinkedListScene() { DeleteAll(pHead); }
 
     void HandleEvent(sf::Event& event, sf::RenderWindow& window, SceneType& nextScene) override {
-        for(VisualNode& node : nodes) node.HandleEvent(event, window);
+        sf::Vector2f mPos = window.mapPixelToCoords(sf::Mouse::getPosition(window));
+        
+        // --- Tab Slide Interaction ---
+        if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
+            float centerY = window.getSize().y / 2.f;
+            float winW = window.getSize().x;
+            
+            bool mouseInLeftTab = (mPos.x >= leftWidth - TAB_WIDTH && mPos.x <= leftWidth &&
+                                   mPos.y >= centerY - TAB_HEIGHT / 2.f && mPos.y <= centerY + TAB_HEIGHT / 2.f);
+            if (mouseInLeftTab) { leftExpanded = !leftExpanded; return; }
+
+            bool mouseInRightTab = (mPos.x >= winW - rightWidth && mPos.x <= winW - rightWidth + TAB_WIDTH &&
+                                    mPos.y >= centerY - TAB_HEIGHT / 2.f && mPos.y <= centerY + TAB_HEIGHT / 2.f);
+            if (mouseInRightTab) { rightExpanded = !rightExpanded; return; }
+        }
+
+        bool isClickingOnPanel = (mPos.x < leftWidth) || (mPos.x > window.getSize().x - rightWidth);
+
+        if (!isClickingOnPanel) {
+            for(VisualNode& node : nodes) node.HandleEvent(event, window);
+        }
+
         for(TextBox& box : boxes) box.HandleEvent_IB(event, window);
         speedCtrl.HandleEvent(event, window);
 
@@ -229,8 +283,9 @@ public:
         if (currentFrame != previousFrame) { UpdateVisualsFromFrame(); }
 
         if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
-            sf::Vector2f mPos = window.mapPixelToCoords(sf::Mouse::getPosition(window));
-            for (auto& node : nodes) { if (node.contains(mPos) && node.isVisible) { nodePanel.show(&node); break; } }
+            if (!isClickingOnPanel) {
+                for (auto& node : nodes) { if (node.contains(mPos) && node.isVisible) { nodePanel.show(&node); break; } }
+            }
             if (menuBtn.isClicked(mPos)) { nextScene = SceneType::MAIN_MENU; return; }
         }
 
@@ -250,8 +305,12 @@ public:
             }
         }
 
+        if (event.type == sf::Event::Resized) {
+            sf::View stretchedView(sf::FloatRect(0, 0, baseWidth, baseHeight));
+            window.setView(stretchedView);
+        }
+
         if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
-            sf::Vector2f mPos = window.mapPixelToCoords(sf::Mouse::getPosition(window));
             auto FastForward = [&]() { if (currentFrame < timeline.size() - 1) currentFrame = timeline.size() - 1; };
 
             if (buttons[0].isClicked(mPos) && !boxes[0].input.empty()) { FastForward(); InsertBack_Visual(pHead, std::stoi(boxes[0].input), timeline); isAutoPlaying = true; boxes[0].clear(); }
@@ -272,13 +331,65 @@ public:
             else if (buttons[2].isClicked(mPos)) { isAutoPlaying = false; buttons[3].setText("PLAY"); if (currentFrame > 0) { currentFrame--; UpdateVisualsFromFrame(); } }
             else if (buttons[3].isClicked(mPos)) { if (!isAutoPlaying && currentFrame == timeline.size() - 1) currentFrame = 0; isAutoPlaying = !isAutoPlaying; buttons[3].setText(isAutoPlaying ? "PAUSE" : "PLAY"); }
             else if (buttons[4].isClicked(mPos)) { isAutoPlaying = false; buttons[3].setText("PLAY"); if (currentFrame < timeline.size() - 1) { currentFrame++; UpdateVisualsFromFrame(); } }
-            else if (buttons[7].isClicked(mPos)) { int randomVal = (rand() % 199) - 99; boxes[0].input = std::to_string(randomVal); boxes[0].text.setString(boxes[0].input); boxes[0].text.setFillColor(sf::Color::Black); }
+            else if (buttons[7].isClicked(mPos)) { int randomVal = (rand() % 199) - 99; boxes[0].input = std::to_string(randomVal); boxes[0].text.setString(boxes[0].input); boxes[0].text.setFillColor(UITheme::Color::TextDark); }
             else if (buttons[9].isClicked(mPos)) { isAutoPlaying = false; buttons[3].setText("PLAY"); int target = timeline.size() - 1; for (int i = currentFrame + 1; i < timeline.size(); i++) { if (timeline[i].isKeyStage) { target = i; break; } } if (currentFrame != target) { currentFrame = target; UpdateVisualsFromFrame(); } }
             else if (buttons[10].isClicked(mPos)) { isAutoPlaying = false; buttons[3].setText("PLAY"); int target = 0; for (int i = currentFrame - 1; i >= 0; i--) { if (timeline[i].isKeyStage) { target = i; break; } } if (currentFrame != target) { currentFrame = target; UpdateVisualsFromFrame(); } }
         }
     }
 
     void Update(float deltaTime, sf::RenderWindow& window) override {
+        // --- Smooth Panel Transitions ---
+        float targetLeft = leftExpanded ? LEFT_PANEL_WIDTH : TAB_WIDTH;
+        leftWidth += (targetLeft - leftWidth) * 12.f * deltaTime;
+        
+        float targetRight = rightExpanded ? RIGHT_PANEL_WIDTH : TAB_WIDTH;
+        rightWidth += (targetRight - rightWidth) * 12.f * deltaTime;
+
+        // --- Left Panel Layout Mathematics ---
+        float leftBaseX = leftWidth - LEFT_PANEL_WIDTH; 
+        float currentY = 20.f;
+        
+        menuBtn.setPosition({leftBaseX + 60.f, currentY}); currentY += 50.f;
+        boxes[0].setPosition({leftBaseX + 30.f, currentY}); currentY += 50.f;
+        buttons[1].setPosition({leftBaseX + 30.f, currentY});  // INS FRONT
+        buttons[0].setPosition({leftBaseX + 145.f, currentY}); currentY += 50.f; // INS BACK
+        buttons[5].setPosition({leftBaseX + 30.f, currentY});  // DEL FRONT
+        buttons[6].setPosition({leftBaseX + 145.f, currentY}); currentY += 50.f; // DEL BACK
+        buttons[8].setPosition({leftBaseX + 30.f, currentY});  // SEARCH
+        buttons[7].setPosition({leftBaseX + 145.f, currentY}); currentY += 50.f; // RANDOM
+        buttons[11].setPosition({leftBaseX + 30.f, currentY}); currentY += 70.f; // CLEAR ALL
+
+        // Play Controls Area
+        buttons[10].setPosition({leftBaseX + 30.f, currentY}); // BACK (Keyframe)
+        buttons[2].setPosition({leftBaseX + 105.f, currentY});  // PREV
+        buttons[3].setPosition({leftBaseX + 180.f, currentY}); currentY += 50.f; // PLAY/PAUSE
+        buttons[4].setPosition({leftBaseX + 30.f, currentY});  // NEXT
+        buttons[9].setPosition({leftBaseX + 105.f, currentY}); currentY += 60.f;  // SKIP (Keyframe)
+
+        speedCtrl.setPosition({leftBaseX + 30.f, currentY}); currentY += 60.f;
+        speedCtrl.update(window);
+        boxes[1].setPosition({leftBaseX + 30.f, currentY}); currentY += 50.f;
+        buttons[12].setPosition({leftBaseX + 30.f, currentY}); // ADD FILE
+
+        // --- Right Panel Layout Mathematics ---
+        float rightBaseX = window.getSize().x - rightWidth;
+        codePanel.setPosition({rightBaseX + TAB_WIDTH + 10.f, 20.f});
+        
+        // --- Timeline Slider stays at bottom, scales dynamically ---
+        slider.setPosition({leftWidth + 20.f, window.getSize().y - 50.f}, window.getSize().x - leftWidth - rightWidth - 40.f);
+
+        if (nodePanel.isVisible) {
+            float npX = rightBaseX - UITheme::Size::PanelDefault.x - 20.f;
+            float npY = window.getSize().y - 230.f; 
+            nodePanel.setPosition({npX, npY});
+        }
+
+        // --- Apply Hovers ---
+        sf::Vector2f mPos = window.mapPixelToCoords(sf::Mouse::getPosition(window));
+        for (auto& btn : buttons) btn.handleHover(mPos);
+        menuBtn.handleHover(mPos);
+        // NOTE: Old minusBtn and plusBtn hovers removed completely!
+
         if (isAutoPlaying) {
             if (animationClock.getElapsedTime().asSeconds() >= timeInterval) {
                 if (currentFrame < timeline.size() - 1) {
@@ -295,7 +406,8 @@ public:
             }
         }
         for (auto& node : nodes) node.update(window, deltaTime);
-        ResolveCollisions(nodes, window); 
+        ResolveCollisions(nodes, window, leftWidth + 100.0f, window.getSize().x - rightWidth); 
+        
         for (auto& line : lines) {
             VisualNode* s = FindNode(line.start_UID, nodes);
             VisualNode* e = FindNode(line.end_UID, nodes);
@@ -304,6 +416,7 @@ public:
     }
 
     void Draw(sf::RenderWindow& window) override {
+        // 1. Draw Links and Nodes Background Layer
         std::vector<VisualNode> printNode = nodes; std::vector<Connector> printLine = lines;
         sort(printNode.begin(), printNode.end(), [](VisualNode& a, VisualNode& b){return a.UID < b.UID;});
         sort(printLine.begin(), printLine.end(), [](Connector& a, Connector& b){return a.start_UID < b.start_UID;});
@@ -311,12 +424,53 @@ public:
         for (auto& line : printLine) line.draw(window);
         for (auto& node : printNode) node.draw(window);
 
-        codePanel.update(timeline[currentFrame].algorithmName, timeline[currentFrame].activeLine);
+        // 2. Center Bottom Content
         slider.update(currentFrame, timeline.size() - 1); slider.draw(window, timeline);
+        nodePanel.draw(window); 
+        codePanel.update(timeline[currentFrame].algorithmName, timeline[currentFrame].activeLine);
 
-        for (auto& box : boxes) box.draw(window); for (auto& btn : buttons) btn.draw(window);
-        nodePanel.draw(window); codePanel.draw(window); speedCtrl.draw(window); menuBtn.draw(window);
+        // 3. Draw Left Panel Architecture
+        sf::RectangleShape leftMenu(sf::Vector2f(leftWidth, window.getSize().y));
+        leftMenu.setFillColor(UITheme::Color::GraphPanelBg);
+        window.draw(leftMenu);
+
+        sf::RectangleShape leftTab(sf::Vector2f(TAB_WIDTH, TAB_HEIGHT));
+        leftTab.setFillColor(UITheme::Color::GraphTabBg);
+        leftTab.setPosition(leftWidth - TAB_WIDTH, window.getSize().y / 2.f - TAB_HEIGHT / 2.f);
+        window.draw(leftTab);
+
+        sf::Text lIcon(leftExpanded ? "<<" : ">>", *fontPtr, 18);
+        sf::FloatRect lb = lIcon.getLocalBounds();
+        lIcon.setOrigin(lb.left + lb.width/2.f, lb.top + lb.height/2.f);
+        lIcon.setPosition(leftWidth - TAB_WIDTH/2.f, window.getSize().y / 2.f - 2.f);
+        lIcon.setFillColor(UITheme::Color::NodeOutlineColor);
+        window.draw(lIcon);
+
+        // 4. Draw Right Panel Architecture
+        float winW = window.getSize().x;
+        sf::RectangleShape rightMenu(sf::Vector2f(rightWidth, window.getSize().y));
+        rightMenu.setFillColor(UITheme::Color::GraphPanelBg);
+        rightMenu.setPosition(winW - rightWidth, 0);
+        window.draw(rightMenu);
+
+        sf::RectangleShape rightTab(sf::Vector2f(TAB_WIDTH, TAB_HEIGHT));
+        rightTab.setFillColor(UITheme::Color::GraphTabBg);
+        rightTab.setPosition(winW - rightWidth, window.getSize().y / 2.f - TAB_HEIGHT / 2.f);
+        window.draw(rightTab);
+
+        sf::Text rIcon(rightExpanded ? ">>" : "<<", *fontPtr, 18);
+        sf::FloatRect rb = rIcon.getLocalBounds();
+        rIcon.setOrigin(rb.left + rb.width/2.f, rb.top + rb.height/2.f);
+        rIcon.setPosition(winW - rightWidth + TAB_WIDTH/2.f, window.getSize().y / 2.f - 2.f);
+        rIcon.setFillColor(UITheme::Color::NodeHighlightColor);
+        window.draw(rIcon);
+
+        // 5. Draw Content over Panels (Positions are tied to leftBaseX and rightBaseX, so they hide automatically)
+        for (auto& box : boxes) box.draw(window); 
+        for (auto& btn : buttons) btn.draw(window);
+        codePanel.draw(window); 
+        speedCtrl.draw(window); 
+        menuBtn.draw(window);
     }
 };
 }
-
