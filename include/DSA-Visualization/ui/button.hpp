@@ -7,6 +7,8 @@ public:
     // Constructor
     ModernButton(const std::string& text, const sf::Font& font, sf::Vector2f size = {200.f, 60.f}, float radius = 20.f);
 
+    void setText(const std::string &str);
+
     // Update state based on mouse position
     void update(sf::Vector2f mousePos);
 

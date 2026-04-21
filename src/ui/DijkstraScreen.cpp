@@ -27,9 +27,14 @@ const std::vector<std::string> pseudoCode = {
 };
 
 int DijkstraScreen::run(sf::RenderWindow &window, sf::Font &font) {
+    float winH = static_cast<float>(window.getSize().y);
+    initialization();
+    for (int i = 0; i < 5; ++i) {
+        button[i] = std::make_unique<ModernButton>("", font, sf::Vector2f(140.f, 35.f), 5.f);
+        button[i]->setPosition(95.f, 50.f + (i * 45.f));
+    }
+
     sf::Clock deltaClock;
-    isDirected = true;
-    returnStatus = false;
     while (window.isOpen()) {
         sf::Event event;
         sf::Vector2i mPos = sf::Mouse::getPosition(window);
@@ -64,17 +69,19 @@ int DijkstraScreen::run(sf::RenderWindow &window, sf::Font &font) {
             handleInput(window, event, mPos);
         }
 
-        if (returnStatus) return 0;
+        if (returnFlag) return 0;
 
         if (isAutoMode && !isEditMode && sourceNode != -1 && tickClock.getElapsedTime().asSeconds() > 0.8f) {
             if (visitingList.empty()) {
                 visitingNode = -1;
                 processingNode = algorithm.stage(nodes);
-                if (processingNode == -1)
+                if (processingNode == -1) {
                     isAutoMode = false;
-                else
+                    currentLine = {16, 16};
+                } else {
                     visitingList = algorithm.getAdjacent(processingNode);
-                currentLine = {7, 9};
+                    currentLine = {7, 9};
+                }
             } else {
                 visitingNode = visitingList.back();
                 visitingList.pop_back();
@@ -101,6 +108,35 @@ int DijkstraScreen::run(sf::RenderWindow &window, sf::Font &font) {
     return -1;
 }
 
+void DijkstraScreen::initialization() {
+    visitingList.clear();
+    dist.clear();
+    nodes.clear();
+    edges.clear();
+
+    returnFlag = false;
+    isEditMode = true;
+    isAutoMode = false;
+    isDeleting = false;
+    isDirected = false;
+
+    sourceNode = -1;
+    selectNode = -1;
+    editingNode = -1;
+    editingEdge = -1;
+    draggingNode = -1;
+    visitingNode = -1;
+    processingNode = -1;
+    inputBuffer.clear();
+
+    leftWidth = 0.f;
+    rightWidth = 0.f;
+    leftExpanded = true;
+    rightExpanded = true;
+    currentLine = {0, 0};
+    activeTab = TabState::Info;
+}
+
 void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf::Vector2i mPos) {
     sf::Vector2f worldPos = window.mapPixelToCoords(mPos);
     float centerY = window.getSize().y / 2.f;
@@ -118,6 +154,9 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
         return;
     }
 
+    for (int i = 0; i < 5; ++i)
+        button[i]->update(worldPos);
+
     // --- 1. XỬ LÝ UI PANEL (Ưu tiên các thao tác trên bảng điều khiển) ---
     if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
         // --- LEFT TAB ---
@@ -128,44 +167,42 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
             return;
         }
         if (leftExpanded && leftWidth > LEFT_PANEL_WIDTH * 0.8f && mPos.x < leftWidth - TAB_WIDTH) {
-            if (mPos.y >= 40 && mPos.y <= 75) { // Nút MODE
+            if (button[0]->isClicked(worldPos, true)) { // Nút MODE
                 isEditMode = !isEditMode;
                 sourceNode = -1;
-                return;
+                selectNode = -1;
+                currentLine = {0, 0};
             }
-            else if (mPos.y >= 80 && mPos.y <= 115) { // Nút ADD/DELETE // AUTO
+            else if (button[1]->isClicked(worldPos, true)) { // Nút INSERT/DELETE // AUTO
                 if (isEditMode) {
                     isDeleting = !isDeleting;
                     selectNode = -1;
                 } else {
                     isAutoMode = !isAutoMode;
                 }
-                return;
             }
-            else if (mPos.y >= 120 && mPos.y <= 155) { // Nút CLEAR // RESET
+            else if (button[2]->isClicked(worldPos, true)) { // Nút DIRECTED/UNDIRECTED // FINISH
+                if (isEditMode) {
+                    isDirected = !isDirected;
+                    selectNode = -1;
+                } else {
+                    finishFlag = true;
+                }
+            }
+            else if (button[3]->isClicked(worldPos, true)) { // Nút CLEAR // RESET
                 if (isEditMode) {
                     nodes.clear();
                     edges.clear();
-                    sourceNode = -1;
                     selectNode = -1;
                 } else {
                     sourceNode = -1;
-                    visitingNode = -1;
-                    processingNode = -1;
-                    fill(dist.begin(), dist.end(), INF);
-                    visitingList.clear();
                     algorithm.init(nodes, edges, sourceNode);
                 }
-                return;
             }
-            else if (mPos.y >= 155 && mPos.y <= 190) { // Nút DIRECTED/UNDIRECTED;
-                isDirected = !isDirected;
-                return;
+            else if (button[4]->isClicked(worldPos, true)) { // Nút RETURN
+                returnFlag = true;
             }
-            else if (mPos.y >= 225 && mPos.y <= 160) { // Nút RETURN
-                returnStatus = true;
-                return;
-            }
+            return;
         }
 
         // --- RIGHT TAB ---
@@ -258,11 +295,13 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
                 if (visitingList.empty()) {
                     visitingNode = -1;
                     processingNode = algorithm.stage(nodes);
-                    if (processingNode == -1)
+                    if (processingNode == -1) {
                         isAutoMode = false;
-                    else
+                        currentLine = {16, 16};
+                    } else {
                         visitingList = algorithm.getAdjacent(processingNode);
-                    currentLine = {7, 9};
+                        currentLine = {7, 9};
+                    }
                 } else {
                     visitingNode = visitingList.back();
                     visitingList.pop_back();
@@ -534,7 +573,7 @@ void DijkstraScreen::drawUI(sf::RenderWindow &window, sf::Font &font, sf::Vector
     menu.setFillColor(sf::Color(35, 35, 40));
     window.draw(menu);
 
-    // ----- LEFT PANEL -----
+    //  ----- LEFT PANEL -----
     float centerY = window.getSize().y / 2.f;
     sf::RectangleShape tab(sf::Vector2f(TAB_WIDTH, TAB_HEIGHT));
     tab.setFillColor(sf::Color(45, 45, 50));
@@ -551,35 +590,13 @@ void DijkstraScreen::drawUI(sf::RenderWindow &window, sf::Font &font, sf::Vector
     window.draw(icon);
 
     if (leftExpanded && leftWidth > 180.f) {
-        auto drawButton = [&](std::string str, float y, bool active, bool hover) {
-            sf::Text txt(str, font, 16);
-            txt.setPosition(20, y);
-            txt.setFillColor(hover ? sf::Color::Cyan : (active ? sf::Color::White : sf::Color(150, 150, 150)));
-            window.draw(txt);
-        };
-
-        bool isHoverMenu = (mPos.x < leftWidth - TAB_WIDTH);
-        
-        // Nút 1: Chuyển MODE
-        drawButton(isEditMode ? "MODE: EDIT" : "MODE: RUN", 50, true, isHoverMenu && mPos.y >= 40 && mPos.y <= 75);
-
-        // Nút 2: Logic động
-        if (isEditMode)
-            drawButton(isDeleting ? "ACTION: DELETE" : "ACTION: ADD", 90, true, isHoverMenu && mPos.y >= 85 && mPos.y <= 115);
-        else if (sourceNode == -1)
-            drawButton("CHOOSE SOURCE", 90, false, false);
-        else
-            drawButton(isAutoMode ? "AUTO: ON" : "AUTO: OFF", 90, true, isHoverMenu && mPos.y >= 85 && mPos.y <= 115);
-
-        // Nút 3: RESET / CLEAR
-        drawButton(isEditMode ? "CLEAR" : "RESET", 130, true, isHoverMenu && mPos.y >= 125 && mPos.y <= 155);
-
-        float returnY = 200.f;
-        bool isHoverReturn = isHoverMenu && mPos.y >= returnY - 5 && mPos.y <= returnY + 25;
-        sf::Text retTxt("<- RETURN", font, 16);
-        retTxt.setPosition(20, returnY);
-        retTxt.setFillColor(isHoverReturn ? sf::Color::Red : sf::Color(200, 200, 200));
-        window.draw(retTxt);
+        button[0]->setText(isEditMode ? "MODE: EDIT" : "MODE: RUN");
+        button[1]->setText(isEditMode ? (isDeleting ? "DELETE" : "INSERT") : (isAutoMode ? "AUTO: ON" : "AUTO: OFF"));
+        button[2]->setText(isEditMode ? (isDirected ? "DIRECTED" : "UNDIRECTED") : "FINISH");
+        button[3]->setText(isEditMode ? "CLEAR" : "RESET");
+        button[4]->setText("RETURN");
+        for (size_t i = 0; i < 5; ++i)
+            window.draw(*button[i]);
     }
 
     // ----- RIGHT PANEL -----

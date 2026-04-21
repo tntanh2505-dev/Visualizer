@@ -1,7 +1,9 @@
 #pragma once
+#include "button.hpp"
 #include "Screen.hpp"
 #include "DSA-Visualization/Shortest_Path/Dijkstra.hpp"
 #include <SFML/Graphics.hpp>
+#include <memory>
 
 enum class TabState { Info, Dist, Code };
 
@@ -16,28 +18,33 @@ private:
     std::vector<Edge> edges;
     Dijkstra algorithm;
 
-    bool returnStatus = false;
-    bool isEditMode = true;
-    bool isAutoMode = false;
-    bool isDeleting = false;
-    bool isDirected = false;
-    int sourceNode = -1;
-    int selectNode = -1;
-    int editingNode = -1;
-    int editingEdge = -1;
-    int draggingNode = -1;
-    int visitingNode = -1;
-    int processingNode = -1;
+    std::unique_ptr<ModernButton> button[5];
+
+    bool returnFlag;
+    bool finishFlag;
+    bool isEditMode;
+    bool isAutoMode;
+    bool isDeleting;
+    bool isDirected;
+
+    int sourceNode;
+    int selectNode;
+    int editingNode;
+    int editingEdge;
+    int draggingNode;
+    int visitingNode;
+    int processingNode;
     std::string inputBuffer;
 
-    float leftWidth = 0.f;
-    float rightWidth = 0.f;
-    bool leftExpanded = true;
-    bool rightExpanded = true;
+    float leftWidth;
+    float rightWidth;
+    bool leftExpanded;
+    bool rightExpanded;
     std::pair<int, int> currentLine;
-    TabState activeTab = TabState::Info;
+    TabState activeTab;
     sf::Clock tickClock;
 
+    void initialization();
     void handleInput(sf::RenderWindow &window, sf::Event &event, sf::Vector2i mPos);
     bool isSegmentHovering(sf::Vector2f pos, sf::Vector2f A, sf::Vector2f B);
     bool isPosValid(sf::Vector2f pos, float winW, int ignoreNode = -1);

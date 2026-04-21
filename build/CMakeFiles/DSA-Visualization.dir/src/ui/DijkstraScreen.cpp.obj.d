@@ -1,7 +1,7 @@
 CMakeFiles/DSA-Visualization.dir/src/ui/DijkstraScreen.cpp.obj: \
  C:\Users\DELL\Desktop\Visualizer\src\ui\DijkstraScreen.cpp \
  C:/Users/DELL/Desktop/Visualizer/include/DSA-Visualization/ui/DijkstraScreen.hpp \
- C:/Users/DELL/Desktop/Visualizer/include/DSA-Visualization/ui/Screen.hpp \
+ C:/Users/DELL/Desktop/Visualizer/include/DSA-Visualization/ui/button.hpp \
  C:/Users/DELL/Desktop/Visualizer/lib/include/SFML/Graphics.hpp \
  C:/Users/DELL/Desktop/Visualizer/lib/include/SFML/Window.hpp \
  C:/Users/DELL/Desktop/Visualizer/lib/include/SFML/System.hpp \
@@ -248,9 +248,23 @@ CMakeFiles/DSA-Visualization.dir/src/ui/DijkstraScreen.cpp.obj: \
  C:/Users/DELL/Desktop/Visualizer/lib/include/SFML/Graphics/Sprite.hpp \
  C:/Users/DELL/Desktop/Visualizer/lib/include/SFML/Graphics/Text.hpp \
  C:/Users/DELL/Desktop/Visualizer/lib/include/SFML/Graphics/VertexBuffer.hpp \
+ C:/Users/DELL/Desktop/Visualizer/include/DSA-Visualization/ui/Screen.hpp \
  C:/Users/DELL/Desktop/Visualizer/include/DSA-Visualization/Shortest_Path/Dijkstra.hpp \
  C:/mingw64/include/c++/13.1.0/utility \
  C:/mingw64/include/c++/13.1.0/bits/stl_relops.h \
+ C:/mingw64/include/c++/13.1.0/memory \
+ C:/mingw64/include/c++/13.1.0/bits/stl_raw_storage_iter.h \
+ C:/mingw64/include/c++/13.1.0/bits/align.h \
+ C:/mingw64/include/c++/13.1.0/bits/unique_ptr.h \
+ C:/mingw64/include/c++/13.1.0/bits/shared_ptr.h \
+ C:/mingw64/include/c++/13.1.0/bits/shared_ptr_base.h \
+ C:/mingw64/include/c++/13.1.0/bits/allocated_ptr.h \
+ C:/mingw64/include/c++/13.1.0/ext/concurrence.h \
+ C:/mingw64/include/c++/13.1.0/bits/shared_ptr_atomic.h \
+ C:/mingw64/include/c++/13.1.0/bits/atomic_base.h \
+ C:/mingw64/include/c++/13.1.0/bits/atomic_lockfree_defines.h \
+ C:/mingw64/include/c++/13.1.0/backward/auto_ptr.h \
+ C:/mingw64/include/c++/13.1.0/pstl/glue_memory_defs.h \
  C:/mingw64/include/c++/13.1.0/cmath \
  C:/mingw64/x86_64-w64-mingw32/include/math.h \
  C:/mingw64/include/c++/13.1.0/bits/specfun.h \
