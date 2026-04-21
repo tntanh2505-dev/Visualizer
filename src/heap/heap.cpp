@@ -69,20 +69,47 @@ void MaxHeap::Insert(int k) {
     Increase(i, k);
 }
 
-void MaxHeap::Delete(int i) {
-    if (i >= nums.size()) return;
-    actionQueue.push_back({ActionType::SWAP, i, (int)nums.size() - 1});
-    nums[i] = nums.back();
-    nums.pop_back();
-    //Fix if violates
-    if (i<nums.size()) {
-        //Bubble up first (if needed)
-        Increase(i, nums[i]);
-        //Then sink down (if needed)
-        MaxHeapify(i);
+void MaxHeap::Update(int i, int k) {
+    if (i < 0 || i >= (int)nums.size()) return;
+    int oldValue = nums[i];
+
+    actionQueue.push_back({ActionType::CHANGE_VALUE, i, k, 0});
+    
+    if (k > oldValue) {
+        Increase(i, k);
+    } 
+    else if (k < oldValue) {
+        Decrease(i, k);
+    }
+    else {
+        actionQueue.push_back({ActionType::HIGHLIGHT, i, -1, 0});
     }
 }
 
-int MaxHeap::GetMax() {
-    return nums[0];
+void MaxHeap::Delete(int i) {
+    if (nums.empty() || i < 0 || i >= (int)nums.size()) return;
+
+    int lastIdx = (int)nums.size() - 1;
+    if (i == lastIdx) {
+        actionQueue.push_back({ActionType::REMOVE, lastIdx, nums.back(), 9});
+        nums.pop_back();
+        return;
+    }
+
+    actionQueue.push_back({ActionType::SWAP, i, lastIdx, 9});
+    std::swap(nums[i], nums[lastIdx]);
+    actionQueue.push_back({ActionType::REMOVE, lastIdx, nums.back(), 9});
+    nums.pop_back();
+
+    if (!nums.empty() && i < (int)nums.size()) {
+        MaxHeapify(i); 
+        int current = i;
+        while (current > 0 && nums[current] > nums[(current - 1) / 2]) {
+            int parent = (current - 1) / 2;
+            actionQueue.push_back({ActionType::COMPARE, current, parent, 1}); 
+            actionQueue.push_back({ActionType::SWAP, current, parent, 2});
+            std::swap(nums[current], nums[parent]);
+            current = parent;
+        }
+    }
 }
