@@ -131,6 +131,26 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
     mSliderHandle.setOrigin(10.f, 10.f);
     mSliderHandle.setFillColor(UITheme::Color::SliderHandle); 
 
+    // --- Initialize Color Swatches ---
+    mCurrentNodeColor = UITheme::Color::GlobalNodeFill;
+    mThemeColors = {
+        UITheme::Color::GlobalNodeFill,
+        UITheme::Color::AVLNodeCustom1,
+        UITheme::Color::AVLNodeCustom2,
+        UITheme::Color::AVLNodeCustom3,
+        UITheme::Color::AVLNodeCustom4,
+        UITheme::Color::AVLNodeCustom5
+    };
+
+    mColorSwatches.clear();
+    for (const auto& color : mThemeColors) {
+        sf::RectangleShape swatch(sf::Vector2f(30.f, 30.f));
+        swatch.setFillColor(color);
+        swatch.setOutlineThickness(2.f);
+        swatch.setOutlineColor(sf::Color(100, 100, 100));
+        mColorSwatches.push_back(swatch);
+    }
+
     sf::VertexArray dotGrid(sf::Points);
     for (int x = 0; x <= window.getSize().x; x += 30) {
         for (int y = 0; y <= window.getSize().y; y += 30) {
@@ -175,6 +195,15 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
 
             if (leftPressed && isClickingOnPanel) {
                 if (mReturnBtn->isClicked(mouseRaw, true)) return 0;
+
+                // --- Color Swatch Click Detection ---
+                if (mouseRaw.x > window.getSize().x - m_rightWidth) { 
+                    for (size_t i = 0; i < mColorSwatches.size(); ++i) {
+                        if (mColorSwatches[i].getGlobalBounds().contains(mouseRaw)) {
+                            mCurrentNodeColor = mThemeColors[i];
+                        }
+                    }
+                }
 
                 float leftBaseX = m_leftWidth - LEFT_PANEL_WIDTH;
                 sf::FloatRect inputBox(leftBaseX + 30.f, 30.f, 220.f, 42.f);
@@ -524,6 +553,7 @@ void AVLScreen::drawLeftPanel(sf::RenderWindow& window, const sf::Font& font, fl
 
 void AVLScreen::drawRightPanel(sf::RenderWindow& window, const sf::Font& font, float rightBaseX) {
     float winW = window.getSize().x;
+    float TAB_WIDTH = 35.f;
     
     sf::RectangleShape rightMenu(sf::Vector2f(m_rightWidth, window.getSize().y));
     rightMenu.setFillColor(UITheme::Color::AVLPanelBg);
@@ -545,6 +575,30 @@ void AVLScreen::drawRightPanel(sf::RenderWindow& window, const sf::Font& font, f
 
     mCodePanel.highlight(mController.hasSteps() ? mController.currentStep()->codeLineIndex : -1);
     const_cast<CodePanel&>(mCodePanel).draw(window);
+
+    // --- Draw Color Customization UI ---
+    if (m_rightWidth > 50.f) { 
+        sf::Text colorLabel("Node Fill Color", font, 16);
+        colorLabel.setFillColor(sf::Color(200, 200, 210));
+        colorLabel.setPosition(rightBaseX + TAB_WIDTH + 15.f, 390.f + fset);
+        window.draw(colorLabel);
+
+        float swatchX = rightBaseX + TAB_WIDTH + 15.f;
+        float swatchY = 420.f + fset;
+
+        for (size_t i = 0; i < mColorSwatches.size(); ++i) {
+            mColorSwatches[i].setPosition(swatchX + (i * 42.f), swatchY);
+            
+            if (mThemeColors[i] == mCurrentNodeColor) {
+                mColorSwatches[i].setOutlineColor(UITheme::Color::AVLAccent);
+                mColorSwatches[i].setOutlineThickness(3.f);
+            } else {
+                mColorSwatches[i].setOutlineColor(sf::Color(100, 100, 100));
+                mColorSwatches[i].setOutlineThickness(1.5f);
+            }
+            window.draw(mColorSwatches[i]);
+        }
+    }
 }
 
 void AVLScreen::drawTree(sf::RenderWindow& window, const sf::Font& font, float shiftX) {
@@ -579,8 +633,11 @@ void AVLScreen::drawNode(sf::RenderWindow& window, const sf::Font& font,
 
     GraphicNode node(NODE_RADIUS, std::to_string(ns.value), font);
     node.setPosition(pos);
-    node.setFillColor(ns.fillColor);
+    
+    // Override the animation frame's fill color with user-selected color
+    node.setFillColor(mCurrentNodeColor);
     node.setOutlineColor(ns.outlineColor);
+    
     window.draw(node);
 }
 

@@ -70,6 +70,11 @@ private:
     bool  m_rightExpanded;
     int   m_selectedNodeValue;
 
+    // --- Color Customization ---
+    sf::Color                       mCurrentNodeColor;
+    std::vector<sf::RectangleShape> mColorSwatches;
+    std::vector<sf::Color>          mThemeColors;
+
     bool  mStepMode = false;
     bool  mStepAnimatingNext = false;
     bool  mStepAnimatingPrev = false;
