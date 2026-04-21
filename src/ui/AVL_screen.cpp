@@ -6,6 +6,7 @@
 #include <map>
 #include <functional>
 #include <fstream> 
+#include <sstream>
 
 const float fset = 40.f;//family offset #1
 const float fset2 = 40.f; //family offset #2
@@ -213,13 +214,42 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
                     mSliderDragging = true;
 
                 if (mInsertBtn->isClicked(mouseRaw, true) && !mInputString.empty()) {
-                    int val = std::stoi(mInputString);
-                    if (mHistoryIndex < (int)mHistory.size()) mHistory.erase(mHistory.begin() + mHistoryIndex, mHistory.end());
-                    Operation op{OpType::Insert, val};
-                    mHistory.push_back(op); mHistoryIndex++;
-                    buildSteps(op); mInputString.clear();
-                    m_selectedNodeValue = -1;
-                }
+                       if (mHistoryIndex < (int)mHistory.size()) {
+                            mHistory.erase(mHistory.begin() + mHistoryIndex, mHistory.end());
+                            }
+
+    // 2. Create a copy of the input and replace all commas with spaces
+                        std::string processedString = mInputString;
+                        std::replace(processedString.begin(), processedString.end(), ',', ' ');
+
+                        // 3. Use stringstream to extract tokens (it automatically skips consecutive spaces)
+                        std::stringstream ss(processedString);
+                        std::string token;
+
+                        // 4. Loop through every separated token in the string
+                        while (ss >> token) {
+                            try {
+                                int val = std::stoi(token);
+                                
+                                // Push each operation into history and build steps
+                                Operation op{OpType::Insert, val};
+                                mHistory.push_back(op); 
+                                mHistoryIndex++;
+                                buildSteps(op);
+                                
+                            } catch (const std::invalid_argument& e) {
+                                // Skips tokens that aren't numbers (e.g., if they typed "a")
+                                continue; 
+                            } catch (const std::out_of_range& e) {
+                                // Skips numbers that are too large for a standard integer
+                                continue; 
+                            }
+                        }
+
+                        // 5. Reset the UI states after the batch completes
+                        mInputString.clear();
+                        m_selectedNodeValue = -1;
+            }
 
                 if (mDeleteBtn->isClicked(mouseRaw, true) && !mInputString.empty()) {
                     int val = std::stoi(mInputString);
@@ -377,8 +407,12 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
             if (mInputActive && event.type == sf::Event::TextEntered) {
                 if (event.text.unicode == 8 && !mInputString.empty())
                     mInputString.pop_back();
-                else if ((event.text.unicode >= '0' && event.text.unicode <= '9' || event.text.unicode == '-') && mInputString.size() < 4)
-                    mInputString += static_cast<char>(event.text.unicode);
+                else 
+                if (((event.text.unicode >= '0' && event.text.unicode <= '9' || event.text.unicode == '-') || 
+               (event.text.unicode == ' ' || event.text.unicode == ','))
+                && mInputString.size() < 10)
+                mInputString += static_cast<char>(event.text.unicode);
+               
             }
         }
         
