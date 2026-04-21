@@ -16,6 +16,8 @@ public:
     //Get button boundary coordinates
     sf::FloatRect getGlobalBounds() const;
 
+    void setText(const std::string &str);
+
 protected:
     // Standard SFML draw override
     virtual void draw(sf::RenderTarget& target, sf::RenderStates states) const override;

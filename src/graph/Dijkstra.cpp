@@ -1,4 +1,4 @@
-#include "DSA-Visualization/graph/dijkstra.hpp"
+#include "DSA-Visualization/shortest_path/dijkstra.hpp"
 
 void Dijkstra::init(std::vector<Node> &nodes, std::vector<Edge> &edges, int source) {
     for (Node &v : nodes) {

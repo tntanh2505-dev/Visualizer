@@ -30,6 +30,13 @@ ModernButton::ModernButton(const std::string& text, const sf::Font& font, sf::Ve
     setOrigin(m_size.x / 2.0f, m_size.y / 2.0f);
 }
 
+void ModernButton::setText(const std::string &str) {
+    m_text.setString(str);
+    sf::FloatRect textRect = m_text.getLocalBounds();
+    m_text.setOrigin(textRect.left + textRect.width / 2.0f, textRect.top + textRect.height / 2.0f);
+    m_text.setPosition(m_size.x / 2.0f, m_size.y / 2.0f);
+}
+
 void ModernButton::update(sf::Vector2f mousePos)
 {
     sf::Transform transform = getTransform();
