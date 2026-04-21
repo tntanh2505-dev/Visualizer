@@ -82,6 +82,9 @@ void AVLScreen::buildSteps(Operation op) {
         mTree.insert(op.value, &steps);       // insert with animation
     }
     mController.loadSteps(steps);
+    mStepMode = false;
+    mStepAnimatingNext = false;
+    mStepAnimatingPrev = false;
 }
 
 int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
@@ -249,7 +252,12 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
                 }
 
                 if (mPrevBtn->isClicked(mouseRaw, true)) {
-                    if (mHistoryIndex > 0) {
+                    if (mController.currentIndex() > 0) {
+                        mController.prev();
+                        mStepMode = true;
+                        mStepAnimatingPrev = true;
+                        mStepAnimatingNext = false;
+                    } else if (mHistoryIndex > 0) {
                         mHistoryIndex--;
                         mTree.clear(); mController.clear();
                         for(int i = 0; i < mHistoryIndex - 1; ++i) {
@@ -262,14 +270,25 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
                             buildSteps(mHistory[mHistoryIndex - 1]); mController.skipToEnd();
                         }
                         m_selectedNodeValue = -1;
+                        mStepMode = true; 
+                        mStepAnimatingPrev = false;
+                        mStepAnimatingNext = false;
                     }
                 }
                 
                 if (mNextBtn->isClicked(mouseRaw, true)) {
-                    if (mHistoryIndex < (int)mHistory.size()) {
+                    if (mController.currentIndex() < mController.totalSteps() - 1) {
+                        mController.next();
+                        mStepMode = true;
+                        mStepAnimatingNext = true;
+                        mStepAnimatingPrev = false;
+                    } else if (mHistoryIndex < (int)mHistory.size()) {
                         Operation op = mHistory[mHistoryIndex]; mHistoryIndex++;
                         buildSteps(op);
                         m_selectedNodeValue = -1;
+                        mStepMode = true;
+                        mStepAnimatingNext = true;
+                        mStepAnimatingPrev = false;
                     }
                 }
 
@@ -384,9 +403,19 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
         mPrevBtn->update(mouseRaw); mNextBtn->update(mouseRaw); mSkipAnimationBtn->update(mouseRaw);
         mReturnBtn->update(mouseRaw);
 
-        mController.update(dt);
+        if (!mStepMode) {
+            mController.update(dt);
+        } else {
+            if (mStepAnimatingNext) {
+                mController.update(dt);
+                if (mController.t() >= 1.0f) mStepAnimatingNext = false;
+            } else if (mStepAnimatingPrev) {
+                mController.update(dt);
+                if (mController.t() <= 0.0f) mStepAnimatingPrev = false;
+            }
+        }
 
-        window.clear(UITheme::Color::AVLBackground); 
+        window.clear(UITheme::Color::AVLBackground);  
         window.draw(mBgSprite); 
         window.draw(dotGrid); 
 
