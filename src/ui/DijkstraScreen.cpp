@@ -1,9 +1,8 @@
 #include "DSA-Visualization/ui/DijkstraScreen.hpp"
 #include <cmath>
-#include <iostream>
 
 const float NODE_RADIUS = 25.f;
-const float LEFT_PANEL_WIDTH = 200.f;
+const float LEFT_PANEL_WIDTH = 250.f;
 const float RIGHT_PANEL_WIDTH = 300.f;
 const float TAB_WIDTH = 35.f;
 const float TAB_HEIGHT = 50.f;
@@ -28,11 +27,10 @@ const std::vector<std::string> pseudoCode = {
 };
 
 int DijkstraScreen::run(sf::RenderWindow &window, sf::Font &font) {
-    float winH = static_cast<float>(window.getSize().y);
     initialization();
     for (int i = 0; i < 5; ++i) {
-        button[i] = std::make_unique<ModernButton>("", font, sf::Vector2f(140.f, 35.f), 5.f);
-        button[i]->setPosition(95.f, 50.f + (i * 45.f));
+        button[i] = std::make_unique<ModernButton>("", font, sf::Vector2f(160.f, 40.f), 5.f);
+        button[i]->setPosition(100.f, 50.f + (i * 50.f));
     }
 
     sf::Clock deltaClock;
@@ -73,7 +71,6 @@ int DijkstraScreen::run(sf::RenderWindow &window, sf::Font &font) {
         if (returnFlag) return 0;
 
         if (isAutoMode && !isEditMode && sourceNode != -1 && tickClock.getElapsedTime().asSeconds() > 0.8f) {
-            std::cout << "Auto is running step..." << std::endl; // Thêm dòng này
             if (visitingList.empty()) {
                 visitingNode = -1;
                 processingNode = algorithm.stage(nodes);
@@ -141,8 +138,15 @@ void DijkstraScreen::initialization() {
 
 void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf::Vector2i mPos) {
     sf::Vector2f worldPos = window.mapPixelToCoords(mPos);
-    float centerY = window.getSize().y / 2.f;
     float winW = static_cast<float>(window.getSize().x);
+    float winH = static_cast<float>(window.getSize().y);
+    float centerY = winH / 2.f;
+
+
+    if (event.type == sf::Event::Resized) {
+        sf::FloatRect visibleArea(0, 0, event.size.width, event.size.height);
+        window.setView(sf::View(visibleArea));
+    }
 
     // Khi thả chuột trái -> Ngừng trạng thái di chuyển node
     if (event.type == sf::Event::MouseButtonReleased && event.mouseButton.button == sf::Mouse::Left) {
@@ -162,9 +166,9 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
     // --- 1. XỬ LÝ UI PANEL (Ưu tiên các thao tác trên bảng điều khiển) ---
     if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
         // --- LEFT TAB ---
-        bool mouseInLeftTab = (mPos.x >= leftWidth - TAB_WIDTH && mPos.x <= leftWidth &&
-                               mPos.y >= centerY - TAB_HEIGHT / 2.f && mPos.y <= centerY + TAB_HEIGHT / 2.f);
-        if (mouseInLeftTab) {
+        bool mouseInLeftIcon = (mPos.x >= leftWidth - TAB_WIDTH && mPos.x <= leftWidth &&
+                                mPos.y >= centerY - TAB_HEIGHT / 2.f && mPos.y <= centerY + TAB_HEIGHT / 2.f);
+        if (mouseInLeftIcon) {
             leftExpanded = !leftExpanded;
             return;
         }
@@ -206,9 +210,9 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
         }
 
         // --- RIGHT TAB ---
-        bool mouseInRightTab = (mPos.x >= winW - rightWidth && mPos.x <= winW - rightWidth + TAB_WIDTH &&
-                                mPos.y >= centerY - TAB_HEIGHT / 2.f && mPos.y <= centerY + TAB_HEIGHT / 2.f);
-        if (mouseInRightTab) {
+        bool mouseInRightIcon = (mPos.x >= winW - rightWidth && mPos.x <= winW - rightWidth + TAB_WIDTH &&
+                                 mPos.y >= centerY - TAB_HEIGHT / 2.f && mPos.y <= centerY + TAB_HEIGHT / 2.f);
+        if (mouseInRightIcon) {
             rightExpanded = !rightExpanded;
             return;
         }
@@ -276,7 +280,7 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
                     draggingNode = hoveredNode;
                     if (selectNode == -1) selectNode = hoveredNode;
                     else {
-                        if (selectNode != hoveredNode) edges.push_back({selectNode, hoveredNode, 1});
+                        if (selectNode != hoveredNode) edges.emplace_back(Edge(selectNode, hoveredNode, 1));
                         selectNode = -1;
                     }
                 }
@@ -569,27 +573,30 @@ void DijkstraScreen::drawGraph(sf::RenderWindow &window, sf::Font &font) {
 }
 
 void DijkstraScreen::drawUI(sf::RenderWindow &window, sf::Font &font, sf::Vector2i mPos) {
-    sf::RectangleShape menu(sf::Vector2f(leftWidth, window.getSize().y));
-    menu.setFillColor(sf::Color(35, 35, 40));
-    window.draw(menu);
+    float winW = static_cast<float>(window.getSize().x);
+    float winH = static_cast<float>(window.getSize().y);
+    float centerY = winH / 2.f;
 
     //  ----- LEFT PANEL -----
-    float centerY = window.getSize().y / 2.f;
-    sf::RectangleShape tab(sf::Vector2f(TAB_WIDTH, TAB_HEIGHT));
-    tab.setFillColor(sf::Color(45, 45, 50));
-    tab.setPosition(leftWidth - TAB_WIDTH, centerY - TAB_HEIGHT / 2.f);
-    tab.setOutlineThickness(-1.f);
-    tab.setOutlineColor(sf::Color(100, 100, 100));
-    window.draw(tab);
+    sf::RectangleShape leftMenu(sf::Vector2f(leftWidth, winH));
+    leftMenu.setFillColor(sf::Color(35, 35, 40));
+    window.draw(leftMenu);
 
-    sf::Text icon(leftExpanded ? "<<" : ">>", font, 18);
-    sf::FloatRect b = icon.getLocalBounds();
-    icon.setOrigin(b.left + b.width/2.f, b.top + b.height/2.f);
-    icon.setPosition(leftWidth - TAB_WIDTH/2.f, centerY);
-    icon.setFillColor(sf::Color::Cyan);
-    window.draw(icon);
+    sf::RectangleShape leftTab(sf::Vector2f(TAB_WIDTH, TAB_HEIGHT));
+    leftTab.setFillColor(sf::Color(45, 45, 50));
+    leftTab.setPosition(leftWidth - TAB_WIDTH, centerY - TAB_HEIGHT / 2.f);
+    leftTab.setOutlineThickness(-1.f);
+    leftTab.setOutlineColor(sf::Color(100, 100, 100));
+    window.draw(leftTab);
 
-    if (leftExpanded && leftWidth > 180.f) {
+    sf::Text leftIcon(leftExpanded ? "<<" : ">>", font, 18);
+    sf::FloatRect lb = leftIcon.getLocalBounds();
+    leftIcon.setOrigin(lb.left + lb.width / 2.f, lb.top + lb.height / 2.f);
+    leftIcon.setPosition(leftWidth - TAB_WIDTH / 2.f, centerY);
+    leftIcon.setFillColor(sf::Color::Cyan);
+    window.draw(leftIcon);
+
+    if (leftExpanded && leftWidth > 200.f) {
         button[0]->setText(isEditMode ? "MODE: EDIT" : "MODE: RUN");
         button[1]->setText(isEditMode ? (isDeleting ? "DELETE" : "INSERT") : (isAutoMode ? "AUTO: ON" : "AUTO: OFF"));
         button[2]->setText(isEditMode ? (isDirected ? "DIRECTED" : "UNDIRECTED") : "FINISH");
@@ -600,9 +607,6 @@ void DijkstraScreen::drawUI(sf::RenderWindow &window, sf::Font &font, sf::Vector
     }
 
     // ----- RIGHT PANEL -----
-    float winW = window.getSize().x;
-    float winH = window.getSize().y;
-    
     // 1. Vẽ nền Panel
     sf::RectangleShape rightMenu(sf::Vector2f(rightWidth, winH));
     rightMenu.setOrigin(rightWidth, 0); // Đặt gốc bên phải để giãn về bên trái
@@ -611,19 +615,19 @@ void DijkstraScreen::drawUI(sf::RenderWindow &window, sf::Font &font, sf::Vector
     window.draw(rightMenu);
 
     // 2. Nút Tab Collapse (Mũi tên lật ngược lại so với bên trái)
-    sf::RectangleShape rTab(sf::Vector2f(TAB_WIDTH, TAB_HEIGHT));
-    rTab.setFillColor(sf::Color(45, 45, 50));
-    rTab.setPosition(winW - rightWidth, winH / 2.f - TAB_HEIGHT / 2.f);
-    rTab.setOutlineThickness(-1.f);
-    rTab.setOutlineColor(sf::Color(100, 100, 100));
-    window.draw(rTab);
+    sf::RectangleShape rightTab(sf::Vector2f(TAB_WIDTH, TAB_HEIGHT));
+    rightTab.setFillColor(sf::Color(45, 45, 50));
+    rightTab.setPosition(winW - rightWidth, centerY - TAB_HEIGHT / 2.f);
+    rightTab.setOutlineThickness(-1.f);
+    rightTab.setOutlineColor(sf::Color(100, 100, 100));
+    window.draw(rightTab);
 
-    sf::Text rIcon(rightExpanded ? ">>" : "<<", font, 18);
-    sf::FloatRect rb = rIcon.getLocalBounds();
-    rIcon.setOrigin(rb.left + rb.width/2.f, rb.top + rb.height/2.f);
-    rIcon.setPosition(winW - rightWidth + TAB_WIDTH/2.f, winH / 2.f);
-    rIcon.setFillColor(sf::Color::Yellow);
-    window.draw(rIcon);
+    sf::Text rightIcon(rightExpanded ? ">>" : "<<", font, 18);
+    sf::FloatRect rb = rightIcon.getLocalBounds();
+    rightIcon.setOrigin(rb.left + rb.width / 2.f, rb.top + rb.height / 2.f);
+    rightIcon.setPosition(winW - rightWidth + TAB_WIDTH / 2.f, centerY);
+    rightIcon.setFillColor(sf::Color::Yellow);
+    window.draw(rightIcon);
 
     // 3. Nội dung bên trong khi mở rộng
     if (rightExpanded && rightWidth > 250.f) {
@@ -647,8 +651,8 @@ void DijkstraScreen::drawUI(sf::RenderWindow &window, sf::Font &font, sf::Vector
             // Chữ tab
             sf::Text tText(labels[i], font, 14);
             sf::FloatRect tb = tText.getLocalBounds();
-            tText.setOrigin(tb.left + tb.width/2.f, tb.top + tb.height/2.f);
-            tText.setPosition(panelStart + i * tabW + tabW/2.f, 25.f);
+            tText.setOrigin(tb.left + tb.width/2.f, tb.top + tb.height / 2.f);
+            tText.setPosition(panelStart + i * tabW + tabW / 2.f, 25.f);
             tText.setFillColor(activeTab == state ? sf::Color::White : sf::Color(150, 150, 150));
             window.draw(tText);
         }
