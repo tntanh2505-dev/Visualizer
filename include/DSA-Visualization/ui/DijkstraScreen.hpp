@@ -1,7 +1,7 @@
 #pragma once
 #include "button.hpp"
 #include "Screen.hpp"
-#include "DSA-Visualization/shortest_path/Dijkstra.hpp"
+#include "DSA-Visualization/graph/Dijkstra.hpp"
 #include <SFML/Graphics.hpp>
 #include <memory>
 
