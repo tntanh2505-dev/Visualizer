@@ -726,14 +726,66 @@ void DijkstraScreen::drawUI(sf::RenderWindow &window, sf::Font &font, sf::Vector
         // --- NỘI DUNG TỪNG TRANG ---
         float contentY = 60.f;
         if (activeTab == TabState::Info) { // TRANG INFO
+            sf::Text title("DIJKSTRA'S ALGORITHM", font, 16);
+            title.setStyle(sf::Text::Bold);
+            title.setFillColor(sf::Color::Yellow);
+            title.setPosition(panelStart + 10, contentY);
+            window.draw(title);
+
             sf::Text info(R"(
-Dijkstra's Algorithm
-Finds shortest paths
-from source to all
-other nodes.
-                )", font, 14);
-            info.setPosition(panelStart + 10, contentY);
+[ ALGORITHM ]
+Dijkstra finds the shortest
+path from Source to all nodes.
+- Weights: Non-negative only
+- Complexity: O(V*V + E)
+
+[ MODE: EDIT ]
+- [L-Click]: Create Node/Edge
+- [R-Click]: Edit Weight/Label
+
+[ MODE: RUN ]
+- Step 1: Select Source Node
+- Step 2: Observe Expansion
+- Step 3: Select Target Node
+- Step 4: Observe Final Path
+(All actions via Left-Click)
+)", font, 16);
+            info.setPosition(panelStart + 10, contentY + 25.f);
+            info.setFillColor(sf::Color(220, 220, 220));
             window.draw(info);
+
+            float legendStartY = contentY + 400.f;
+            float circleRadius = 6.f;
+            float itemSpacing = 22.f;
+
+            // Danh sách các trạng thái cần hiển thị
+
+            std::vector<std::pair<sf::Color, std::string>> legends = {
+                {sf::Color::White,         "Hovering"},
+                {sf::Color::Magenta,       "Selecting"},
+                {sf::Color::Green,         "Source Node"},
+                {sf::Color::Red,           "Best Node"},
+                {sf::Color::Yellow,        "Visiting"},
+                {sf::Color::Blue,          "Processed"}
+            };
+
+            for (int i = 0; i < legends.size(); ++i) {
+                float yPos = legendStartY + (i * itemSpacing);
+
+                // Vẽ hình tròn màu
+                sf::CircleShape circle(circleRadius);
+                circle.setFillColor(legends[i].first);
+                circle.setOutlineThickness(1.f);
+                circle.setOutlineColor(sf::Color(255, 255, 255, 50)); // Viền mờ cho đẹp
+                circle.setPosition(panelStart + 15.f, yPos + 3.f);
+                window.draw(circle);
+
+                // Vẽ nhãn văn bản
+                sf::Text label(legends[i].second, font, 12);
+                label.setPosition(panelStart + 15.f + circleRadius * 2 + 10.f, yPos);
+                label.setFillColor(sf::Color(180, 180, 180));
+                window.draw(label);
+            }
         }
         else if (activeTab == TabState::Dist) { // TRANG DIST
             sf::Text title("Distance Table", font, 16);
