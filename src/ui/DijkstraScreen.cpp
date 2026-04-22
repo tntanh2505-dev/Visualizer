@@ -85,6 +85,24 @@ int DijkstraScreen::run(sf::RenderWindow &window, sf::Font &font) {
 
         if (returnFlag) return 0;
 
+        if (finishFlag) {
+            finishFlag = false;
+            if (sourceNode != -1) {
+                if (isAlgoDone) {
+                    if (selectNode != -1)
+                        pathLimit = path.size();
+                } else {
+                    processingNode = -1;
+                    visitingNode = -1;
+                    visitingList.clear();
+                    while (algorithm.stage(nodes) != -1);
+                    for (size_t i = 0; i < nodes.size(); ++i)
+                        dist[i] = nodes[i].dist;
+                    isAlgoDone = true;
+                }
+            }
+        }
+
         if (isAutoMode && tickClock.getElapsedTime().asSeconds() > 0.8f) {
             if (isAlgoDone) {
                 if (selectNode != -1 && pathLimit < path.size())
@@ -198,13 +216,15 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
             return;
         }
         if (leftExpanded && mPos.x < leftWidth - TAB_WIDTH) {
-            selectNode = -1;
             if (button[0]->isClicked(worldPos, true)) { // Nút MODE
+                selectNode = -1;
                 isEditMode = !isEditMode;
                 processingNode = -1;
                 sourceNode = -1;
                 isAlgoDone = false;
                 dist.assign(nodes.size(), INF);
+                for (size_t i = 0; i < nodes.size(); ++i)
+                    nodes[i].isProcessed = false;
                 visitingList.clear();
                 visitingNode = -1;
                 path.clear();
@@ -213,6 +233,7 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
                 algorithm.init(nodes, edges, isDirected);
             }
             else if (button[1]->isClicked(worldPos, true)) { // Nút INSERT/DELETE // AUTO
+                selectNode = -1;
                 if (isEditMode) {
                     isDeleting = !isDeleting;
                 } else {
@@ -221,19 +242,28 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
             }
             else if (button[2]->isClicked(worldPos, true)) { // Nút DIRECTED/UNDIRECTED // FINISH
                 if (isEditMode) {
+                    selectNode = -1;
                     isDirected = !isDirected;
                 } else {
                     finishFlag = true;
                 }
             }
             else if (button[3]->isClicked(worldPos, true)) { // Nút CLEAR // RESET
+                selectNode = -1;
                 if (isEditMode) {
                     nodes.clear();
                     edges.clear();
                 } else {
                     sourceNode = -1;
                     isAlgoDone = false;
+                    processingNode = -1;
+                    visitingNode = -1;
+                    visitingList.clear();
                     dist.assign(nodes.size(), INF);
+                    for (size_t i = 0; i < nodes.size(); ++i)
+                        nodes[i].isProcessed = false;
+                    path.clear();
+                    pathLimit = -1;
                     currentLine = 0;
                 }
             }
