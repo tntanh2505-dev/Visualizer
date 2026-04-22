@@ -87,7 +87,7 @@ namespace UITheme {
         
         // Custom Node Colors for the Swatches
         const sf::Color AVLNodeCustom1       = sf::Color(65, 105, 225);   // Royal Blue
-        const sf::Color AVLNodeCustom2       = sf::Color(46, 139, 87);    // Sea Green
+        const sf::Color AVLNodeCustom2       = sf::Color(140, 140, 140);  // Grey
         const sf::Color AVLNodeCustom3       = sf::Color(220, 20, 60);    // Crimson
         const sf::Color AVLNodeCustom4       = sf::Color(148, 0, 211);    // Dark Violet
         const sf::Color AVLNodeCustom5       = sf::Color(255, 140, 0);    // Dark Orange
