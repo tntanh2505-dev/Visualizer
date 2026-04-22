@@ -55,6 +55,7 @@ private:
     bool isSegmentHovering(sf::Vector2f pos, sf::Vector2f A, sf::Vector2f B);
     bool isPosValid(sf::Vector2f pos, float winW, int ignoreNode = -1);
     void updateAnimation(float dt);
+    sf::Color getNodeColor(sf::RenderWindow &window, int index);
     void drawGraph(sf::RenderWindow &window, sf::Font &font);
     void drawUI(sf::RenderWindow &window, sf::Font &font, sf::Vector2i mPos);
 };

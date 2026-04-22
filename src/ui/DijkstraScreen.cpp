@@ -203,6 +203,8 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
                 processingNode = -1;
                 sourceNode = -1;
                 isAlgoDone = false;
+                visitingList.clear();
+                visitingNode = -1;
                 path.clear();
                 pathLimit = -1;
                 currentLine = 0;
@@ -440,6 +442,23 @@ void DijkstraScreen::updateAnimation(float dt) {
     rightWidth += (targetRight - rightWidth) * 12.f * dt;
 }
 
+sf::Color DijkstraScreen::getNodeColor(sf::RenderWindow &window, int index) {
+    if (!isEditMode) {
+        if (index == processingNode)
+            return sf::Color::Red;
+        if (index == visitingNode)
+            return sf::Color::Yellow;
+        if (index == sourceNode)
+            return sf::Color::Green;
+        if (nodes[index].isProcessed)
+            return sf::Color::Cyan;
+    }
+    if (index == selectNode)
+        return sf::Color::Magenta;
+
+    return sf::Color(100, 100, 100);
+}
+
 void DijkstraScreen::drawGraph(sf::RenderWindow &window, sf::Font &font) {
     sf::Vector2f worldPos = window.mapPixelToCoords(sf::Mouse::getPosition(window));
 
@@ -574,24 +593,12 @@ void DijkstraScreen::drawGraph(sf::RenderWindow &window, sf::Font &font) {
         shape.setPosition(nodes[i].x, nodes[i].y);
         shape.setFillColor(sf::Color(50, 50, 50)); 
         shape.setOutlineThickness(-3.f);
-        shape.setOutlineColor(sf::Color(100, 100, 100));
 
+        shape.setOutlineColor(getNodeColor(window, i));
         if (i == hoveredNode) {
             shape.setOutlineThickness(-5.f);
             shape.setOutlineColor(sf::Color::White);
         }
-      
-        if (!isEditMode) {
-            if (nodes[i].isProcessed)
-                shape.setOutlineColor(sf::Color::Blue);
-            if (i == sourceNode)
-                shape.setOutlineColor(sf::Color::Green);
-            if (i == visitingNode)
-                shape.setOutlineColor(sf::Color::Yellow);
-            if (i == processingNode)
-                shape.setOutlineColor(sf::Color::Red);
-        }
-
         if (i == selectNode)
             shape.setOutlineColor(sf::Color::Magenta);
 
@@ -788,10 +795,68 @@ path from Source to all nodes.
             }
         }
         else if (activeTab == TabState::Dist) { // TRANG DIST
-            sf::Text title("Distance Table", font, 16);
-            title.setPosition(panelStart + 10, contentY);
+            sf::Text title("DIAGNOSTICS", font, 16);
+            title.setStyle(sf::Text::Bold);
+            title.setFillColor(sf::Color::Yellow);
+            title.setPosition(panelStart + 10.f, contentY);
             window.draw(title);
-            // Bạn có thể dùng vòng lặp vẽ nodes[i].dist tại đây
+
+            // 2. Định nghĩa các cột (Anchor points)
+            float colStatusX = panelStart + 15.f;
+            float colNodeX   = panelStart + 75.f;
+            float colDistX   = panelStart + 140.f;
+            float headerY    = contentY + 35.f;
+            float rowHeight  = 28.f;
+
+            // Vẽ Header của bảng
+            sf::Text h1("STATUS", font, 12); h1.setPosition(colStatusX, headerY); h1.setFillColor(sf::Color(120, 120, 120));
+            sf::Text h2("NODE", font, 12); h2.setPosition(colNodeX, headerY); h2.setFillColor(sf::Color(120, 120, 120));
+            sf::Text h3("DISTANCE", font, 12); h3.setPosition(colDistX, headerY); h3.setFillColor(sf::Color(120, 120, 120));
+            window.draw(h1); window.draw(h2); window.draw(h3);
+
+            // Đường kẻ phân cách Header
+            sf::RectangleShape line(sf::Vector2f(tabAreaWidth - 25.f, 1.f));
+            line.setPosition(panelStart + 10.f, headerY + 20.f);
+            line.setFillColor(sf::Color(80, 80, 80));
+            window.draw(line);
+
+            // 3. Vẽ dữ liệu các hàng
+            float startTableY = headerY + 30.f;
+
+            for (size_t i = 0; i < nodes.size(); ++i) {
+                float yPos = startTableY + (i * rowHeight);
+
+                // --- CỘT 1: STATUS (Hình tròn màu) ---
+                sf::CircleShape statusCircle(5.f);
+                statusCircle.setPosition(colStatusX + 8.f, yPos + 3.f);
+                
+                // Màu sắc dựa trên trạng thái của node (logic của bạn)
+                statusCircle.setFillColor(getNodeColor(window, i)); 
+                window.draw(statusCircle);
+
+                // --- CỘT 2: NODE (Tên/Nhãn) ---
+                sf::Text nodeTxt(nodes[i].label, font, 14);
+                nodeTxt.setPosition(colNodeX + 8.f, yPos);
+                nodeTxt.setFillColor(sf::Color::White);
+                window.draw(nodeTxt);
+
+                // --- CỘT 3: DISTANCE ---
+                std::string dStr = (nodes[i].dist == INF) ? "INF" : std::to_string((int)nodes[i].dist);
+                sf::Text distTxt(dStr, font, 14);
+                distTxt.setPosition(colDistX + 8.f, yPos);
+                
+                // Tô màu cột Dist cho sinh động
+                if (dStr == "INF") distTxt.setFillColor(sf::Color(100, 100, 100));
+                else distTxt.setFillColor(getNodeColor(window, i));
+
+                window.draw(distTxt);
+
+                // Đường kẻ mờ giữa các hàng
+                sf::RectangleShape rowLine(sf::Vector2f(tabAreaWidth - 25.f, 0.5f));
+                rowLine.setPosition(panelStart + 10.f, yPos + rowHeight - 2.f);
+                rowLine.setFillColor(sf::Color(50, 50, 50));
+                window.draw(rowLine);
+            }
         } 
         else if (activeTab == TabState::Code) { // TRANG CODE
             sf::Vector2f panelPos(winW - RIGHT_PANEL_WIDTH + TAB_WIDTH + 5.f, contentY + 10.f);
