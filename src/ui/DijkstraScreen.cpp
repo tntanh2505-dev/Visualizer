@@ -1,5 +1,6 @@
 #include "DSA-Visualization/ui/DijkstraScreen.hpp"
 #include <cmath>
+#include <iostream>
 
 const float NODE_RADIUS = 25.f;
 const float LEFT_PANEL_WIDTH = 200.f;
@@ -72,6 +73,7 @@ int DijkstraScreen::run(sf::RenderWindow &window, sf::Font &font) {
         if (returnFlag) return 0;
 
         if (isAutoMode && !isEditMode && sourceNode != -1 && tickClock.getElapsedTime().asSeconds() > 0.8f) {
+            std::cout << "Auto is running step..." << std::endl; // Thêm dòng này
             if (visitingList.empty()) {
                 visitingNode = -1;
                 processingNode = algorithm.stage(nodes);
@@ -166,17 +168,17 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
             leftExpanded = !leftExpanded;
             return;
         }
-        if (leftExpanded && leftWidth > LEFT_PANEL_WIDTH * 0.8f && mPos.x < leftWidth - TAB_WIDTH) {
+        if (leftExpanded && mPos.x < leftWidth - TAB_WIDTH) {
+            selectNode = -1;
             if (button[0]->isClicked(worldPos, true)) { // Nút MODE
                 isEditMode = !isEditMode;
                 sourceNode = -1;
-                selectNode = -1;
                 currentLine = {0, 0};
+                algorithm.init(nodes, edges, isDirected);
             }
             else if (button[1]->isClicked(worldPos, true)) { // Nút INSERT/DELETE // AUTO
                 if (isEditMode) {
                     isDeleting = !isDeleting;
-                    selectNode = -1;
                 } else {
                     isAutoMode = !isAutoMode;
                 }
@@ -184,7 +186,6 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
             else if (button[2]->isClicked(worldPos, true)) { // Nút DIRECTED/UNDIRECTED // FINISH
                 if (isEditMode) {
                     isDirected = !isDirected;
-                    selectNode = -1;
                 } else {
                     finishFlag = true;
                 }
@@ -193,10 +194,9 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
                 if (isEditMode) {
                     nodes.clear();
                     edges.clear();
-                    selectNode = -1;
                 } else {
                     sourceNode = -1;
-                    algorithm.init(nodes, edges, sourceNode);
+                    algorithm.init(nodes, edges, isDirected);
                 }
             }
             else if (button[4]->isClicked(worldPos, true)) { // Nút RETURN
@@ -242,7 +242,6 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
     if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
         if (isEditMode) {
             fill(dist.begin(), dist.end(), INF);
-            algorithm.init(nodes, edges, -1);
             if (isDeleting) {
                 // CHẾ ĐỘ XÓA
                 if (hoveredNode != -1) {
@@ -288,7 +287,7 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
                 if (hoveredNode != -1) {
                     processingNode = -1;
                     sourceNode = hoveredNode;
-                    algorithm.init(nodes, edges, sourceNode);
+                    algorithm.init(nodes, edges, isDirected, sourceNode);
                     currentLine = {1, 5};
                 }
             } else if (mPos.x > leftWidth && mPos.x < winW - rightWidth) {
@@ -420,7 +419,8 @@ void DijkstraScreen::drawGraph(sf::RenderWindow &window, sf::Font &font) {
         // Hiệu ứng hover cạnh khi ở chế độ Delete
         if (isEditMode && isSegmentHovering(worldPos, A, B) && hoveredNode == -1)
             line.setFillColor(sf::Color::White);
-        else if (from == processingNode && to == visitingNode)
+        else if (from == processingNode && to == visitingNode ||
+                (from == visitingNode && to == processingNode && !isDirected))
             line.setFillColor(sf::Color::Yellow);
         else
             line.setFillColor(sf::Color(100, 100, 100));
