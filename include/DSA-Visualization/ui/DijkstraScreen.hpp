@@ -21,7 +21,7 @@ private:
     std::vector<Edge> edges;
     Dijkstra algorithm;
 
-    std::unique_ptr<ModernButton> button[7];
+    std::unique_ptr<ModernButton> button[8];
 
     bool returnFlag;
     bool finishFlag;

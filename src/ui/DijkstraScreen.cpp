@@ -1,5 +1,6 @@
 #include "DSA-Visualization/ui/DijkstraScreen.hpp"
 #include <cmath>
+#include <random>
 #include <fstream>
 
 const float NODE_RADIUS = 25.f;
@@ -44,7 +45,7 @@ const std::vector<std::string> pseudoCode = {
 
 int DijkstraScreen::run(sf::RenderWindow &window, sf::Font &font) {
     initialization();
-    for (int i = 0; i < 7; ++i) {
+    for (int i = 0; i < 8; ++i) {
         button[i] = std::make_unique<ModernButton>("", font, sf::Vector2f(160.f, 40.f), 5.f);
         button[i]->setPosition(100.f, 50.f + (i * 50.f));
     }
@@ -180,6 +181,7 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
     sf::Vector2f worldPos = window.mapPixelToCoords(mPos);
     float winW = static_cast<float>(window.getSize().x);
     float winH = static_cast<float>(window.getSize().y);
+    float centerX = winW / 2.f;
     float centerY = winH / 2.f;
 
 
@@ -200,7 +202,7 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
         return;
     }
 
-    for (int i = 0; i < 7; ++i)
+    for (int i = 0; i < 8; ++i)
         button[i]->update(worldPos);
 
     // --- 1. XỬ LÝ UI PANEL (Ưu tiên các thao tác trên bảng điều khiển) ---
@@ -303,7 +305,35 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
 
                     inFile.close();
             }
-            else if (button[6]->isClicked(worldPos, true)) { // Nút RETURN
+            else if (button[6]->isClicked(worldPos, true)) { // Nút RANDOM
+                initialization();
+
+                float radius = winW / 8.f;
+                for (int i = 0; i < 6; ++i) {
+                    float angle = i * (2.0f * M_PI / 6.0f); 
+                    Node n;
+                    n.label = std::to_string(i);
+                    n.x = centerX + radius * std::cos(angle);
+                    n.y = centerY + radius * std::sin(angle);
+                    nodes.emplace_back(n);
+                }
+
+                std::random_device rd;
+                std::mt19937 gen(rd());
+                std::uniform_int_distribution<> nodeDist(0, 5);
+                std::uniform_int_distribution<> weightDist(1, 20);
+                std::vector<std::vector<bool>> exist(6, std::vector<bool>(6, false));
+                for (int i = 0; i < 15; ++i) {
+                    int u = nodeDist(gen);
+                    int v = nodeDist(gen);
+                    int w = weightDist(gen);
+                    if (u == v || exist[u][v] || exist[v][u])
+                        continue;
+                        exist[u][v] = exist[v][u] = true;
+                    edges.emplace_back(Edge(u, v, w));
+                }
+            }
+            else if (button[7]->isClicked(worldPos, true)) { // Nút RETURN
                 returnFlag = true;
             }
             return;
@@ -747,8 +777,9 @@ void DijkstraScreen::drawUI(sf::RenderWindow &window, sf::Font &font, sf::Vector
         button[3]->setText(isEditMode ? "CLEAR" : "RESET");
         button[4]->setText("SAVE FILE");
         button[5]->setText("LOAD FILE");
-        button[6]->setText("RETURN");
-        for (size_t i = 0; i < 7; ++i)
+        button[6]->setText("RANDOM");
+        button[7]->setText("RETURN");
+        for (size_t i = 0; i < 8; ++i)
             window.draw(*button[i]);
     }
 
