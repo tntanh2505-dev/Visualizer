@@ -21,7 +21,7 @@ private:
     std::vector<Edge> edges;
     Dijkstra algorithm;
 
-    std::unique_ptr<ModernButton> button[5];
+    std::unique_ptr<ModernButton> button[7];
 
     bool returnFlag;
     bool finishFlag;
@@ -40,10 +40,10 @@ private:
     int processingNode;
     std::string inputBuffer;
 
-    float leftWidth;
-    float rightWidth;
-    bool leftExpanded;
-    bool rightExpanded;
+    float leftWidth = 0.f;
+    float rightWidth = 0.f;
+    bool leftExpanded = true;
+    bool rightExpanded = true;
     int currentLine;
     TabState activeTab;
     CodePanel panel;

@@ -1,5 +1,6 @@
 #include "DSA-Visualization/ui/DijkstraScreen.hpp"
 #include <cmath>
+#include <fstream>
 
 const float NODE_RADIUS = 25.f;
 const float LEFT_PANEL_WIDTH = 250.f;
@@ -43,7 +44,7 @@ const std::vector<std::string> pseudoCode = {
 
 int DijkstraScreen::run(sf::RenderWindow &window, sf::Font &font) {
     initialization();
-    for (int i = 0; i < 5; ++i) {
+    for (int i = 0; i < 7; ++i) {
         button[i] = std::make_unique<ModernButton>("", font, sf::Vector2f(160.f, 40.f), 5.f);
         button[i]->setPosition(100.f, 50.f + (i * 50.f));
     }
@@ -171,10 +172,6 @@ void DijkstraScreen::initialization() {
     processingNode = -1;
     inputBuffer.clear();
 
-    leftWidth = 0.f;
-    rightWidth = 0.f;
-    leftExpanded = true;
-    rightExpanded = true;
     currentLine = 0;
     activeTab = TabState::Info;
 }
@@ -203,7 +200,7 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
         return;
     }
 
-    for (int i = 0; i < 5; ++i)
+    for (int i = 0; i < 7; ++i)
         button[i]->update(worldPos);
 
     // --- 1. XỬ LÝ UI PANEL (Ưu tiên các thao tác trên bảng điều khiển) ---
@@ -267,7 +264,46 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
                     currentLine = 0;
                 }
             }
-            else if (button[4]->isClicked(worldPos, true)) { // Nút RETURN
+            else if (button[4]->isClicked(worldPos, true)) { // Nút SAVE
+                std::ofstream outFile("data/graph.txt");
+                if (!outFile) return;
+
+                outFile << nodes.size() << "\n";
+                for (const auto &n : nodes)
+                    outFile << n.label << " " << n.x << " " << n.y << "\n";
+
+                outFile << edges.size() << ' ' << isDirected << "\n";
+                for (const auto &[from, to, weight] : edges)
+                    outFile << from << " " << to << " " << weight << "\n";
+
+                outFile.close();
+            }
+            else if (button[5]->isClicked(worldPos, true)) { // Nút LOAD
+                std::ifstream inFile("data/graph.txt");
+                    if (!inFile) return;
+                    initialization();
+
+                    int numNodes;
+                    inFile >> numNodes;
+                    for (int i = 0; i < numNodes; ++i) {
+                        float x, y;
+                        std::string label;
+                        inFile >> label >> x >> y;
+                        nodes.emplace_back(Node(label, x, y));
+                        dist.emplace_back(INF);
+                    }
+
+                    int numEdges;
+                    inFile >> numEdges >> isDirected;
+                    for (int i = 0; i < numEdges; ++i) {
+                        int u, v, w;
+                        inFile >> u >> v >> w;
+                        edges.emplace_back(Edge(u, v, w));
+                    }
+
+                    inFile.close();
+            }
+            else if (button[6]->isClicked(worldPos, true)) { // Nút RETURN
                 returnFlag = true;
             }
             return;
@@ -709,8 +745,10 @@ void DijkstraScreen::drawUI(sf::RenderWindow &window, sf::Font &font, sf::Vector
         button[1]->setText(isEditMode ? (isDeleting ? "DELETE" : "INSERT") : (isAutoMode ? "AUTO: ON" : "AUTO: OFF"));
         button[2]->setText(isEditMode ? (isDirected ? "DIRECTED" : "UNDIRECTED") : "FINISH");
         button[3]->setText(isEditMode ? "CLEAR" : "RESET");
-        button[4]->setText("RETURN");
-        for (size_t i = 0; i < 5; ++i)
+        button[4]->setText("SAVE FILE");
+        button[5]->setText("LOAD FILE");
+        button[6]->setText("RETURN");
+        for (size_t i = 0; i < 7; ++i)
             window.draw(*button[i]);
     }
 
