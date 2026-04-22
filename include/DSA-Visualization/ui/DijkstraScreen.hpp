@@ -2,6 +2,7 @@
 #include "button.hpp"
 #include "Screen.hpp"
 #include "DSA-Visualization/graph/Dijkstra.hpp"
+#include "DSA-Visualization/ui/CodePanel.hpp"
 #include <SFML/Graphics.hpp>
 #include <memory>
 
@@ -43,8 +44,9 @@ private:
     float rightWidth;
     bool leftExpanded;
     bool rightExpanded;
-    std::pair<int, int> currentLine;
+    int currentLine;
     TabState activeTab;
+    CodePanel panel;
 
     sf::Clock tickClock;
 

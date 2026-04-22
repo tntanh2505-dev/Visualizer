@@ -7,23 +7,38 @@ const float RIGHT_PANEL_WIDTH = 300.f;
 const float TAB_WIDTH = 35.f;
 const float TAB_HEIGHT = 50.f;
 const std::vector<std::string> pseudoCode = {
-    "function Dijkstra(Graph, source):",        // 0
-    "    dist[source] = 0",                     // 1
-    "    for each vertex v in Graph",           // 2
-    "        add v to Q",                       // 3
-    "        if v != source",                   // 4
-    "            dist[v] = INFINITY",           // 5
-    "",                                         // 6
-    "    while Q is not empty",                 // 7
-    "        u = vertex in Q with min dist",    // 8
-    "        remove u from Q",                  // 9
-    "",                                         // 10
-    "        for each neighbor v of u",         // 11
-    "           w = weight(u, v)",              // 12
-    "           if dist[v] > dist[u] + w",      // 13
-    "              dist[v] = dist[u] + w",      // 14
-    "",                                         // 15
-    "    return dist[]"                         // 16
+    "Dijkstra(Graph, source)",        
+    "  dist[source] = 0",                     
+    "  for each vertex v in Graph",           
+    "      add v to Q",                       
+    "      if v != source",                   
+    "          dist[v] = INFINITY",
+    "          prev[v] = NULL",       
+    "",                                        
+    "  while Q is not empty",                 
+    "      v = vertex in Q with min dist",    
+    "      remove v from Q",                 
+    "",                                       
+    "      for each neighbor u of v",         
+    "          w = weight(v, u)",            
+    "          if dist[u] > dist[v] + w",    
+    "             dist[u] = dist[v] + w",
+    "             prev[u] = v"
+    "",                                       
+    "  return dist[]",                     
+    "",
+    "",
+    "Path_Finding(Graph, target)",
+    "  if dist[target] = INFINITY",
+    "      return empty",
+    "",
+    "  path = {}",
+    "  while target != NULL",
+    "      path.insert(target)",
+    "      target = prev[target]",
+    "  reverse(path)",
+    "",
+    "  return path"
 };
 
 int DijkstraScreen::run(sf::RenderWindow &window, sf::Font &font) {
@@ -80,15 +95,15 @@ int DijkstraScreen::run(sf::RenderWindow &window, sf::Font &font) {
                     processingNode = algorithm.stage(nodes);
                     if (processingNode == -1) {
                         isAlgoDone = true;
-                        currentLine = {16, 16};
+                        currentLine = 17;
                     } else {
                         visitingList = algorithm.getAdjacent(processingNode);
-                        currentLine = {7, 9};
+                        currentLine = 9;
                     }
                 } else {
                     visitingNode = visitingList.back();
                     visitingList.pop_back();
-                    currentLine = {11, 14};
+                    currentLine = 14;
                 }
             }
             tickClock.restart();
@@ -141,7 +156,7 @@ void DijkstraScreen::initialization() {
     rightWidth = 0.f;
     leftExpanded = true;
     rightExpanded = true;
-    currentLine = {0, 0};
+    currentLine = 0;
     activeTab = TabState::Info;
 }
 
@@ -190,7 +205,7 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
                 isAlgoDone = false;
                 path.clear();
                 pathLimit = -1;
-                currentLine = {0, 0};
+                currentLine = 0;
                 algorithm.init(nodes, edges, isDirected);
             }
             else if (button[1]->isClicked(worldPos, true)) { // Nút INSERT/DELETE // AUTO
@@ -214,6 +229,7 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
                 } else {
                     sourceNode = -1;
                     isAlgoDone = false;
+                    currentLine = 0;
                 }
             }
             else if (button[4]->isClicked(worldPos, true)) { // Nút RETURN
@@ -306,12 +322,13 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
                 selectNode = -1;
                 sourceNode = hoveredNode;
                 algorithm.init(nodes, edges, isDirected, sourceNode);
-                currentLine = {1, 5};
+                currentLine = 1;
             } else {
                 if (isAlgoDone) {
                     if (selectNode == -1) {
                         if (hoveredNode == -1)
                             return;
+                        currentLine = 20;
                         selectNode = hoveredNode;
                         path = algorithm.getShortestPath(nodes, selectNode);
                         pathLimit = 1;
@@ -330,15 +347,15 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
                         processingNode = algorithm.stage(nodes);
                         if (processingNode == -1) {
                             isAlgoDone = true;
-                            currentLine = {16, 16};
+                            currentLine = 17;
                         } else {
                             visitingList = algorithm.getAdjacent(processingNode);
-                            currentLine = {7, 9};
+                            currentLine = 9;
                         }
                     } else {
                         visitingNode = visitingList.back();
                         visitingList.pop_back();
-                        currentLine = {11, 14};
+                        currentLine = 14;
                     }
                 }
             }
@@ -706,15 +723,6 @@ void DijkstraScreen::drawUI(sf::RenderWindow &window, sf::Font &font, sf::Vector
             window.draw(tText);
         }
 
-
-        /*float contentY = 60.f; // Dưới thanh Tab một chút
-        sf::RectangleShape contentBg(sf::Vector2f(tabAreaWidth - 10.f, winH - contentY - 20.f));
-        contentBg.setPosition(panelStart + 5.f, contentY);
-        contentBg.setFillColor(sf::Color(30, 30, 35)); // Màu xám tối chuyên nghiệp
-        contentBg.setOutlineThickness(1.f);
-        contentBg.setOutlineColor(sf::Color(60, 60, 70));
-        window.draw(contentBg);*/
-
         // --- NỘI DUNG TỪNG TRANG ---
         float contentY = 60.f;
         if (activeTab == TabState::Info) { // TRANG INFO
@@ -734,37 +742,13 @@ other nodes.
             // Bạn có thể dùng vòng lặp vẽ nodes[i].dist tại đây
         } 
         else if (activeTab == TabState::Code) { // TRANG CODE
-            float lineIncr = 22.f; // Khoảng cách giữa các dòng (Line spacing)
-            float startX = panelStart + 5.f; // Lùi vào một chút so với mép panel
-            float startY = contentY + 10.f;
-
-            for (int i = 0; i < pseudoCode.size(); ++i) {
-                float currentYPos = startY + (i * lineIncr);
-
-                // 1. VẼ NỀN HIGHLIGHT (Dành cho dòng hiện tại)
-                if (currentLine.first <= i && i <= currentLine.second) {
-                    sf::RectangleShape background;
-                    background.setSize(sf::Vector2f(rightWidth - 10.f, lineIncr)); 
-                    background.setPosition(startX, currentYPos);
-                    
-                    // Màu nền highlight (Xanh dương đậm hoặc Cam nhạt tùy gu của bạn)
-                    background.setFillColor(sf::Color(60, 60, 90)); 
-                    window.draw(background);
-                }
-
-                // 2. VẼ CHỮ
-                sf::Text lineText(pseudoCode[i], font, 14);
-                lineText.setPosition(startX + 10.f, currentYPos); // Thụt lề chữ so với nền xám
-
-                // Đổi màu chữ cho đẹp
-                if (currentLine.first <= i && i <= currentLine.second)
-                    lineText.setFillColor(sf::Color::Yellow); // Dòng đang chạy chữ màu Vàng
-                else
-                    // Màu code mặc định (Trắng mờ hoặc xanh nhạt kiểu IDE)
-                    lineText.setFillColor(sf::Color(200, 200, 200));
-
-                window.draw(lineText);
-            }
+            sf::Vector2f panelPos(winW - RIGHT_PANEL_WIDTH + TAB_WIDTH + 5.f, contentY + 10.f);
+            sf::Vector2f panelSize(tabAreaWidth - 10.f, winH - contentY - 30.f);
+            panel = CodePanel(font, panelPos, panelSize);
+            panel.setPosition(sf::Vector2f(panelStart + 5.f, contentY + 10.f));
+            panel.loadSnippets({ {"pseudoCode", pseudoCode} });
+            panel.update("pseudoCode", currentLine);
+            panel.draw(window);
         }
     }
 }
