@@ -102,6 +102,7 @@ int DijkstraScreen::run(sf::RenderWindow &window, sf::Font &font) {
                     }
                 } else {
                     visitingNode = visitingList.back();
+                    dist[visitingNode] = nodes[visitingNode].dist;
                     visitingList.pop_back();
                     currentLine = 14;
                 }
@@ -203,6 +204,7 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
                 processingNode = -1;
                 sourceNode = -1;
                 isAlgoDone = false;
+                dist.assign(nodes.size(), INF);
                 visitingList.clear();
                 visitingNode = -1;
                 path.clear();
@@ -231,6 +233,7 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
                 } else {
                     sourceNode = -1;
                     isAlgoDone = false;
+                    dist.assign(nodes.size(), INF);
                     currentLine = 0;
                 }
             }
@@ -323,6 +326,7 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
                     return;
                 selectNode = -1;
                 sourceNode = hoveredNode;
+                dist[sourceNode] = 0;
                 algorithm.init(nodes, edges, isDirected, sourceNode);
                 currentLine = 1;
             } else {
@@ -356,6 +360,7 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
                         }
                     } else {
                         visitingNode = visitingList.back();
+                        dist[visitingNode] = nodes[visitingNode].dist;
                         visitingList.pop_back();
                         currentLine = 14;
                     }
@@ -841,15 +846,17 @@ path from Source to all nodes.
                 window.draw(nodeTxt);
 
                 // --- CỘT 3: DISTANCE ---
-                std::string dStr = (nodes[i].dist == INF) ? "INF" : std::to_string((int)nodes[i].dist);
-                sf::Text distTxt(dStr, font, 14);
-                distTxt.setPosition(colDistX + 8.f, yPos);
-                
-                // Tô màu cột Dist cho sinh động
-                if (dStr == "INF") distTxt.setFillColor(sf::Color(100, 100, 100));
-                else distTxt.setFillColor(getNodeColor(window, i));
+                if (!isEditMode) {
+                    std::string dStr = (dist[i] == INF) ? "INF" : std::to_string(dist[i]);
+                    sf::Text distTxt(dStr, font, 14);
+                    distTxt.setPosition(colDistX + 8.f, yPos);
+                    
+                    // Tô màu cột Dist cho sinh động
+                    if (dStr == "INF") distTxt.setFillColor(sf::Color(100, 100, 100));
+                    else distTxt.setFillColor(getNodeColor(window, i));
 
-                window.draw(distTxt);
+                    window.draw(distTxt);
+                }
 
                 // Đường kẻ mờ giữa các hàng
                 sf::RectangleShape rowLine(sf::Vector2f(tabAreaWidth - 25.f, 0.5f));
