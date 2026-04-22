@@ -1,4 +1,5 @@
 #include "DSA-Visualization/graph/Dijkstra.hpp"
+#include <algorithm>
 
 void Dijkstra::init(std::vector<Node> &nodes, std::vector<Edge> &edges, bool isDirected, int source) {
     for (Node &v : nodes) {
@@ -50,6 +51,8 @@ std::vector<int> Dijkstra::getShortestPath(std::vector<Node> &nodes, int target)
         path.emplace_back(target);
         target = nodes[target].parent;
     }
+    std::reverse(path.begin(), path.end());
+
     return path;
 }
 

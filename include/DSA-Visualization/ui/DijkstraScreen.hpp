@@ -12,6 +12,8 @@ public:
     virtual int run(sf::RenderWindow &window, sf::Font &font) override;
 
 private:
+    int pathLimit;
+    std::vector<int> path;
     std::vector<int> visitingList;
     std::vector<long long> dist;
     std::vector<Node> nodes;
@@ -26,6 +28,7 @@ private:
     bool isAutoMode;
     bool isDeleting;
     bool isDirected;
+    bool isAlgoDone;
 
     int sourceNode;
     int selectNode;
@@ -42,6 +45,7 @@ private:
     bool rightExpanded;
     std::pair<int, int> currentLine;
     TabState activeTab;
+
     sf::Clock tickClock;
 
     void initialization();

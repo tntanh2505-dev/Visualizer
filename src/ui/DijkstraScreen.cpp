@@ -70,21 +70,26 @@ int DijkstraScreen::run(sf::RenderWindow &window, sf::Font &font) {
 
         if (returnFlag) return 0;
 
-        if (isAutoMode && !isEditMode && sourceNode != -1 && tickClock.getElapsedTime().asSeconds() > 0.8f) {
-            if (visitingList.empty()) {
-                visitingNode = -1;
-                processingNode = algorithm.stage(nodes);
-                if (processingNode == -1) {
-                    isAutoMode = false;
-                    currentLine = {16, 16};
+        if (isAutoMode && tickClock.getElapsedTime().asSeconds() > 0.8f) {
+            if (isAlgoDone) {
+                if (selectNode != -1 && pathLimit < path.size())
+                    pathLimit++;
+            } else if (sourceNode != -1) {
+                if (visitingList.empty()) {
+                    visitingNode = -1;
+                    processingNode = algorithm.stage(nodes);
+                    if (processingNode == -1) {
+                        isAlgoDone = true;
+                        currentLine = {16, 16};
+                    } else {
+                        visitingList = algorithm.getAdjacent(processingNode);
+                        currentLine = {7, 9};
+                    }
                 } else {
-                    visitingList = algorithm.getAdjacent(processingNode);
-                    currentLine = {7, 9};
+                    visitingNode = visitingList.back();
+                    visitingList.pop_back();
+                    currentLine = {11, 14};
                 }
-            } else {
-                visitingNode = visitingList.back();
-                visitingList.pop_back();
-                currentLine = {11, 14};
             }
             tickClock.restart();
         }
@@ -108,16 +113,20 @@ int DijkstraScreen::run(sf::RenderWindow &window, sf::Font &font) {
 }
 
 void DijkstraScreen::initialization() {
+    pathLimit = -1;
+    path.clear();
     visitingList.clear();
     dist.clear();
     nodes.clear();
     edges.clear();
 
     returnFlag = false;
+    finishFlag = false;
     isEditMode = true;
     isAutoMode = false;
     isDeleting = false;
     isDirected = false;
+    isAlgoDone = false;
 
     sourceNode = -1;
     selectNode = -1;
@@ -176,7 +185,11 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
             selectNode = -1;
             if (button[0]->isClicked(worldPos, true)) { // Nút MODE
                 isEditMode = !isEditMode;
+                processingNode = -1;
                 sourceNode = -1;
+                isAlgoDone = false;
+                path.clear();
+                pathLimit = -1;
                 currentLine = {0, 0};
                 algorithm.init(nodes, edges, isDirected);
             }
@@ -200,7 +213,7 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
                     edges.clear();
                 } else {
                     sourceNode = -1;
-                    algorithm.init(nodes, edges, isDirected);
+                    isAlgoDone = false;
                 }
             }
             else if (button[4]->isClicked(worldPos, true)) { // Nút RETURN
@@ -288,32 +301,50 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
         } else {
             // CHẾ ĐỘ RUN
             if (sourceNode == -1) {
-                if (hoveredNode != -1) {
-                    processingNode = -1;
-                    sourceNode = hoveredNode;
-                    algorithm.init(nodes, edges, isDirected, sourceNode);
-                    currentLine = {1, 5};
-                }
-            } else if (mPos.x > leftWidth && mPos.x < winW - rightWidth) {
-                if (visitingList.empty()) {
-                    visitingNode = -1;
-                    processingNode = algorithm.stage(nodes);
-                    if (processingNode == -1) {
-                        isAutoMode = false;
-                        currentLine = {16, 16};
+                if (hoveredNode == -1)
+                    return;
+                selectNode = -1;
+                sourceNode = hoveredNode;
+                algorithm.init(nodes, edges, isDirected, sourceNode);
+                currentLine = {1, 5};
+            } else {
+                if (isAlgoDone) {
+                    if (selectNode == -1) {
+                        if (hoveredNode == -1)
+                            return;
+                        selectNode = hoveredNode;
+                        path = algorithm.getShortestPath(nodes, selectNode);
+                        pathLimit = 1;
                     } else {
-                        visitingList = algorithm.getAdjacent(processingNode);
-                        currentLine = {7, 9};
+                        if (pathLimit < path.size())
+                            pathLimit++;
+                        else {
+                            selectNode = -1;
+                            path.clear();
+                            pathLimit = -1;
+                        }
                     }
                 } else {
-                    visitingNode = visitingList.back();
-                    visitingList.pop_back();
-                    currentLine = {11, 14};
+                    if (visitingList.empty()) {
+                        visitingNode = -1;
+                        processingNode = algorithm.stage(nodes);
+                        if (processingNode == -1) {
+                            isAlgoDone = true;
+                            currentLine = {16, 16};
+                        } else {
+                            visitingList = algorithm.getAdjacent(processingNode);
+                            currentLine = {7, 9};
+                        }
+                    } else {
+                        visitingNode = visitingList.back();
+                        visitingList.pop_back();
+                        currentLine = {11, 14};
+                    }
                 }
             }
         }
     }
- 
+
     // --- 4. XỬ LÝ CHUỘT PHẢI (BẮT ĐẦU SỬA NỘI DUNG) ---
     if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Right) {
         if (!isEditMode)
@@ -393,8 +424,7 @@ void DijkstraScreen::updateAnimation(float dt) {
 }
 
 void DijkstraScreen::drawGraph(sf::RenderWindow &window, sf::Font &font) {
-    sf::Vector2i mPos = sf::Mouse::getPosition(window);
-    sf::Vector2f worldPos = window.mapPixelToCoords(mPos);
+    sf::Vector2f worldPos = window.mapPixelToCoords(sf::Mouse::getPosition(window));
 
     // Xác định node đang hover (để vẽ hiệu ứng)
     int hoveredNode = -1;
@@ -406,11 +436,7 @@ void DijkstraScreen::drawGraph(sf::RenderWindow &window, sf::Font &font) {
     }
 
     //  Draw edges
-    for (size_t i = 0; i < edges.size(); ++i) {
-        auto [from, to, weight] = edges[i];
-        sf::Vector2f A(nodes[from].x, nodes[from].y);
-        sf::Vector2f B(nodes[to].x, nodes[to].y);
-
+    auto drawEdge = [&](sf::Vector2f A, sf::Vector2f B, bool condition) -> void {
         sf::Vector2f direction = B - A;
         float length = std::sqrt(direction.x * direction.x + direction.y * direction.y);
         float angle = std::atan2(direction.y, direction.x) * 180.f / M_PI;
@@ -420,15 +446,12 @@ void DijkstraScreen::drawGraph(sf::RenderWindow &window, sf::Font &font) {
         line.setPosition(A);
         line.setRotation(angle);
         line.setOrigin(0, thickness / 2.f);
-        // Hiệu ứng hover cạnh khi ở chế độ Delete
+
+        line.setFillColor(sf::Color(100, 100, 100));
         if (isEditMode && isSegmentHovering(worldPos, A, B) && hoveredNode == -1)
             line.setFillColor(sf::Color::White);
-        else if (from == processingNode && to == visitingNode ||
-                (from == visitingNode && to == processingNode && !isDirected))
+        if (condition)
             line.setFillColor(sf::Color::Yellow);
-        else
-            line.setFillColor(sf::Color(100, 100, 100));
-
         window.draw(line);
         
         // --- VẼ HÌNH TAM GIÁC (MŨI TÊN) Ở CUỐI ĐƯỜNG NỐI ---
@@ -454,32 +477,39 @@ void DijkstraScreen::drawGraph(sf::RenderWindow &window, sf::Font &font) {
             // 5. Màu sắc (Đổi màu nếu cạnh đang được hover hoặc trong đường đi)
             if (isEditMode && isSegmentHovering(worldPos, A, B) && hoveredNode == -1)
                 arrow.setFillColor(sf::Color::White);
-            else if (from == processingNode && to == visitingNode)
+            else if (condition)
                 arrow.setFillColor(sf::Color::Yellow);
             else
                 arrow.setFillColor(sf::Color(100, 100, 100));
 
             window.draw(arrow);
         }
+    };
 
-        //  Label
-        auto getLabelPosition = [](sf::Vector2f A, sf::Vector2f B, float offset = 12.f) -> sf::Vector2f {
-            sf::Vector2f midPoint = (A + B) / 2.f;
-            sf::Vector2f direction = B - A;
-            float length = std::sqrt(direction.x * direction.x + direction.y * direction.y);
-            if (length < 1.f) return midPoint; // Tránh chia cho 0
+    auto getLabelPosition = [](sf::Vector2f A, sf::Vector2f B, float offset = 12.f) -> sf::Vector2f {
+        sf::Vector2f midPoint = (A + B) / 2.f;
+        sf::Vector2f direction = B - A;
+        float length = std::sqrt(direction.x * direction.x + direction.y * direction.y);
+        if (length < 1.f) return midPoint; // Tránh chia cho 0
 
-            // Tính vector pháp tuyến (vuông góc)
-            sf::Vector2f normal(-direction.y / length, direction.x / length);
-            
-            // Đảm bảo vector pháp tuyến luôn hướng lên trên màn hình (y âm) để nhất quán
-            if (normal.y > 0) normal = -normal;
+        // Tính vector pháp tuyến (vuông góc)
+        sf::Vector2f normal(-direction.y / length, direction.x / length);
+        
+        // Đảm bảo vector pháp tuyến luôn hướng lên trên màn hình (y âm) để nhất quán
+        if (normal.y > 0) normal = -normal;
 
-            return midPoint + normal * offset;
-        };
+        return midPoint + normal * offset;
+    };
 
+    for (size_t i = 0; i < edges.size(); ++i) {
+        auto [from, to, weight] = edges[i];
+        sf::Vector2f A(nodes[from].x, nodes[from].y);
+        sf::Vector2f B(nodes[to].x, nodes[to].y);
         sf::Vector2f labelPos = getLabelPosition(A, B, 12.f);
+        bool condition = (from == processingNode && to == visitingNode) ||
+                         (from == visitingNode && to == processingNode && !isDirected);
 
+        drawEdge(A, B, condition);
         if (editingEdge == i) {
             // Vẽ nền cho ô nhập trọng số
             sf::RectangleShape box(sf::Vector2f(40, 20));
@@ -513,6 +543,13 @@ void DijkstraScreen::drawGraph(sf::RenderWindow &window, sf::Font &font) {
         }
     }
 
+    if (pathLimit != -1)
+        for (int i = 1; i < pathLimit; ++i) {
+            sf::Vector2f A(nodes[path[i - 1]].x, nodes[path[i - 1]].y);
+            sf::Vector2f B(nodes[path[i]].x, nodes[path[i]].y);
+            drawEdge(A, B, true);
+        }
+
     //  Draw nodes
     for (size_t i = 0; i < nodes.size(); ++i) {
         sf::CircleShape shape(NODE_RADIUS);
@@ -526,10 +563,6 @@ void DijkstraScreen::drawGraph(sf::RenderWindow &window, sf::Font &font) {
             shape.setOutlineThickness(-5.f);
             shape.setOutlineColor(sf::Color::White);
         }
-        if (i == selectNode) {
-            shape.setOutlineThickness(-5.f); 
-            shape.setOutlineColor(sf::Color::Magenta);
-        }
       
         if (!isEditMode) {
             if (nodes[i].isProcessed)
@@ -541,6 +574,9 @@ void DijkstraScreen::drawGraph(sf::RenderWindow &window, sf::Font &font) {
             if (i == processingNode)
                 shape.setOutlineColor(sf::Color::Red);
         }
+
+        if (i == selectNode)
+            shape.setOutlineColor(sf::Color::Magenta);
 
         window.draw(shape);
 
@@ -570,6 +606,19 @@ void DijkstraScreen::drawGraph(sf::RenderWindow &window, sf::Font &font) {
             window.draw(txt);
         }
     }
+
+    if (pathLimit != -1)
+        for (int i = 1; i < pathLimit; ++i) {
+            if (path[i] == selectNode)
+                continue;
+            sf::CircleShape shape(NODE_RADIUS);
+            shape.setOrigin(NODE_RADIUS, NODE_RADIUS);
+            shape.setPosition(nodes[path[i]].x, nodes[path[i]].y); 
+            shape.setFillColor(sf::Color::Transparent);
+            shape.setOutlineThickness(-3.f);
+            shape.setOutlineColor(sf::Color::Yellow);
+            window.draw(shape);
+        }
 }
 
 void DijkstraScreen::drawUI(sf::RenderWindow &window, sf::Font &font, sf::Vector2i mPos) {
