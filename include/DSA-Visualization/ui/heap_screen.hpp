@@ -148,5 +148,9 @@ private:
     std::vector<sf::RectangleShape> mColorSwatches;
     void drawColorPicker(sf::RenderWindow& window) const;
     bool mIsDarkMode = true;
-
+    float mNodeRadius;
+    sf::RectangleShape mSizeSliderTrack;
+    sf::CircleShape mSizeSliderKnob;
+    sf::Text mSizeLabel;
+    bool mIsDraggingSizeSlider = false;
 };
