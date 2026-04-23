@@ -4,7 +4,7 @@
 
 class ModernButton : public sf::Drawable, public sf::Transformable {
 public:
-    // Constructor
+    // Constructor (Signature unchanged for compatibility)
     ModernButton(const std::string& text, const sf::Font& font, sf::Vector2f size = {200.f, 60.f}, float radius = 20.f);
 
     // Update state based on mouse position
@@ -13,7 +13,7 @@ public:
     // Check if the button was clicked
     bool isClicked(sf::Vector2f mousePos, bool mousePressed);
 
-    //Get button boundary coordinates
+    // Get button boundary coordinates
     sf::FloatRect getGlobalBounds() const;
 
     void setText(const std::string &str);
@@ -34,7 +34,11 @@ private:
     // Visual Components
     sf::VertexArray m_background;
     sf::VertexArray m_border;
+    sf::VertexArray m_glow;       // NEW: Glow effect layer
     sf::Text m_text;
+    
+    mutable sf::Clock m_clock;    // NEW: Time tracker for pulsing glow animation
+
     // Theme Colors
     sf::Color m_topNormal;
     sf::Color m_bottomNormal;
@@ -45,6 +49,7 @@ private:
 
 class Button {
 public:
+    // Constructor (Signature unchanged for compatibility)
     Button(const std::string& label, const sf::Font& font,
            sf::Vector2f position, sf::Vector2f size);
 
@@ -54,6 +59,9 @@ public:
     sf::FloatRect getGlobalBounds() const;
 
 private:
-    sf::RectangleShape mBox;
-    sf::Text           mText;
+    sf::ConvexShape mBox;         // UPGRADED: From RectangleShape to ConvexShape for round corners
+    sf::ConvexShape mGlow;        // NEW: Glow effect layer
+    sf::Text        mText;
+    bool            mIsHighlighted = false;
+    mutable sf::Clock mClock;     // NEW: Time tracker for pulsing glow animation
 };
