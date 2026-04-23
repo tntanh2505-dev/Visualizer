@@ -6,6 +6,7 @@
 #include <deque>
 #include <string>
 #include <vector>
+#include <fstream>
 
 #include "DSA-Visualization/ui/button.hpp"
 #include "DSA-Visualization/heap/heap.hpp"
@@ -31,6 +32,7 @@ private:
         std::string label;
     };
 
+    void runLoadFile();
     void runInsert();
     void runDeleteSelected();
     void runBuildHeap();

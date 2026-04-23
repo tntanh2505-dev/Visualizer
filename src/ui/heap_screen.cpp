@@ -241,6 +241,9 @@ void HeapVisualizer::handleEvent(const sf::Event& event, const sf::RenderWindow&
             }
         }
     
+        if (mLoadButton.isClicked(mouse, true)) {
+            runLoadFile();
+        }
         if (mInsertButton.isClicked(mouse, true)) {
             runInsert();
         }
@@ -255,9 +258,6 @@ void HeapVisualizer::handleEvent(const sf::Event& event, const sf::RenderWindow&
         }
         if (mUpdateButton.isClicked(mouse, true)) {
             runUpdate();
-        }
-        if (mLoadButton.isClicked(mouse, true)) {
-            setStatus("Load from file is not implemented yet.");
         }
         if (mRandomButton.isClicked(mouse, true)) {
             runRandom();
@@ -414,6 +414,50 @@ void HeapVisualizer::reset() {
     mPendingActions.clear();
     mHighlight = {};
     mActionTimer = 0.f;
+}
+
+void HeapVisualizer::runLoadFile() {
+    std::ifstream file("data/heap.txt");
+    if (!file.is_open()) {
+        setStatus("Could not open data/heap.txt");
+        return;
+    }
+
+    std::vector<int> values;
+    int val;
+    while (file >> val) {
+        values.push_back(val);
+    }
+    file.close();
+
+    if (values.empty()) {
+        setStatus("File is empty or invalid format.");
+        return;
+    }
+
+    if (values.size() > MAX_RENDERED_NODES) {
+        values.resize(MAX_RENDERED_NODES);
+        setStatus("Loaded " + std::to_string(MAX_RENDERED_NODES) + " nodes (trimmed).");
+    } else {
+        setStatus("Loaded " + std::to_string(values.size()) + " nodes from file.");
+    }
+
+    loadHeapifyCode();
+    mPendingActions.clear();
+    mHistory.clear();
+    mHighlight = {};
+    mActionTimer = 0.f;
+    clearInput();
+
+    mHeap.BuildHeap(values);
+    mDisplayArray = values;
+    
+    const std::vector<Action> actions = mHeap.flushActions();
+    for (const Action& action : actions) {
+        mPendingActions.push_back(action);
+    }
+    
+    mIsPlaying = true;
 }
 
 // Inserts a single value into the current heap and converts the heap's action log into animation steps.
