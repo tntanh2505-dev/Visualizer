@@ -90,7 +90,10 @@ int DijkstraScreen::run(sf::RenderWindow &window, sf::Font &font) {
 
         if (returnFlag) return 0;
 
-        if (!isEditMode && currentIndex != 0 && !isAlgoDone) {
+        if (isEditMode) {
+            nodes = m_edit[currentIndex - 1].m_nodes;
+            edges = m_edit[currentIndex - 1].m_edges;
+        } else if (currentIndex != 0 && !isAlgoDone) {
             currentLine = m_run[currentIndex - 1].m_currentLine;
             visitingNode = m_run[currentIndex - 1].m_visitingNode;
             processingNode = m_run[currentIndex - 1].m_processingNode;
@@ -246,6 +249,9 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
                 if (isEditMode) {
                     nodes.clear();
                     edges.clear();
+                    m_edit.clear();
+                    m_edit.push_back({{}, {}});
+                    currentIndex = 1;
                 } else {
                     sourceNode = -1;
                     isAlgoDone = false;
@@ -327,14 +333,17 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
                         exist[u][v] = exist[v][u] = true;
                     edges.emplace_back(Edge(u, v, w));
                 }
+
+                m_edit.push_back({nodes, edges});
+                currentIndex = 2;
             }
             else if (button[7]->isClicked(worldPos, true)) { // Nút RETURN
                 returnFlag = true;
             }
-            else if (button[8]->isClicked(worldPos, true)) {
+            else if (button[8]->isClicked(worldPos, true)) { // Nút PREV
 
             }
-            else if (button[9]->isClicked(worldPos, true)) {
+            else if (button[9]->isClicked(worldPos, true)) { // Nút NEXT
 
             }
             return;
@@ -399,14 +408,25 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
                         if (e.to > id) e.to--;
                     }
                     nodes.erase(nodes.begin() + id);
+
+                    while (m_edit.size() > (size_t)currentIndex) m_edit.pop_back();
+                    m_edit.push_back({nodes, edges});
+                    currentIndex = m_edit.size();
+
                     sourceNode = -1;
                     selectNode = -1;
                 } else {
+                    int sz = edges.size();
                     edges.erase(std::remove_if(edges.begin(), edges.end(), [&](const Edge& e) {
                         sf::Vector2f A(nodes[e.from].x, nodes[e.from].y);
                         sf::Vector2f B(nodes[e.to].x, nodes[e.to].y);
                         return isSegmentHovering(worldPos, A, B);
                     }), edges.end());
+                    if (sz != edges.size()) {
+                        while (m_edit.size() > (size_t)currentIndex) m_edit.pop_back();
+                        m_edit.push_back({nodes, edges});
+                        currentIndex = m_edit.size();
+                    }
                 }
             } else {
                 // CHẾ ĐỘ THÊM / NỐI
@@ -417,7 +437,6 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
                         dist.push_back(INF);
 
                         while (m_edit.size() > (size_t)currentIndex) m_edit.pop_back();
-
                         m_edit.push_back({nodes, edges});
                         currentIndex = m_edit.size();
                     }
@@ -429,7 +448,6 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
                             edges.emplace_back(Edge(selectNode, hoveredNode, 1));
 
                             while (m_edit.size() > (size_t)currentIndex) m_edit.pop_back();
-
                             m_edit.push_back({nodes, edges});
                             currentIndex = m_edit.size();
                         }
