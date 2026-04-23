@@ -56,13 +56,13 @@ namespace UITheme {
         const sf::Color TextBoxSelected      = GlobalNodeOutline;
 
         // Modern UI / Amethyst Theme (button.cpp)
-        const sf::Color ModernBtnTop         = GlobalButtonFill;
-        const sf::Color ModernBtnBottom      = sf::Color(20, 16, 27); 
-        const sf::Color ModernBtnHoverT      = GlobalButtonHover;
-        const sf::Color ModernBtnHoverB      = sf::Color(37, 24, 56);
-        const sf::Color ModernBtnBorder      = GlobalButtonBorder;
-        const sf::Color ButtonHoverBorder    = GlobalButtonHoverBorder; 
-        const sf::Color ButtonShadow         = GlobalButtonShadow;
+        inline sf::Color ModernBtnTop         = GlobalButtonFill;
+        inline sf::Color ModernBtnBottom      = sf::Color(20, 16, 27); 
+        inline sf::Color ModernBtnHoverT      = GlobalButtonHover;
+        inline sf::Color ModernBtnHoverB      = sf::Color(37, 24, 56);
+        inline sf::Color ModernBtnBorder      = GlobalButtonBorder;
+        inline sf::Color ButtonHoverBorder    = GlobalButtonHoverBorder; 
+        inline sf::Color ButtonShadow         = GlobalButtonShadow;
         
         // Code Panel Theme
         const sf::Color CodePanelBg          = GlobalPanelBg;
@@ -77,13 +77,13 @@ namespace UITheme {
         const sf::Color CodeLineNum          = sf::Color(100, 90, 120);
 
         // --- AVL Tree Theme ---
-        const sf::Color AVLBackground        = GlobalBg;
-        const sf::Color AVLPanelBg           = GlobalPanelBg;
-        const sf::Color AVLAccent            = GlobalAccent;
-        const sf::Color AVLGlow              = GlobalGlow;
-        const sf::Color AVLGlowStrong        = sf::Color(181, 58, 199, 140); 
-        const sf::Color AVLSliderFill        = GlobalNodeOutline;
-        const sf::Color AVLSpeedSliderText   = GlobalTextPrimary;
+        inline sf::Color AVLBackground        = GlobalBg;
+        inline sf::Color AVLPanelBg           = GlobalPanelBg;
+        inline sf::Color AVLAccent            = GlobalAccent;
+        inline sf::Color AVLGlow              = GlobalGlow;
+        inline sf::Color AVLGlowStrong        = sf::Color(181, 58, 199, 140); 
+        inline sf::Color AVLSliderFill        = GlobalNodeOutline;
+        inline sf::Color AVLSpeedSliderText   = GlobalTextPrimary;
         
         // Custom Node Colors for the Swatches
         const sf::Color AVLNodeCustom1       = sf::Color(65, 105, 225);   // Royal Blue

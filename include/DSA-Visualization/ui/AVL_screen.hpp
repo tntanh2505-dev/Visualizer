@@ -82,4 +82,10 @@ private:
     static const std::vector<std::string> INSERT_CODE;
     static const std::vector<std::string> DELETE_CODE;
     static const std::vector<std::string> SEARCH_CODE;
+
+    //Additional feature: light mode
+    // Add inside private:
+    std::optional<ModernButton> mThemeToggleBtn;
+    bool m_isLightMode = false;
+    void applyTheme(sf::Font& font); // Helper to swap colors and rebuild buttons
 };
