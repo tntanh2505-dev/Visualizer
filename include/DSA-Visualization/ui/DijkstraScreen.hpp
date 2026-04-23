@@ -8,13 +8,30 @@
 
 enum class TabState { Info, Dist, Code };
 
+struct EditState {
+    std::vector<Node> m_nodes;
+    std::vector<Edge> m_edges;
+};
+
+struct RunState {
+    int m_currentLine;
+    int m_visitingNode;
+    int m_processingNode;
+    std::vector<Node> m_nodes;
+    std::vector<long long> m_dist;
+};
+
 class DijkstraScreen : public Screen {
 public:
     virtual int run(sf::RenderWindow &window, sf::Font &font) override;
 
 private:
     int pathLimit;
+    int currentIndex;
     std::vector<int> path;
+    std::vector<EditState> m_edit;
+    std::vector<RunState> m_run;
+
     std::vector<int> visitingList;
     std::vector<long long> dist;
     std::vector<Node> nodes;
@@ -30,6 +47,7 @@ private:
     bool isDeleting;
     bool isDirected;
     bool isAlgoDone;
+    bool isDragging;
 
     int sourceNode;
     int selectNode;
@@ -54,6 +72,7 @@ private:
     void handleInput(sf::RenderWindow &window, sf::Event &event, sf::Vector2i mPos);
     bool isSegmentHovering(sf::Vector2f pos, sf::Vector2f A, sf::Vector2f B);
     bool isPosValid(sf::Vector2f pos, float winW, int ignoreNode = -1);
+    void fixedSeekBar(float mouseX, float startX, float barWidth);
     void updateAnimation(float dt);
     sf::Color getNodeColor(sf::RenderWindow &window, int index);
     void drawGraph(sf::RenderWindow &window, sf::Font &font);

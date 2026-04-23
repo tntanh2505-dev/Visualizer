@@ -90,6 +90,14 @@ int DijkstraScreen::run(sf::RenderWindow &window, sf::Font &font) {
 
         if (returnFlag) return 0;
 
+        if (!isEditMode && currentIndex != 0 && !isAlgoDone) {
+            currentLine = m_run[currentIndex - 1].m_currentLine;
+            visitingNode = m_run[currentIndex - 1].m_visitingNode;
+            processingNode = m_run[currentIndex - 1].m_processingNode;
+            nodes = m_run[currentIndex - 1].m_nodes;
+            dist = m_run[currentIndex - 1].m_dist;
+        }
+
         if (finishFlag) {
             finishFlag = false;
             if (sourceNode != -1) {
@@ -154,6 +162,11 @@ int DijkstraScreen::run(sf::RenderWindow &window, sf::Font &font) {
 void DijkstraScreen::initialization() {
     pathLimit = -1;
     path.clear();
+    currentIndex = 1;
+    m_edit.clear();
+    m_edit.push_back({{}, {}});
+    m_run.clear();
+
     visitingList.clear();
     dist.clear();
     nodes.clear();
@@ -166,6 +179,7 @@ void DijkstraScreen::initialization() {
     isDeleting = false;
     isDirected = false;
     isAlgoDone = false;
+    isDragging = false;
 
     sourceNode = -1;
     selectNode = -1;
@@ -186,7 +200,12 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
     float winH = static_cast<float>(window.getSize().y);
     float centerX = winW / 2.f;
     float centerY = winH / 2.f;
-
+    float barStart = LEFT_PANEL_WIDTH;
+    float barEnd = winW - RIGHT_PANEL_WIDTH;
+    float barCenter = (barEnd + barStart) / 2.f;
+    float bottomY = winH - 60.f;
+    float barWidth = (barEnd - barStart) * 0.7f;
+    float barHeight = 6.f;
 
     if (event.type == sf::Event::Resized) {
         sf::FloatRect visibleArea(0, 0, event.size.width, event.size.height);
@@ -195,6 +214,7 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
 
     // Khi thả chuột trái -> Ngừng trạng thái di chuyển node
     if (event.type == sf::Event::MouseButtonReleased && event.mouseButton.button == sf::Mouse::Left) {
+        isDragging = false;
         draggingNode = -1;
     }
 
@@ -221,6 +241,12 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
             if (button[0]->isClicked(worldPos, true)) { // Nút MODE
                 selectNode = -1;
                 isEditMode = !isEditMode;
+                if (isEditMode) {
+                    currentIndex = m_edit.size();
+                } else {
+                    currentIndex = 0;
+                }
+                m_run.clear();
                 processingNode = -1;
                 sourceNode = -1;
                 isAlgoDone = false;
@@ -262,6 +288,8 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
                     visitingNode = -1;
                     visitingList.clear();
                     dist.assign(nodes.size(), INF);
+                    m_run.clear();
+                    currentIndex = 0;
                     for (size_t i = 0; i < nodes.size(); ++i)
                         nodes[i].isProcessed = false;
                     path.clear();
@@ -367,11 +395,17 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
                 }
             }
         }
+
+        bool mouseInSeekBar = (mPos.x >= barCenter - barWidth / 2.f && mPos.x <= barCenter + barWidth / 2.f &&
+                               mPos.y >= bottomY - 10.f && mPos.y <= bottomY + 10.f);
+        if (mouseInSeekBar) isDragging = true;
     }
+
+    if (event.type == sf::Event::MouseMoved && isDragging)
+        fixedSeekBar(worldPos.x, barCenter - barWidth / 2.f, barWidth);
 
     if (mPos.x < leftWidth) return;
     if (mPos.x > winW - rightWidth) return;
-    if (mPos.y < 120.f) return;
     if (mPos.y > winH - 120.f) return;
 
     // --- 2. XÁC ĐỊNH NODE DƯỚI CON TRỎ CHUỘT ---
@@ -416,12 +450,25 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
                     if (isPosValid(worldPos, winW)) {
                         nodes.emplace_back(Node(std::to_string(nodes.size()), worldPos.x, worldPos.y));
                         selectNode = -1;
+                        dist.push_back(INF);
+
+                        while (m_edit.size() > (size_t)currentIndex) m_edit.pop_back();
+
+                        m_edit.push_back({nodes, edges});
+                        currentIndex = m_edit.size();
                     }
                 } else {
                     draggingNode = hoveredNode;
                     if (selectNode == -1) selectNode = hoveredNode;
                     else {
-                        if (selectNode != hoveredNode) edges.emplace_back(Edge(selectNode, hoveredNode, 1));
+                        if (selectNode != hoveredNode) {
+                            edges.emplace_back(Edge(selectNode, hoveredNode, 1));
+
+                            while (m_edit.size() > (size_t)currentIndex) m_edit.pop_back();
+
+                            m_edit.push_back({nodes, edges});
+                            currentIndex = m_edit.size();
+                        }
                         selectNode = -1;
                     }
                 }
@@ -433,9 +480,28 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
                     return;
                 selectNode = -1;
                 sourceNode = hoveredNode;
+                dist.assign(nodes.size(), INF);
                 dist[sourceNode] = 0;
+                isAlgoDone = false;
                 algorithm.init(nodes, edges, isDirected, sourceNode);
-                currentLine = 1;
+                m_run.clear();
+                m_run.push_back({1, -1, -1, nodes, dist});
+                while (true) {
+                    visitingNode = -1;
+                    processingNode = algorithm.stage(nodes);
+                    if (processingNode == -1) {
+                        m_run.push_back({17, -1, -1, nodes, dist});
+                        break;
+                    }
+                    m_run.push_back({9, visitingNode, processingNode, nodes, dist});
+                    visitingList = algorithm.getAdjacent(processingNode);
+                    for (int v : visitingList) {
+                        visitingNode = v;
+                        dist[v] = nodes[v].dist;
+                        m_run.push_back({14, visitingNode, processingNode, nodes, dist});
+                    }
+                }
+                currentIndex = 1;
             } else {
                 if (isAlgoDone) {
                     if (selectNode == -1) {
@@ -455,21 +521,13 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
                         }
                     }
                 } else {
-                    if (visitingList.empty()) {
-                        visitingNode = -1;
-                        processingNode = algorithm.stage(nodes);
-                        if (processingNode == -1) {
-                            isAlgoDone = true;
-                            currentLine = 17;
-                        } else {
-                            visitingList = algorithm.getAdjacent(processingNode);
-                            currentLine = 9;
-                        }
+                    if (currentIndex < m_run.size()) {
+                        currentIndex++;
                     } else {
-                        visitingNode = visitingList.back();
-                        dist[visitingNode] = nodes[visitingNode].dist;
-                        visitingList.pop_back();
-                        currentLine = 14;
+                        isAlgoDone = true;
+                        currentIndex = 0;
+                        path.clear();
+                        pathLimit = 0;
                     }
                 }
             }
@@ -545,6 +603,25 @@ bool DijkstraScreen::isPosValid(sf::Vector2f pos, float winW, int ignoreNode) {
         if (d < NODE_RADIUS * 2.5f) return false;
     }
     return true;
+}
+
+void DijkstraScreen::fixedSeekBar(float mouseX, float startX, float barWidth) {
+    float relativeX = std::max(0.f, std::min(mouseX - startX, barWidth));
+    float clampedX = std::max(startX, std::min(mouseX, startX + barWidth));
+    float ratio = (clampedX - startX) / barWidth;
+
+    // 3. Xác định tổng số bước dựa trên Mode hiện tại
+    size_t totalSteps = 0;
+    if (isEditMode) totalSteps = m_edit.size();
+    else if (!isAlgoDone) totalSteps = m_run.size();
+    else totalSteps = path.size();
+    if (totalSteps == 0)
+        totalSteps = 1;
+
+    float stepWidth = barWidth / static_cast<float>(totalSteps);
+    int newIndex = static_cast<int>(relativeX / stepWidth) + 1;
+    if (newIndex > (int)totalSteps) newIndex = (int)totalSteps;
+    currentIndex = newIndex;
 }
 
 void DijkstraScreen::updateAnimation(float dt) {
@@ -1003,14 +1080,19 @@ path from Source to all nodes.
     barBg.setFillColor(sf::Color(45, 45, 55)); // Màu xám xanh đậm
     window.draw(barBg);
 
-    // 4. Vẽ thanh tiến trình (Progress Fill) - Màu Cyan (Xanh lơ)
-    // Giả sử bạn có biến currentStepIndex và history.size()
-    // Nếu chưa có history, ta tạm để 0.5f (50%) để test giao diện
-    float progressFactor = 0.5f; 
-    /*if (!history.empty()) {
-        progressFactor = static_cast<float>(currentStepIndex) / (history.size() - 1);
-    }*/
-
+    float progressFactor = 0.0f; 
+    if (isEditMode) {
+        if (!m_edit.empty())
+            progressFactor = (float)currentIndex / m_edit.size();
+    }
+    else if (isAlgoDone) {
+        if (!path.empty())
+            progressFactor = (float)currentIndex / path.size();
+    }
+    else {
+        if (!m_run.empty())
+            progressFactor = (float)currentIndex / m_run.size();
+    }
     sf::RectangleShape barFill(sf::Vector2f(barWidth * progressFactor, barHeight));
     barFill.setOrigin(0, barHeight / 2.f);
     barFill.setPosition(centerX - barWidth / 2.f, bottomY);
@@ -1028,7 +1110,13 @@ path from Source to all nodes.
     
     // 6. Vẽ text hiển thị số bước ở ngay dưới thanh bar
     /*if (!history.empty())*/ {
-        sf::Text stepInfo("18/36", font, 16);
+        sf::Text stepInfo("", font, 16);
+        if (isEditMode)
+            stepInfo.setString(std::to_string(currentIndex) + '/' + std::to_string(m_edit.size()));
+        else if (isAlgoDone)
+            stepInfo.setString(std::to_string(currentIndex) + '/' + std::to_string(path.size()));
+        else
+            stepInfo.setString(std::to_string(currentIndex) + '/' + std::to_string(m_run.size()));
         sf::FloatRect textRect = stepInfo.getLocalBounds();
         stepInfo.setOrigin(textRect.left + textRect.width / 2.0f, 0);
         stepInfo.setPosition(centerX, bottomY + 20.f);
