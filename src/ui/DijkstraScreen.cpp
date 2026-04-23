@@ -103,11 +103,23 @@ int DijkstraScreen::run(sf::RenderWindow &window, sf::Font &font) {
 
         if (finishFlag) {
             finishFlag = false;
-            
+            if (isAlgoDone) {
+                if (selectNode != -1)
+                    currentIndex = path.size();
+            } else {
+                if (sourceNode != -1)
+                    currentIndex = m_run.size();
+            }
         }
 
         if (isAutoMode && tickClock.getElapsedTime().asSeconds() > 0.8f) {
-            
+            if (isAlgoDone) {
+                if (selectNode != -1 && currentIndex < path.size())
+                    currentIndex++;
+            } else {
+                if (sourceNode != -1 && currentIndex < m_run.size())
+                    currentIndex++;
+            }
             tickClock.restart();
         }
 

@@ -26,7 +26,7 @@ public:
     virtual int run(sf::RenderWindow &window, sf::Font &font) override;
 
 private:
-    int pathLimit;
+    int counting;
     int currentIndex;
     std::vector<int> path;
     std::vector<EditState> m_edit;
