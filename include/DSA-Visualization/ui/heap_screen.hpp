@@ -30,7 +30,7 @@ private:
         sf::Color secondColor = sf::Color::Transparent;
         std::string label;
     };
-    
+
     void runInsert();
     void runDeleteSelected();
     void runBuildHeap();
@@ -74,6 +74,8 @@ private:
     std::vector<std::string> mCurrentCode;
     int mActiveLine = -1;
     int mSelectedIndex = -1;
+    bool mLeftExpanded = true;
+    bool mRightExpanded = true;
 
     sf::RectangleShape mPanel;
     sf::RectangleShape mInputBox;
@@ -109,6 +111,8 @@ private:
     ModernButton mRandomButton;
     ModernButton mSkipButton;
     ModernButton mUpdateButton;
+    ModernButton mLeftCollapseBtn;
+    ModernButton mRightCollapseBtn;
 
     sf::Texture mBgTexture;
     sf::Sprite mBgSprite;

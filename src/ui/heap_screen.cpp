@@ -10,6 +10,12 @@ namespace {
     // Panel
     constexpr float PANEL_WIDTH = 1280.f;
     constexpr float PANEL_HEIGHT = 720.f;
+    float mLeftWidth = 300.f;
+    float mRightWidth = 300.f;
+    const float SIDEBAR_MAX_WIDTH = 300.f;
+    const float CODE_PANEL_MAX_WIDTH = 300.f;
+    const float TAB_WIDTH = 40.f;
+    float mWorkspaceCenterX;
 
     // Button
     constexpr float BUTTON_WIDTH = 92.f;
@@ -50,31 +56,6 @@ namespace {
     }
 }
 
-namespace {
-    // --- Dynamic Sliding Panel Constants ---
-    const float LEFT_PANEL_WIDTH = 280.f;
-    const float RIGHT_PANEL_WIDTH = 380.f;
-    const float TAB_WIDTH = 35.f;
-    const float TAB_HEIGHT = 50.f;
-
-    // --- Dynamic Layout Variables ---
-    float g_leftWidth = TAB_WIDTH;
-    float g_rightWidth = TAB_WIDTH;
-    bool g_leftExpanded = false;
-    bool g_rightExpanded = false;
-    
-    float g_TreeWidth = 900.f;
-    float g_TreeLeftX = 40.f;
-    
-
-
-    constexpr float MIN_INTERVAL = 0.1f;
-    constexpr float MAX_INTERVAL = 2.0f;
-
-    // Helper
-}
-
-
 HeapVisualizer::HeapVisualizer(const sf::Font& font)
     : mFont(font)
     // Input Area
@@ -97,6 +78,8 @@ HeapVisualizer::HeapVisualizer(const sf::Font& font)
     , mRandomButton("Random", font, {BUTTON_WIDTH, BUTTON_HEIGHT})
     , mSkipButton("Skip", font, {BUTTON_WIDTH, BUTTON_HEIGHT})
     , mUpdateButton("Update", font, {BUTTON_WIDTH * 2 + BUTTON_GAP_X, BUTTON_HEIGHT})
+    , mLeftCollapseBtn(">>", font, {BUTTON_WIDTH / 4 + BUTTON_GAP_X, BUTTON_HEIGHT})
+    , mRightCollapseBtn("<<", font, {BUTTON_WIDTH / 4 + BUTTON_GAP_X, BUTTON_HEIGHT})
 {
     // Panel
     float cpX = 1058.f;
@@ -257,6 +240,12 @@ void HeapVisualizer::handleEvent(const sf::Event& event, const sf::RenderWindow&
         if (mPlayPauseButton.isClicked(mouse, true)) {
             togglePlayback();
         }
+        if (mLeftCollapseBtn.isClicked(mouse, true)) {
+            mLeftExpanded = !mLeftExpanded;
+        }
+        if (mRightCollapseBtn.isClicked(mouse, true)) {
+            mRightExpanded = !mRightExpanded;
+        }
         if (mStepButton.isClicked(mouse, true)) {
             mIsPlaying = false;
             if (!mPendingActions.empty()) {
@@ -290,6 +279,22 @@ void HeapVisualizer::handleEvent(const sf::Event& event, const sf::RenderWindow&
 // Refreshes hover states, visible text, and advances the animation timer when autoplay is enabled.
 void HeapVisualizer::update(float deltaTime, const sf::RenderWindow& window) {
     const sf::Vector2f mouse = window.mapPixelToCoords(sf::Mouse::getPosition(window));
+    
+    float targetLeft = mLeftExpanded ? SIDEBAR_MAX_WIDTH : TAB_WIDTH;
+    float targetRight = mRightExpanded ? CODE_PANEL_MAX_WIDTH : TAB_WIDTH;
+    mLeftWidth += (targetLeft - mLeftWidth) * 12.f * deltaTime;
+    mRightWidth += (targetRight - mRightWidth) * 12.f * deltaTime;
+    float windowWidth = 1280.f; 
+    float availableSpaceStart = mLeftWidth;
+    float availableSpaceEnd = windowWidth - mRightWidth;
+    mWorkspaceCenterX = availableSpaceStart + (availableSpaceEnd - availableSpaceStart) / 2.f;
+
+    mLeftCollapseBtn.setPosition({mLeftWidth - 20.f, 360.f});
+    mRightCollapseBtn.setPosition({windowWidth - mRightWidth + 20.f, 360.f});
+    
+    mLeftCollapseBtn.update(mouse);
+    mRightCollapseBtn.update(mouse);
+
     mInsertButton.update(mouse);
     mDeleteButton.update(mouse);
     mBuildButton.update(mouse);
@@ -342,14 +347,31 @@ void HeapVisualizer::update(float deltaTime, const sf::RenderWindow& window) {
 
 // Draws the heap screen in layers so the panel, controls, and visualization stay separated.
 void HeapVisualizer::render(sf::RenderWindow& window) const {
-    drawPanel(window);
+    sf::RectangleShape sidebarBg({mLeftWidth, 720.f});
+    sidebarBg.setFillColor(sf::Color(30, 30, 30));
+    window.draw(sidebarBg);
+
+    sf::RectangleShape codePanelBg({mRightWidth, 720.f});
+    codePanelBg.setPosition(1280.f - mRightWidth, 0.f);
+    codePanelBg.setFillColor(sf::Color(30, 30, 30));
+    window.draw(codePanelBg);
+
+    if (mLeftWidth > 100.f) {
+        drawPanel(window);
+        drawInputArea(window);
+        drawButtons(window);
+        drawLegend(window);
+    }
+
+    if (mRightWidth > 100.f) {
+        drawCodeSnippet(window);
+        const_cast<CodePanel&>(mCodePanel).draw(window);
+    }
+
     drawTree(window);
     drawArray(window);
-    drawInputArea(window);
-    drawButtons(window);
-    drawLegend(window);
-    drawCodeSnippet(window);
-    const_cast<CodePanel&>(mCodePanel).draw(window);
+    window.draw(mLeftCollapseBtn);
+    window.draw(mRightCollapseBtn);
 }
 
 // Clears temporary UI state when the user leaves and re-enters the heap screen.
@@ -754,13 +776,20 @@ void HeapVisualizer::drawArray(sf::RenderWindow& window) const {
     const std::size_t visibleNodes = std::min(mDisplayArray.size(), MAX_RENDERED_NODES);
     if (visibleNodes == 0) return;
 
-    const float maxTotalWidth = 760.f;
+    const float windowWidth = 1280.f; 
+    const float availableWorkspaceWidth = (windowWidth - mLeftWidth - mRightWidth) * 0.95f;
     const float gap = 4.f;
-    const float cellWidth = std::min(48.f, (maxTotalWidth - (visibleNodes * gap)) / visibleNodes);
-    
+
+    const float cellWidth = std::min(48.f, (availableWorkspaceWidth - (visibleNodes * gap)) / visibleNodes);
+    const float totalArrayWidth = (visibleNodes * cellWidth) + ((visibleNodes - 1) * gap);
+
+    const float startX = mWorkspaceCenterX - (totalArrayWidth / 2.f);
+
     for (std::size_t i = 0; i < visibleNodes; ++i) {
+        float currentX = startX + i * (cellWidth + gap);
+        
         sf::RectangleShape cell({cellWidth, cellWidth});
-        cell.setPosition({260.f + i * (cellWidth + gap), ARRAY_Y});
+        cell.setPosition({currentX, ARRAY_Y});
         cell.setFillColor(sf::Color(247, 250, 255, 230));
         cell.setOutlineThickness(2.f);
 
@@ -774,15 +803,17 @@ void HeapVisualizer::drawArray(sf::RenderWindow& window) const {
 
         unsigned int fontSize = cellWidth < 35.f ? 12 : 18;
         sf::Text valueText = makeText(mFont, std::to_string(mDisplayArray[i]), fontSize, sf::Color(20, 28, 40), {0.f, 0.f});
+        
         sf::FloatRect bounds = valueText.getLocalBounds();
         valueText.setOrigin(bounds.left + bounds.width / 2.f, bounds.top + bounds.height / 2.f);
-        valueText.setPosition({cell.getPosition().x + cellWidth / 2.f, cell.getPosition().y + cellWidth / 2.f - 2.f});
+
+        valueText.setPosition({currentX + cellWidth / 2.f, ARRAY_Y + cellWidth / 2.f - 2.f});
         window.draw(valueText);
 
         sf::Text indexText = makeText(mFont, std::to_string(i), 12, sf::Color(189, 198, 214), {0.f, 0.f});
         sf::FloatRect idxBounds = indexText.getLocalBounds();
         indexText.setOrigin(idxBounds.left + idxBounds.width / 2.f, 0.f);
-        indexText.setPosition({cell.getPosition().x + cellWidth / 2.f, cell.getPosition().y - 18.f});
+        indexText.setPosition({currentX + cellWidth / 2.f, ARRAY_Y - 18.f});
         window.draw(indexText);
     }
 }
@@ -960,12 +991,18 @@ std::vector<int> HeapVisualizer::parseSequence(bool& ok) const {
 // Converts an array index into a tree position by grouping nodes by heap level.
 sf::Vector2f HeapVisualizer::nodePosition(std::size_t index) const {
     const int level = static_cast<int>(std::floor(std::log2(static_cast<float>(index + 1))));
+
     const std::size_t firstIndexInLevel = (1u << level) - 1u;
     const std::size_t positionInLevel = index - firstIndexInLevel;
     const std::size_t nodesInLevel = 1u << level;
     const float horizontalGap = TREE_WIDTH / static_cast<float>(nodesInLevel);
-    const float x = TREE_LEFT_X + horizontalGap * (static_cast<float>(positionInLevel) + 0.5f);
-    const float y = TREE_TOP_Y + level * 60.f;
+
+    float levelWidth = horizontalGap * nodesInLevel;
+    float xStartOfLevel = mWorkspaceCenterX - (levelWidth / 2.f);
+
+    const float x = xStartOfLevel + horizontalGap * (static_cast<float>(positionInLevel) + 0.5f);
+    const float y = TREE_TOP_Y + level * 80.f;
+
     return {x, y};
 }
 
@@ -986,17 +1023,20 @@ void HeapVisualizer::clearInput() {
 }
 
 int HeapVisualizer::run(sf::RenderWindow& window, sf::Font& font) {
-    // 1. Load texture
+    sf::View originalView = window.getView(); 
+    sf::View heapView;
+    heapView.setSize(1280.f, 720.f); 
+    heapView.setCenter(640.f, 360.f);
+    window.setView(heapView);
+
     if (!mBgTexture.loadFromFile("assets/textures/avl_background.png")) {
         std::cerr << "Failed to load background.png\n";
     }
     mBgSprite.setTexture(mBgTexture);
-    
     mBgSprite.setScale(1280.f / mBgTexture.getSize().x, 720.f / mBgTexture.getSize().y);
 
     sf::Clock clock;
 
-    // 2. Event Loop
     while (window.isOpen()) {
         float deltaTime = clock.restart().asSeconds();
         sf::Event event;
@@ -1008,31 +1048,30 @@ int HeapVisualizer::run(sf::RenderWindow& window, sf::Font& font) {
             }
 
             const sf::Vector2f mouse = window.mapPixelToCoords(sf::Mouse::getPosition(window));
-            mReturnButton.update(mouse);
+
             if (event.type == sf::Event::MouseButtonReleased &&
                 event.mouseButton.button == sf::Mouse::Left &&
                 mReturnButton.isClicked(mouse, true)) {
+                window.setView(originalView);
                 return 0;
             }
 
             if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape) {
+                window.setView(originalView);
                 return 0;
             }
 
             handleEvent(event, window);
         }
 
-        // 3. Update logic (animation, hover effect...)
         update(deltaTime, window);
 
-        // 4. Render
         window.clear();
-        
-        window.draw(mBgSprite); // background
-        render(window);         // render tree, array, buttons...
-        
+        window.draw(mBgSprite);
+        render(window); 
         window.display();
     }
 
+    window.setView(originalView);
     return -1;
 }
