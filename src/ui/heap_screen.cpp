@@ -76,6 +76,9 @@ HeapVisualizer::HeapVisualizer(const sf::Font& font)
     , mRightCollapseBtn("<<", font, {30.f, 60.f}, 5.f)
     , mDarkThemeBtn("Dark", font, {80.f, 30.f})
     , mLightThemeBtn("Light", font, {80.f, 30.f})
+    , mBgDefaultBtn("PNG", font, {60.f, 30.f})
+    , mBgWhiteBtn("White", font, {60.f, 30.f})
+    , mBgBlackBtn("Black", font, {60.f, 30.f})
 {
     // Panel
     float cpX = 1058.f;
