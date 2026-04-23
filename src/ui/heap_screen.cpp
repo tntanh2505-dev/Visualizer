@@ -57,7 +57,7 @@ HeapVisualizer::HeapVisualizer(const sf::Font& font)
     , mPlaceholderText(makeText(font, "Enter value...", 18, sf::Color(120, 112, 138, 190), {INPUT_X + 14.f, INPUT_Y + 8.f}))
     , mInputText(makeText(font, "", 22, sf::Color::White, {INPUT_X + 14.f, INPUT_Y + 8.f}))
     , mHintText(makeText(font, "Build format: 1, 2, 3...", 14, sf::Color(150, 150, 150), {INPUT_X, INPUT_Y + 55.f}))
-    , mStatusText(makeText(font, "", 16, sf::Color(251, 209, 101), {420.f, 640.f}))
+    , mStatusText(makeText(font, "", 16, sf::Color(251, 209, 101), {350.f, 640.f}))
     
     // Button
     , mInsertButton("Insert", font, {BUTTON_WIDTH, BUTTON_HEIGHT})
@@ -389,14 +389,16 @@ void HeapVisualizer::render(sf::RenderWindow& window) const {
     window.draw(mBgSprite);
 
     sf::RectangleShape sidebarBg({mLeftWidth, 720.f});
-    sidebarBg.setFillColor(sf::Color(25, 25, 35));
+    sidebarBg.setFillColor(mCodeBox.getFillColor());
     window.draw(sidebarBg);
 
     sf::RectangleShape codePanelBg({mRightWidth, 720.f});
     codePanelBg.setPosition(1280.f - mRightWidth, 0.f);
-    codePanelBg.setFillColor(sf::Color(25, 25, 35));
+    codePanelBg.setFillColor(mControlPanelBg.getFillColor());
     window.draw(codePanelBg);
+    const_cast<sf::Text&>(mStatusText).setFillColor(mIsDarkMode ? sf::Color(251, 209, 101) : sf::Color(180, 100, 0));
     window.draw(mStatusText);
+    
     drawLegend(window);
 
     if (mLeftWidth > 180.f) {
@@ -1019,7 +1021,7 @@ void HeapVisualizer::drawColorPicker(sf::RenderWindow& window) const {
     float startX = rightBaseX + 50.f;
     float startY = 380.f;
 
-    sf::Text label = makeText(mFont, "Node Fill Color", 14, sf::Color(200, 200, 210), {startX, startY});
+    sf::Text label = makeText(mFont, "Node Fill Color", 14, mIsDarkMode ? sf::Color(200, 200, 210) : sf::Color(50, 50, 60), {startX, startY});
     window.draw(label);
 
     for (size_t i = 0; i < mColorSwatches.size(); ++i) {
@@ -1072,6 +1074,9 @@ void HeapVisualizer::drawColorPicker(sf::RenderWindow& window) const {
             mControlPanelBg.setFillColor(sf::Color(25, 25, 35, 230));
             mCodeBox.setFillColor(sf::Color(25, 25, 35, 230));
             mInputBox.setFillColor(sf::Color(32, 26, 43));
+            mSliderTrack.setFillColor(sf::Color(60, 60, 80));
+            mSliderTrack.setOutlineColor(sf::Color(100, 100, 150));
+            mSliderKnob.setFillColor(sf::Color(181, 58, 199));
             mInsertButton.setColors(sf::Color(32, 26, 43), sf::Color(20, 16, 27), sf::Color(181, 58, 199));
             mDeleteButton.setColors(sf::Color(32, 26, 43), sf::Color(20, 16, 27), sf::Color(181, 58, 199));
             mBuildButton.setColors(sf::Color(32, 26, 43), sf::Color(20, 16, 27), sf::Color(181, 58, 199));
@@ -1095,6 +1100,9 @@ void HeapVisualizer::drawColorPicker(sf::RenderWindow& window) const {
             mInputText.setFillColor(sf::Color(20, 28, 40));
             mPlaceholderText.setFillColor(sf::Color(80, 80, 80, 190));
             mHintText.setFillColor(sf::Color(60, 60, 70));
+            mSliderTrack.setFillColor(sf::Color(200, 200, 210));
+            mSliderTrack.setOutlineColor(sf::Color(160, 160, 170));
+            mSliderKnob.setFillColor(sf::Color(52, 152, 219));
             mInsertButton.setColors(sf::Color(230, 230, 240), sf::Color(200, 200, 215), sf::Color(150, 150, 160), sf::Color(40, 40, 50));
             mDeleteButton.setColors(sf::Color(230, 230, 240), sf::Color(200, 200, 215), sf::Color(150, 150, 160), sf::Color(40, 40, 50));
             mBuildButton.setColors(sf::Color(230, 230, 240), sf::Color(200, 200, 215), sf::Color(150, 150, 160), sf::Color(40, 40, 50));
