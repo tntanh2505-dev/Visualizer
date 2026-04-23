@@ -362,6 +362,8 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
 
     if (mPos.x < leftWidth) return;
     if (mPos.x > winW - rightWidth) return;
+    if (mPos.y < 120.f) return;
+    if (mPos.y > winH - 120.f) return;
 
     // --- 2. XÁC ĐỊNH NODE DƯỚI CON TRỎ CHUỘT ---
     int hoveredNode = -1;
@@ -973,5 +975,55 @@ path from Source to all nodes.
             panel.update("pseudoCode", currentLine);
             panel.draw(window);
         }
+    }
+
+    // --- SEEK BAR
+    float availableAreaStart = LEFT_PANEL_WIDTH;
+    float availableAreaEnd = winW - RIGHT_PANEL_WIDTH;
+    float centerX = availableAreaStart + (availableAreaEnd - availableAreaStart) / 2.f;
+    float bottomY = winH - 60.f; // Cách đáy màn hình 60px
+
+    // 2. Cấu hình kích thước thanh Seek Bar
+    float barWidth = (availableAreaEnd - availableAreaStart) * 0.7f; // Dài bằng 70% vùng trống
+    float barHeight = 6.f;
+
+    // 3. Vẽ thanh nền (Background Bar) - Màu tối
+    sf::RectangleShape barBg(sf::Vector2f(barWidth, barHeight));
+    barBg.setOrigin(barWidth / 2.f, barHeight / 2.f);
+    barBg.setPosition(centerX, bottomY);
+    barBg.setFillColor(sf::Color(45, 45, 55)); // Màu xám xanh đậm
+    window.draw(barBg);
+
+    // 4. Vẽ thanh tiến trình (Progress Fill) - Màu Cyan (Xanh lơ)
+    // Giả sử bạn có biến currentStepIndex và history.size()
+    // Nếu chưa có history, ta tạm để 0.5f (50%) để test giao diện
+    float progressFactor = 0.5f; 
+    /*if (!history.empty()) {
+        progressFactor = static_cast<float>(currentStepIndex) / (history.size() - 1);
+    }*/
+
+    sf::RectangleShape barFill(sf::Vector2f(barWidth * progressFactor, barHeight));
+    barFill.setOrigin(0, barHeight / 2.f);
+    barFill.setPosition(centerX - barWidth / 2.f, bottomY);
+    barFill.setFillColor(sf::Color(0, 122, 255));
+    window.draw(barFill);
+
+    // 5. Vẽ nút tròn điều khiển (Handle) - Màu trắng
+    sf::CircleShape handle(8.f); // Bán kính 8px
+    handle.setOrigin(8.f, 8.f);
+    handle.setPosition(centerX - barWidth / 2.f + barWidth * progressFactor, bottomY);
+    handle.setFillColor(sf::Color::White);
+    handle.setOutlineThickness(1.5f);
+    handle.setOutlineColor(sf::Color(100, 100, 100));
+    window.draw(handle);
+    
+    // 6. Vẽ text hiển thị số bước ở ngay dưới thanh bar
+    /*if (!history.empty())*/ {
+        sf::Text stepInfo("18/36", font, 16);
+        sf::FloatRect textRect = stepInfo.getLocalBounds();
+        stepInfo.setOrigin(textRect.left + textRect.width / 2.0f, 0);
+        stepInfo.setPosition(centerX, bottomY + 20.f);
+        stepInfo.setFillColor(sf::Color(150, 150, 150));
+        window.draw(stepInfo);
     }
 }
