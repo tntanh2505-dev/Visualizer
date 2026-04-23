@@ -79,6 +79,17 @@ sf::FloatRect ModernButton::getGlobalBounds() const {
     return getTransform().transformRect(localBounds);
 }
 
+void ModernButton::setColors(sf::Color top, sf::Color bottom, sf::Color border, sf::Color textColor) 
+{
+    m_topNormal = top;
+    m_bottomNormal = bottom;
+    m_borderColor = border;
+    m_text.setFillColor(textColor);
+    m_topHover = sf::Color(std::min(top.r + 20, 255), std::min(top.g + 20, 255), std::min(top.b + 20, 255));
+    m_bottomHover = sf::Color(std::min(bottom.r + 20, 255), std::min(bottom.g + 20, 255), std::min(bottom.b + 20, 255));
+    updateColors();
+}
+
 void ModernButton::draw(sf::RenderTarget& target, sf::RenderStates states) const
 {
     states.transform *= getTransform();

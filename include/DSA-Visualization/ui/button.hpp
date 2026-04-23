@@ -16,6 +16,9 @@ public:
     // Get button boundary coordinates
     sf::FloatRect getGlobalBounds() const;
 
+    //Set Color
+    void setColors(sf::Color top, sf::Color bottom, sf::Color border, sf::Color textColor = sf::Color::White);
+
     void setText(const std::string &str);
 
 protected:
