@@ -83,7 +83,7 @@ HeapVisualizer::HeapVisualizer(const sf::Font& font)
     // Panel
     float cpX = 1058.f;
     float cpY = 24.f;
-    float cpWidth = 204.f;
+    float cpWidth = 214.f;
     float cpHeight = 318.f;
     mPanel.setSize({PANEL_WIDTH, PANEL_HEIGHT});
     mPanel.setFillColor(sf::Color(10, 10, 15));
@@ -1205,6 +1205,7 @@ void HeapVisualizer::applyTheme() {
         mControlPanelBg.setFillColor(sf::Color(25, 25, 35, 230));
         mCodeBox.setFillColor(sf::Color(25, 25, 35, 230));
         mInputBox.setFillColor(sf::Color(32, 26, 43));
+        mInputText.setFillColor(sf::Color::White);
         mSliderTrack.setFillColor(sf::Color(60, 60, 80));
         mSliderTrack.setOutlineColor(sf::Color(100, 100, 150));
         mSliderKnob.setFillColor(sf::Color(181, 58, 199));
@@ -1235,7 +1236,6 @@ void HeapVisualizer::applyTheme() {
         mCodeBox.setFillColor(sf::Color(220, 220, 230, 230));
         mInputBox.setFillColor(sf::Color(255, 255, 255));
         mInputText.setFillColor(sf::Color(20, 28, 40));
-        mPlaceholderText.setFillColor(sf::Color(80, 80, 80, 190));
         mHintText.setFillColor(sf::Color(60, 60, 70));
         mSliderTrack.setFillColor(sf::Color(200, 200, 210));
         mSliderTrack.setOutlineColor(sf::Color(160, 160, 170));
