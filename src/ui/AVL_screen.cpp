@@ -57,6 +57,7 @@ AVLScreen::AVLScreen()
 , m_leftExpanded(false)
 , m_rightExpanded(false)
 , m_selectedNodeValue(-1)
+, m_isLightMode(false)
 {}
 
 void AVLScreen::buildSteps(Operation op) {
@@ -122,6 +123,7 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
     mSkipAnimationBtn.emplace("Skip Animation", font, sf::Vector2f(210.f, 40.f));
 
     mReturnBtn.emplace("Return",  font, sf::Vector2f(210.f, 40.f));
+    mThemeToggleBtn.emplace("Light Mode", font, sf::Vector2f(140.f, 40.f));
     
     mSliderTrack = sf::RectangleShape({220.f, 6.f});
     mSliderTrack.setFillColor(UITheme::Color::SliderTrack);
@@ -197,8 +199,13 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
             if (leftPressed && isClickingOnPanel) {
                 if (mReturnBtn->isClicked(mouseRaw, true)) return 0;
 
-                // --- Color Swatch Click Detection ---
+                // --- Right Panel Click Detection ---
                 if (mouseRaw.x > window.getSize().x - m_rightWidth) { 
+                    if (mThemeToggleBtn->isClicked(mouseRaw, true)) {
+                        m_isLightMode = !m_isLightMode;
+                        applyTheme(font);
+                    }
+
                     for (size_t i = 0; i < mColorSwatches.size(); ++i) {
                         if (mColorSwatches[i].getGlobalBounds().contains(mouseRaw)) {
                             mCurrentNodeColor = mThemeColors[i];
@@ -457,6 +464,8 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
 
         mReturnBtn->setPosition(sf::Vector2f(leftBaseX + 140.f, window.getSize().y - 40.f));
         mCodePanel.setPosition(sf::Vector2f(rightBaseX + TAB_WIDTH + 10.f, 20.f + fset));
+        
+        mThemeToggleBtn->setPosition(sf::Vector2f(rightBaseX + TAB_WIDTH + 50.f, 500.f + fset));
 
         // Update hovers
         mInsertBtn->update(mouseRaw); mDeleteBtn->update(mouseRaw); mSearchBtn->update(mouseRaw);
@@ -465,6 +474,7 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
         mRandomBtn->update(mouseRaw); mClearBtn->update(mouseRaw); mLoadFileBtn->update(mouseRaw);
         mPrevBtn->update(mouseRaw); mNextBtn->update(mouseRaw); mSkipAnimationBtn->update(mouseRaw);
         mReturnBtn->update(mouseRaw);
+        mThemeToggleBtn->update(mouseRaw);
 
         if (!mStepMode) {
             mController.update(dt);
@@ -613,7 +623,7 @@ void AVLScreen::drawRightPanel(sf::RenderWindow& window, const sf::Font& font, f
     // --- Draw Color Customization UI ---
     if (m_rightWidth > 50.f) { 
         sf::Text colorLabel("Node Fill Color", font, 16);
-        colorLabel.setFillColor(sf::Color(200, 200, 210));
+        colorLabel.setFillColor(m_isLightMode ? sf::Color(40, 40, 50) : sf::Color(200, 200, 210));
         colorLabel.setPosition(rightBaseX + TAB_WIDTH + 15.f, 390.f + fset);
         window.draw(colorLabel);
 
@@ -632,6 +642,8 @@ void AVLScreen::drawRightPanel(sf::RenderWindow& window, const sf::Font& font, f
             }
             window.draw(mColorSwatches[i]);
         }
+        
+        window.draw(*mThemeToggleBtn);
     }
 }
 
@@ -757,7 +769,54 @@ void AVLScreen::drawDescription(sf::RenderWindow& window, const sf::Font& font, 
     desc.setString(descText);
     desc.setCharacterSize(24);
     desc.setLetterSpacing(1.1f);
-    desc.setFillColor(sf::Color(240, 245, 255));
+    desc.setFillColor(m_isLightMode ? sf::Color(30, 30, 35) : sf::Color(240, 245, 255));
     desc.setPosition(boxX + 18.f, boxY + 20.f);
     window.draw(desc);
+}
+
+void AVLScreen::applyTheme(sf::Font& font) {
+    if (m_isLightMode) {
+        // Pleasant, soft light mode palette
+        UITheme::Color::AVLBackground        = sf::Color(245, 246, 250); 
+        UITheme::Color::AVLPanelBg           = sf::Color(230, 232, 240, 240);
+        UITheme::Color::AVLSpeedSliderText   = sf::Color(40, 40, 50);
+        
+        // Soft white buttons with subtle contrast
+        UITheme::Color::ModernBtnTop         = sf::Color(250, 250, 255);
+        UITheme::Color::ModernBtnBottom      = sf::Color(235, 235, 240);
+        UITheme::Color::ModernBtnHoverT      = sf::Color(240, 240, 245);
+        UITheme::Color::ModernBtnHoverB      = sf::Color(220, 220, 230);
+        UITheme::Color::ModernBtnBorder      = sf::Color(180, 180, 195);
+        
+        mBgSprite.setColor(sf::Color(255, 255, 255, 180)); // Lighten background grid
+    } else {
+        // Restore Amethyst Dark Mode palette
+        UITheme::Color::AVLBackground        = UITheme::Color::GlobalBg;
+        UITheme::Color::AVLPanelBg           = UITheme::Color::GlobalPanelBg;
+        UITheme::Color::AVLSpeedSliderText   = UITheme::Color::GlobalTextPrimary;
+        
+        UITheme::Color::ModernBtnTop         = UITheme::Color::GlobalButtonFill;
+        UITheme::Color::ModernBtnBottom      = sf::Color(20, 16, 27);
+        UITheme::Color::ModernBtnHoverT      = UITheme::Color::GlobalButtonHover;
+        UITheme::Color::ModernBtnHoverB      = sf::Color(37, 24, 56);
+        UITheme::Color::ModernBtnBorder      = UITheme::Color::GlobalButtonBorder;
+
+        mBgSprite.setColor(UITheme::Color::AVLBackground);
+    }
+
+    // Re-emplace buttons to immediately apply the new inline theme colors
+    mInsertBtn.emplace("Insert",  font, sf::Vector2f(100.f, 40.f));
+    mDeleteBtn.emplace("Delete",  font, sf::Vector2f(100.f, 40.f));
+    mSearchBtn.emplace("Search",  font, sf::Vector2f(100.f, 40.f));
+    mUpdateBtn.emplace("Update",  font, sf::Vector2f(100.f, 40.f));
+    mRandomBtn.emplace("Random",  font, sf::Vector2f(100.f, 40.f));
+    mClearBtn .emplace("Clear",   font, sf::Vector2f(100.f, 40.f));
+    mLoadFileBtn.emplace("Load File", font, sf::Vector2f(210.f, 40.f));
+    mPrevBtn  .emplace("< Prev",  font, sf::Vector2f(100.f,  40.f));
+    mNextBtn  .emplace("Next >",  font, sf::Vector2f(100.f,  40.f));
+    mSkipAnimationBtn.emplace("Skip Animation", font, sf::Vector2f(210.f, 40.f));
+    mReturnBtn.emplace("Return",  font, sf::Vector2f(210.f, 40.f));
+    
+    // Update toggle button text
+    mThemeToggleBtn.emplace(m_isLightMode ? "Dark Mode" : "Light Mode", font, sf::Vector2f(140.f, 40.f));
 }
