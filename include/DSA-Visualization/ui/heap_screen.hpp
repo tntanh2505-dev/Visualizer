@@ -55,6 +55,8 @@ private:
     void drawTree(sf::RenderWindow& window) const;
     void drawLegend(sf::RenderWindow& window) const;
     void drawCodeSnippet(sf::RenderWindow& window) const;
+    void applyTheme();
+    void drawThemeToggle(sf::RenderWindow& window) const;
 
     void appendDigit(char digit);
     void appendCharacter(char character);
@@ -125,6 +127,8 @@ private:
     ModernButton mUpdateButton;
     ModernButton mLeftCollapseBtn;
     ModernButton mRightCollapseBtn;
+    ModernButton mDarkThemeBtn;
+    ModernButton mLightThemeBtn;
 
     //Background
     sf::Texture mBgTexture;
@@ -143,5 +147,6 @@ private:
     std::vector<sf::Color> mThemeColors;
     std::vector<sf::RectangleShape> mColorSwatches;
     void drawColorPicker(sf::RenderWindow& window) const;
-    
+    bool mIsDarkMode = true;
+
 };
