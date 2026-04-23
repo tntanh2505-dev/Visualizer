@@ -905,7 +905,7 @@ void HeapVisualizer::drawArray(sf::RenderWindow& window) const {
         sf::RectangleShape cell({cellWidth, cellWidth});
         cell.setPosition({currentX, ARRAY_Y});
         cell.setFillColor(mCurrentNodeColor);
-        cell.setOutlineThickness(2.f);
+        cell.setOutlineThickness(3.f);
 
         sf::Color currentOutlineColor = nodeColor(i);
         if (mSelectedIndex == static_cast<int>(i)) {
