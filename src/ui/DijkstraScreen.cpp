@@ -112,7 +112,7 @@ int DijkstraScreen::run(sf::RenderWindow &window, sf::Font &font) {
             }
         }
 
-        if (isAutoMode && tickClock.getElapsedTime().asSeconds() > 0.8f) {
+        if (isAutoMode && tickClock.getElapsedTime().asSeconds() > delayTime) {
             if (isAlgoDone) {
                 if (selectNode != -1 && currentIndex < path.size())
                     currentIndex++;
@@ -161,6 +161,7 @@ void DijkstraScreen::initialization() {
     isDirected = false;
     isAlgoDone = false;
     isDragging = false;
+    isDraggingSpeed = false;
 
     sourceNode = -1;
     selectNode = -1;
@@ -170,6 +171,8 @@ void DijkstraScreen::initialization() {
     visitingNode = -1;
     processingNode = -1;
     inputBuffer.clear();
+
+    delayTime = 1.05f;
 
     currentLine = 0;
     activeTab = TabState::Info;
@@ -187,6 +190,9 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
     float bottomY = winH - 60.f;
     float barWidth = (barEnd - barStart) * 0.7f;
     float barHeight = 6.f;
+    float slideY = 500.f;
+    float slideX = 25.f;
+    float slideW = leftWidth - 85.f;
 
     if (event.type == sf::Event::Resized) {
         sf::FloatRect visibleArea(0, 0, event.size.width, event.size.height);
@@ -195,6 +201,7 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
 
     // Khi thả chuột trái -> Ngừng trạng thái di chuyển node
     if (event.type == sf::Event::MouseButtonReleased && event.mouseButton.button == sf::Mouse::Left) {
+        isDraggingSpeed = false;
         isDragging = false;
         draggingNode = -1;
     }
@@ -219,6 +226,15 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
             return;
         }
         if (leftExpanded && mPos.x < leftWidth - TAB_WIDTH) {
+            if (mPos.y >= slideY - 15.f && mPos.y <= slideY + 15.f && 
+                mPos.x >= slideX - 10.f && mPos.x <= slideX + slideW + 10.f) {
+                isDraggingSpeed = true;
+                float relativeX = std::max(0.f, std::min((float)mPos.x - slideX, slideW));
+                float ratio = relativeX / slideW;
+                delayTime = 2.0f - ratio * (2.0f - 0.1f); 
+                
+                return; // Thoát để không click nhầm vào các thành phần dưới UI
+            }
             if (button[0]->isClicked(worldPos, true)) { // Nút MODE
                 selectNode = -1;
                 isEditMode = !isEditMode;
@@ -407,8 +423,9 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
 
     if (selectNode >= nodes.size())
         selectNode = -1;
-    if (event.type == sf::Event::MouseMoved && isDragging)
-        fixedSeekBar(worldPos.x, barCenter - barWidth / 2.f, barWidth);
+
+    if (worldPos.y > winH - 120.f)
+        return;
 
     // --- 2. XÁC ĐỊNH NODE DƯỚI CON TRỎ CHUỘT ---
     int hoveredNode = -1;
@@ -569,32 +586,45 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
     }
 
     // --- 5. LOGIC DI CHUYỂN NODE & VẬT LÝ ĐẨY NHAU ---
-    if (event.type == sf::Event::MouseMoved && draggingNode != -1) {
-        selectNode = -1;
+    if (event.type == sf::Event::MouseMoved) {
+        if (draggingNode != -1) {
+            selectNode = -1;
 
-        nodes[draggingNode].x = worldPos.x;
-        nodes[draggingNode].y = worldPos.y;
+            nodes[draggingNode].x = worldPos.x;
+            nodes[draggingNode].y = worldPos.y;
 
-        for (int i = 0; i < (int)nodes.size(); ++i) {
-            if (i == draggingNode) continue;
-            
-            float dx = nodes[draggingNode].x - nodes[i].x;
-            float dy = nodes[draggingNode].y - nodes[i].y;
-            float dist = std::hypot(dx, dy);
-            float minSafe = NODE_RADIUS * 2.5f;
+            for (int i = 0; i < (int)nodes.size(); ++i) {
+                if (i == draggingNode) continue;
+                
+                float dx = nodes[draggingNode].x - nodes[i].x;
+                float dy = nodes[draggingNode].y - nodes[i].y;
+                float dist = std::hypot(dx, dy);
+                float minSafe = NODE_RADIUS * 2.5f;
 
-            if (dist < minSafe && dist > 0.01f) {
-                float overlap = minSafe - dist;
-                nodes[draggingNode].x += (dx / dist) * overlap;
-                nodes[draggingNode].y += (dy / dist) * overlap;
+                if (dist < minSafe && dist > 0.01f) {
+                    float overlap = minSafe - dist;
+                    nodes[draggingNode].x += (dx / dist) * overlap;
+                    nodes[draggingNode].y += (dy / dist) * overlap;
+                }
             }
-        }
 
-        if (nodes[draggingNode].x < leftWidth + NODE_RADIUS) {
-            nodes[draggingNode].x = leftWidth + NODE_RADIUS;
-        }
+            if (nodes[draggingNode].x < leftWidth + NODE_RADIUS) {
+                nodes[draggingNode].x = leftWidth + NODE_RADIUS;
+            }
 
-        m_edit[currentIndex - 1].m_nodes = nodes;
+            m_edit[currentIndex - 1].m_nodes = nodes;
+        }
+        if (isDragging)
+            fixedSeekBar(worldPos.x, barCenter - barWidth / 2.f, barWidth);
+        if (isDraggingSpeed) {
+            float slideX = 25.f;
+            float slideW = leftWidth - 85.f;
+            float relativeX = std::max(0.f, std::min((float)mPos.x - slideX, slideW));
+            float ratio = relativeX / slideW;
+            // ratio = 0 (bên trái) -> delayTime = 2.0s (Chậm)
+            // ratio = 1 (bên phải) -> delayTime = 0.1s (Nhanh)
+            delayTime = 2.0f - ratio * (2.0f - 0.1f);
+        }
     }
 }
 
@@ -882,6 +912,33 @@ void DijkstraScreen::drawUI(sf::RenderWindow &window, sf::Font &font, sf::Vector
         button[7]->setText("RETURN");
         for (size_t i = 0; i < 8; ++i)
             window.draw(*button[i]);
+
+        float sliderY = 500.f; // Điều chỉnh Y cho phù hợp với danh sách nút của bạn
+        float sliderX = 25.f;
+        float sliderW = leftWidth - 85.f;
+
+        // Tính % tốc độ hiển thị cho người dùng (Chậm: 0%, Nhanh: 100%)
+        // Công thức: nghịch đảo của delayTime
+        int speedPercent = static_cast<int>((2.0f - delayTime) / (2.0f - 0.1f) * 100.f);
+        
+        sf::Text speedText("Speed: " + std::to_string(speedPercent) + "%", font, 16);
+        speedText.setPosition(sliderX, sliderY - 30.f);
+        window.draw(speedText);
+
+        // Vẽ thanh nền
+        sf::RectangleShape track(sf::Vector2f(sliderW, 4.f));
+        track.setPosition(sliderX, sliderY);
+        track.setFillColor(sf::Color(0, 122, 255));
+        window.draw(track);
+
+        // Vẽ nút trượt (Thumb)
+        sf::CircleShape thumb(8.f);
+        thumb.setOrigin(8.f, 8.f);
+        // Vị trí: delay 2.0s nằm bên trái (0%), delay 0.1s nằm bên phải (100%)
+        float ratio = (2.0f - delayTime) / (2.0f - 0.1f);
+        thumb.setPosition(sliderX + ratio * sliderW, sliderY + 2.f);
+        thumb.setFillColor(sf::Color::White);
+        window.draw(thumb);    
     }
 
     // ----- RIGHT PANEL -----

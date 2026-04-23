@@ -48,6 +48,7 @@ private:
     bool isDirected;
     bool isAlgoDone;
     bool isDragging;
+    bool isDraggingSpeed;
 
     int sourceNode;
     int selectNode;
@@ -66,6 +67,7 @@ private:
     TabState activeTab;
     CodePanel panel;
 
+    float delayTime;
     sf::Clock tickClock;
 
     void initialization();
