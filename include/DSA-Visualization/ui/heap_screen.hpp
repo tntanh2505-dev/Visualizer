@@ -76,6 +76,12 @@ private:
     int mSelectedIndex = -1;
     bool mLeftExpanded = true;
     bool mRightExpanded = true;
+    float mLeftWidth = 300.f;
+    float mRightWidth = 300.f;
+    const float SIDEBAR_MAX_WIDTH = 300.f;
+    const float CODE_PANEL_MAX_WIDTH = 300.f;
+    const float TAB_WIDTH = 40.f;
+    float mWorkspaceCenterX;
 
     sf::RectangleShape mPanel;
     sf::RectangleShape mInputBox;

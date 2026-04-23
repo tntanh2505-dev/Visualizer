@@ -10,12 +10,6 @@ namespace {
     // Panel
     constexpr float PANEL_WIDTH = 1280.f;
     constexpr float PANEL_HEIGHT = 720.f;
-    float mLeftWidth = 300.f;
-    float mRightWidth = 300.f;
-    const float SIDEBAR_MAX_WIDTH = 300.f;
-    const float CODE_PANEL_MAX_WIDTH = 300.f;
-    const float TAB_WIDTH = 40.f;
-    float mWorkspaceCenterX;
 
     // Button
     constexpr float BUTTON_WIDTH = 92.f;
@@ -78,8 +72,8 @@ HeapVisualizer::HeapVisualizer(const sf::Font& font)
     , mRandomButton("Random", font, {BUTTON_WIDTH, BUTTON_HEIGHT})
     , mSkipButton("Skip", font, {BUTTON_WIDTH, BUTTON_HEIGHT})
     , mUpdateButton("Update", font, {BUTTON_WIDTH * 2 + BUTTON_GAP_X, BUTTON_HEIGHT})
-    , mLeftCollapseBtn(">>", font, {BUTTON_WIDTH / 4 + BUTTON_GAP_X, BUTTON_HEIGHT})
-    , mRightCollapseBtn("<<", font, {BUTTON_WIDTH / 4 + BUTTON_GAP_X, BUTTON_HEIGHT})
+    , mLeftCollapseBtn(">>", font, {30.f, 60.f}, 5.f)
+    , mRightCollapseBtn("<<", font, {30.f, 60.f}, 5.f)
 {
     // Panel
     float cpX = 1058.f;
@@ -137,7 +131,7 @@ HeapVisualizer::HeapVisualizer(const sf::Font& font)
     mPlayPauseButton.setPosition({BUTTON_X + BUTTON_WIDTH + BUTTON_GAP_X / 2.f, BUTTON_START_Y + 5 * (BUTTON_HEIGHT + BUTTON_GAP_Y) + BUTTON_HEIGHT / 2.f});
     mStepButton.setPosition({BUTTON_X + 1.75f * BUTTON_WIDTH + BUTTON_GAP_X, BUTTON_START_Y + 5 * (BUTTON_HEIGHT + BUTTON_GAP_Y) + BUTTON_HEIGHT / 2.f});
     mReturnButton.setPosition({BUTTON_X + (BUTTON_WIDTH * 2 + BUTTON_GAP_X) / 2.f, 626.f + BUTTON_HEIGHT / 2.f});
-    
+
     setStatus("Ready.");
 }
 
@@ -279,18 +273,21 @@ void HeapVisualizer::handleEvent(const sf::Event& event, const sf::RenderWindow&
 // Refreshes hover states, visible text, and advances the animation timer when autoplay is enabled.
 void HeapVisualizer::update(float deltaTime, const sf::RenderWindow& window) {
     const sf::Vector2f mouse = window.mapPixelToCoords(sf::Mouse::getPosition(window));
-    
     float targetLeft = mLeftExpanded ? SIDEBAR_MAX_WIDTH : TAB_WIDTH;
     float targetRight = mRightExpanded ? CODE_PANEL_MAX_WIDTH : TAB_WIDTH;
+
     mLeftWidth += (targetLeft - mLeftWidth) * 12.f * deltaTime;
     mRightWidth += (targetRight - mRightWidth) * 12.f * deltaTime;
-    float windowWidth = 1280.f; 
-    float availableSpaceStart = mLeftWidth;
-    float availableSpaceEnd = windowWidth - mRightWidth;
-    mWorkspaceCenterX = availableSpaceStart + (availableSpaceEnd - availableSpaceStart) / 2.f;
 
-    mLeftCollapseBtn.setPosition({mLeftWidth - 20.f, 360.f});
-    mRightCollapseBtn.setPosition({windowWidth - mRightWidth + 20.f, 360.f});
+    float windowWidth = 1280.f; 
+    mWorkspaceCenterX = mLeftWidth + (windowWidth - mLeftWidth - mRightWidth) / 2.f;
+
+    mLeftCollapseBtn.setPosition({ mLeftWidth - 15.f, 360.f }); 
+    mRightCollapseBtn.setPosition({ windowWidth - mRightWidth + 15.f, 360.f });
+    mLeftCollapseBtn.setText(mLeftExpanded ? "<<" : ">>");
+    mRightCollapseBtn.setText(mRightExpanded ? ">>" : "<<");
+
+    mCodePanel.setPosition({ 1280.f - mRightWidth + 20.f, 24.f });
     
     mLeftCollapseBtn.update(mouse);
     mRightCollapseBtn.update(mouse);
@@ -347,29 +344,31 @@ void HeapVisualizer::update(float deltaTime, const sf::RenderWindow& window) {
 
 // Draws the heap screen in layers so the panel, controls, and visualization stay separated.
 void HeapVisualizer::render(sf::RenderWindow& window) const {
+    window.draw(mBgSprite);
+
     sf::RectangleShape sidebarBg({mLeftWidth, 720.f});
-    sidebarBg.setFillColor(sf::Color(30, 30, 30));
+    sidebarBg.setFillColor(sf::Color(25, 25, 30));
     window.draw(sidebarBg);
 
     sf::RectangleShape codePanelBg({mRightWidth, 720.f});
     codePanelBg.setPosition(1280.f - mRightWidth, 0.f);
-    codePanelBg.setFillColor(sf::Color(30, 30, 30));
+    codePanelBg.setFillColor(sf::Color(25, 25, 30));
     window.draw(codePanelBg);
 
-    if (mLeftWidth > 100.f) {
-        drawPanel(window);
+    if (mLeftWidth > 200.f) {
         drawInputArea(window);
         drawButtons(window);
         drawLegend(window);
+        window.draw(mStatusText);
     }
 
-    if (mRightWidth > 100.f) {
-        drawCodeSnippet(window);
+    if (mRightWidth > 200.f) {
         const_cast<CodePanel&>(mCodePanel).draw(window);
     }
 
     drawTree(window);
     drawArray(window);
+
     window.draw(mLeftCollapseBtn);
     window.draw(mRightCollapseBtn);
 }
