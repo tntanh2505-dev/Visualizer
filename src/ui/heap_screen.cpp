@@ -118,7 +118,7 @@ HeapVisualizer::HeapVisualizer(const sf::Font& font)
     mInputBox.setOutlineThickness(2.f);
     mInputBox.setOutlineColor(sf::Color(181, 58, 199, 120));
 
-    // ModernButton uses centered transforms, so convert the existing top-left layout into center positions.
+    // Button
     mInsertButton.setPosition({BUTTON_X + BUTTON_WIDTH / 2.f, BUTTON_START_Y + BUTTON_HEIGHT / 2.f});
     mDeleteButton.setPosition({BUTTON_X2 + BUTTON_WIDTH / 2.f, BUTTON_START_Y + BUTTON_HEIGHT / 2.f});
     mBuildButton.setPosition({BUTTON_X + BUTTON_WIDTH / 2.f, BUTTON_START_Y + (BUTTON_HEIGHT + BUTTON_GAP_Y) + BUTTON_HEIGHT / 2.f});
@@ -131,18 +131,40 @@ HeapVisualizer::HeapVisualizer(const sf::Font& font)
     mPlayPauseButton.setPosition({BUTTON_X + BUTTON_WIDTH + BUTTON_GAP_X / 2.f, BUTTON_START_Y + 5 * (BUTTON_HEIGHT + BUTTON_GAP_Y) + BUTTON_HEIGHT / 2.f});
     mStepButton.setPosition({BUTTON_X + 1.75f * BUTTON_WIDTH + BUTTON_GAP_X, BUTTON_START_Y + 5 * (BUTTON_HEIGHT + BUTTON_GAP_Y) + BUTTON_HEIGHT / 2.f});
     mReturnButton.setPosition({BUTTON_X + (BUTTON_WIDTH * 2 + BUTTON_GAP_X) / 2.f, 626.f + BUTTON_HEIGHT / 2.f});
+    
+    //Customization
+    mCurrentNodeColor = sf::Color(245, 249, 255); 
+
+    mThemeColors = {
+        sf::Color(245, 249, 255),
+        sf::Color(181, 58, 199),
+        sf::Color(52, 152, 219),
+        sf::Color(231, 76, 60),
+        sf::Color(241, 196, 15),
+        sf::Color(46, 204, 113)
+    };
+
+    for (const auto& color : mThemeColors) {
+        sf::RectangleShape swatch(sf::Vector2f(25.f, 25.f));
+        swatch.setFillColor(color);
+        swatch.setOutlineThickness(1.5f);
+        swatch.setOutlineColor(sf::Color(100, 100, 100));
+        mColorSwatches.push_back(swatch);
+    }
 
     setStatus("Ready.");
 }
 
 // Routes mouse and keyboard input to the correct heap action or text field update.
 void HeapVisualizer::handleEvent(const sf::Event& event, const sf::RenderWindow& window) {
+    //Mouse position
     sf::Vector2f mouse = window.mapPixelToCoords(sf::Mouse::getPosition(window));
     bool mouseOverButtons = mDeleteButton.getGlobalBounds().contains(mouse) || mUpdateButton.getGlobalBounds().contains(mouse);
     bool mouseOverInput = mInputBox.getGlobalBounds().contains(mouse);
     bool mouseOverSlider = mSliderTrack.getGlobalBounds().contains(mouse) || mSliderKnob.getGlobalBounds().contains(mouse);
 
     if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
+        //Node selection
         if (mPendingActions.empty()) {
             const std::size_t visibleNodes = std::min(mDisplayArray.size(), MAX_RENDERED_NODES);
             for (std::size_t i = 0; i < visibleNodes; ++i) {
@@ -161,7 +183,8 @@ void HeapVisualizer::handleEvent(const sf::Event& event, const sf::RenderWindow&
         if (mouseOverButtons) {
             return;
         }
- 
+
+        //Slider Drag
         sf::FloatRect knobBounds = mSliderKnob.getGlobalBounds();
         knobBounds.left -= 10.f; knobBounds.width += 20.f;
         knobBounds.top -= 10.f;  knobBounds.height += 20.f;
@@ -180,6 +203,17 @@ void HeapVisualizer::handleEvent(const sf::Event& event, const sf::RenderWindow&
             std::stringstream ss;
             ss << "Speed: " << std::fixed << std::setprecision(2) << mActionInterval << "s";
             mSpeedLabel.setString(ss.str());
+        }
+        
+        //Color selection
+        if (mRightExpanded && mouse.x > 1280.f - mRightWidth) {
+            for (size_t i = 0; i < mColorSwatches.size(); ++i) {
+                if (mColorSwatches[i].getGlobalBounds().contains(mouse)) {
+                    mCurrentNodeColor = mThemeColors[i];
+                    setStatus("Node color updated.");
+                    return; 
+                }
+                }
         }
     }
 
@@ -273,16 +307,19 @@ void HeapVisualizer::handleEvent(const sf::Event& event, const sf::RenderWindow&
 // Refreshes hover states, visible text, and advances the animation timer when autoplay is enabled.
 void HeapVisualizer::update(float deltaTime, const sf::RenderWindow& window) {
     const sf::Vector2f mouse = window.mapPixelToCoords(sf::Mouse::getPosition(window));
+
     float targetLeft = mLeftExpanded ? SIDEBAR_MAX_WIDTH : TAB_WIDTH;
     float targetRight = mRightExpanded ? CODE_PANEL_MAX_WIDTH : TAB_WIDTH;
 
     mLeftWidth += (targetLeft - mLeftWidth) * 12.f * deltaTime;
     mRightWidth += (targetRight - mRightWidth) * 12.f * deltaTime;
 
-    float cpWidth = 204.f;
-    mCodePanel.setPosition({ 1280.f - cpWidth - 15.f, 24.f});
+    mWorkspaceCenterX = mLeftWidth + (1280.f - mLeftWidth - mRightWidth) / 2.f;
 
-    mLeftCollapseBtn.setPosition({ mLeftWidth - 15.f, 360.f});
+    float cpWidth = 204.f;
+    mCodePanel.setPosition({ 1280.f - mRightWidth + (mRightWidth - cpWidth) / 2.f, 24.f });
+
+    mLeftCollapseBtn.setPosition({ mLeftWidth - 15.f, 360.f });
     mRightCollapseBtn.setPosition({ 1280.f - mRightWidth + 15.f, 360.f });
     mLeftCollapseBtn.setText(mLeftExpanded ? "<<" : ">>");
     mRightCollapseBtn.setText(mRightExpanded ? ">>" : "<<");
@@ -362,6 +399,7 @@ void HeapVisualizer::render(sf::RenderWindow& window) const {
 
     if (mRightWidth > 180.f) {
         const_cast<CodePanel&>(mCodePanel).draw(window);
+        drawColorPicker(window);
     }
 
     drawTree(window);
@@ -786,7 +824,7 @@ void HeapVisualizer::drawArray(sf::RenderWindow& window) const {
         
         sf::RectangleShape cell({cellWidth, cellWidth});
         cell.setPosition({currentX, ARRAY_Y});
-        cell.setFillColor(sf::Color(247, 250, 255, 230));
+        cell.setFillColor(mCurrentNodeColor);
         cell.setOutlineThickness(2.f);
 
         sf::Color currentOutlineColor = nodeColor(i);
@@ -833,7 +871,7 @@ void HeapVisualizer::drawTree(sf::RenderWindow& window) const {
         sf::CircleShape node(Radius);
         node.setOrigin({Radius, Radius});
         node.setPosition(nodePosition(i));
-        node.setFillColor(sf::Color(245, 249, 255));
+        node.setFillColor(mCurrentNodeColor);
         node.setOutlineThickness(4.f);
 
         sf::Color currentOutlineColor = nodeColor(i);
@@ -924,6 +962,32 @@ void HeapVisualizer::drawCodeSnippet(sf::RenderWindow& window) const {
     }
 }
 
+void HeapVisualizer::drawColorPicker(sf::RenderWindow& window) const {
+    float rightBaseX = 1280.f - mRightWidth;
+    float startX = rightBaseX + 50.f;
+    float startY = 380.f;
+
+    sf::Text label = makeText(mFont, "Node Fill Color", 14, sf::Color(200, 200, 210), {startX, startY});
+    window.draw(label);
+
+    for (size_t i = 0; i < mColorSwatches.size(); ++i) {
+        float x = startX + (i % 3) * 35.f;
+        float y = startY + 25.f + (i / 3) * 35.f;
+        
+        auto& swatch = const_cast<sf::RectangleShape&>(mColorSwatches[i]);
+        swatch.setPosition(x, y);
+
+        if (mThemeColors[i] == mCurrentNodeColor) {
+            swatch.setOutlineColor(sf::Color::Yellow);
+            swatch.setOutlineThickness(2.5f);
+        } else {
+            swatch.setOutlineColor(sf::Color(100, 100, 100));
+            swatch.setOutlineThickness(1.5f);
+        }
+        window.draw(swatch);
+    }
+}
+
 // Adds a character to the input buffer while keeping the field length bounded.
 void HeapVisualizer::appendDigit(char digit) {
     if (mInputBuffer.size() < 60) {
@@ -989,7 +1053,7 @@ sf::Vector2f HeapVisualizer::nodePosition(std::size_t index) const {
     const int level = static_cast<int>(std::floor(std::log2(static_cast<float>(index + 1))));
     const std::size_t nodesInLevel = 1u << level;
 
-    float availableWidth = (1280.f - mLeftWidth - mRightWidth) - 40.f;
+    float availableWidth = (1280.f - mLeftWidth - mRightWidth) - 60.f;
     const float horizontalGap = availableWidth / static_cast<float>(nodesInLevel);
 
     const std::size_t firstIndexInLevel = (1u << level) - 1u;

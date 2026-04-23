@@ -63,6 +63,7 @@ private:
     sf::Vector2f nodePosition(std::size_t index) const;
     sf::Color nodeColor(std::size_t index) const;
 
+    //Panels
     CodePanel mCodePanel;
     const sf::Font& mFont;
     MaxHeap mHeap;
@@ -76,24 +77,26 @@ private:
     int mSelectedIndex = -1;
     bool mLeftExpanded = true;
     bool mRightExpanded = true;
-    float mLeftWidth = 300.f;
-    float mRightWidth = 300.f;
+    float mLeftWidth = 240.f;  
+    float mRightWidth = 260.f;
     const float SIDEBAR_MAX_WIDTH = 240.f;
     const float CODE_PANEL_MAX_WIDTH = 260.f;
     const float TAB_WIDTH = 35.f;
-    float mWorkspaceCenterX;
+    float mWorkspaceCenterX = 640.f;
 
     sf::RectangleShape mPanel;
     sf::RectangleShape mInputBox;
     sf::RectangleShape mControlPanelBg;
     sf::RectangleShape mCodeBox;
 
+    //Slider
     sf::RectangleShape mSliderTrack;
     sf::CircleShape mSliderKnob;
     bool mIsDraggingSlider = false;
     const float MIN_INTERVAL = 0.1f;
     const float MAX_INTERVAL = 2.0f;
 
+    //Texts
     sf::Text mTitleText;
     sf::Text mSubtitleText;
     sf::Text mInputLabel;
@@ -105,6 +108,7 @@ private:
     sf::Text mRootText;
     sf::Text mLegendText;
 
+    //Buttons
     ModernButton mInsertButton;
     ModernButton mDeleteButton;
     ModernButton mBuildButton;
@@ -120,13 +124,22 @@ private:
     ModernButton mLeftCollapseBtn;
     ModernButton mRightCollapseBtn;
 
+    //Background
     sf::Texture mBgTexture;
     sf::Sprite mBgSprite;
 
+    //Animation
     std::string mInputBuffer;
     std::string mStatusMessage;
     bool mInputFocused = false;
     bool mIsPlaying = true;
     float mActionTimer = 0.f;
     float mActionInterval = 0.6f;
+
+    //Customization
+    sf::Color mCurrentNodeColor;
+    std::vector<sf::Color> mThemeColors;
+    std::vector<sf::RectangleShape> mColorSwatches;
+    void drawColorPicker(sf::RenderWindow& window) const;
+    
 };
