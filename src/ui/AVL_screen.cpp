@@ -6,6 +6,7 @@
 #include <map>
 #include <functional>
 #include <fstream> 
+#include <sstream>
 
 const float fset = 40.f;//family offset #1
 const float fset2 = 40.f; //family offset #2
@@ -82,6 +83,9 @@ void AVLScreen::buildSteps(Operation op) {
         mTree.insert(op.value, &steps);       // insert with animation
     }
     mController.loadSteps(steps);
+    mStepMode = false;
+    mStepAnimatingNext = false;
+    mStepAnimatingPrev = false;
 }
 
 int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
@@ -128,6 +132,26 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
     mSliderHandle.setOrigin(10.f, 10.f);
     mSliderHandle.setFillColor(UITheme::Color::SliderHandle); 
 
+    // --- Initialize Color Swatches ---
+    mCurrentNodeColor = UITheme::Color::GlobalNodeFill;
+    mThemeColors = {
+        UITheme::Color::GlobalNodeFill,
+        UITheme::Color::AVLNodeCustom1,
+        UITheme::Color::AVLNodeCustom2,
+        UITheme::Color::AVLNodeCustom3,
+        UITheme::Color::AVLNodeCustom4,
+        UITheme::Color::AVLNodeCustom5
+    };
+
+    mColorSwatches.clear();
+    for (const auto& color : mThemeColors) {
+        sf::RectangleShape swatch(sf::Vector2f(30.f, 30.f));
+        swatch.setFillColor(color);
+        swatch.setOutlineThickness(2.f);
+        swatch.setOutlineColor(sf::Color(100, 100, 100));
+        mColorSwatches.push_back(swatch);
+    }
+
     sf::VertexArray dotGrid(sf::Points);
     for (int x = 0; x <= window.getSize().x; x += 30) {
         for (int y = 0; y <= window.getSize().y; y += 30) {
@@ -173,6 +197,15 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
             if (leftPressed && isClickingOnPanel) {
                 if (mReturnBtn->isClicked(mouseRaw, true)) return 0;
 
+                // --- Color Swatch Click Detection ---
+                if (mouseRaw.x > window.getSize().x - m_rightWidth) { 
+                    for (size_t i = 0; i < mColorSwatches.size(); ++i) {
+                        if (mColorSwatches[i].getGlobalBounds().contains(mouseRaw)) {
+                            mCurrentNodeColor = mThemeColors[i];
+                        }
+                    }
+                }
+
                 float leftBaseX = m_leftWidth - LEFT_PANEL_WIDTH;
                 sf::FloatRect inputBox(leftBaseX + 30.f, 30.f, 220.f, 42.f);
                 mInputActive = inputBox.contains(mouseRaw);
@@ -181,13 +214,42 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
                     mSliderDragging = true;
 
                 if (mInsertBtn->isClicked(mouseRaw, true) && !mInputString.empty()) {
-                    int val = std::stoi(mInputString);
-                    if (mHistoryIndex < (int)mHistory.size()) mHistory.erase(mHistory.begin() + mHistoryIndex, mHistory.end());
-                    Operation op{OpType::Insert, val};
-                    mHistory.push_back(op); mHistoryIndex++;
-                    buildSteps(op); mInputString.clear();
-                    m_selectedNodeValue = -1;
-                }
+                       if (mHistoryIndex < (int)mHistory.size()) {
+                            mHistory.erase(mHistory.begin() + mHistoryIndex, mHistory.end());
+                            }
+
+    // 2. Create a copy of the input and replace all commas with spaces
+                        std::string processedString = mInputString;
+                        std::replace(processedString.begin(), processedString.end(), ',', ' ');
+
+                        // 3. Use stringstream to extract tokens (it automatically skips consecutive spaces)
+                        std::stringstream ss(processedString);
+                        std::string token;
+
+                        // 4. Loop through every separated token in the string
+                        while (ss >> token) {
+                            try {
+                                int val = std::stoi(token);
+                                
+                                // Push each operation into history and build steps
+                                Operation op{OpType::Insert, val};
+                                mHistory.push_back(op); 
+                                mHistoryIndex++;
+                                buildSteps(op);
+                                
+                            } catch (const std::invalid_argument& e) {
+                                // Skips tokens that aren't numbers (e.g., if they typed "a")
+                                continue; 
+                            } catch (const std::out_of_range& e) {
+                                // Skips numbers that are too large for a standard integer
+                                continue; 
+                            }
+                        }
+
+                        // 5. Reset the UI states after the batch completes
+                        mInputString.clear();
+                        m_selectedNodeValue = -1;
+            }
 
                 if (mDeleteBtn->isClicked(mouseRaw, true) && !mInputString.empty()) {
                     int val = std::stoi(mInputString);
@@ -249,7 +311,12 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
                 }
 
                 if (mPrevBtn->isClicked(mouseRaw, true)) {
-                    if (mHistoryIndex > 0) {
+                    if (mController.currentIndex() > 0) {
+                        mController.prev();
+                        mStepMode = true;
+                        mStepAnimatingPrev = true;
+                        mStepAnimatingNext = false;
+                    } else if (mHistoryIndex > 0) {
                         mHistoryIndex--;
                         mTree.clear(); mController.clear();
                         for(int i = 0; i < mHistoryIndex - 1; ++i) {
@@ -262,14 +329,25 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
                             buildSteps(mHistory[mHistoryIndex - 1]); mController.skipToEnd();
                         }
                         m_selectedNodeValue = -1;
+                        mStepMode = true; 
+                        mStepAnimatingPrev = false;
+                        mStepAnimatingNext = false;
                     }
                 }
                 
                 if (mNextBtn->isClicked(mouseRaw, true)) {
-                    if (mHistoryIndex < (int)mHistory.size()) {
+                    if (mController.currentIndex() < mController.totalSteps() - 1) {
+                        mController.next();
+                        mStepMode = true;
+                        mStepAnimatingNext = true;
+                        mStepAnimatingPrev = false;
+                    } else if (mHistoryIndex < (int)mHistory.size()) {
                         Operation op = mHistory[mHistoryIndex]; mHistoryIndex++;
                         buildSteps(op);
                         m_selectedNodeValue = -1;
+                        mStepMode = true;
+                        mStepAnimatingNext = true;
+                        mStepAnimatingPrev = false;
                     }
                 }
 
@@ -329,8 +407,12 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
             if (mInputActive && event.type == sf::Event::TextEntered) {
                 if (event.text.unicode == 8 && !mInputString.empty())
                     mInputString.pop_back();
-                else if ((event.text.unicode >= '0' && event.text.unicode <= '9' || event.text.unicode == '-') && mInputString.size() < 4)
-                    mInputString += static_cast<char>(event.text.unicode);
+                else 
+                if (((event.text.unicode >= '0' && event.text.unicode <= '9' || event.text.unicode == '-') || 
+               (event.text.unicode == ' ' || event.text.unicode == ','))
+                && mInputString.size() < 10)
+                mInputString += static_cast<char>(event.text.unicode);
+               
             }
         }
         
@@ -384,9 +466,19 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
         mPrevBtn->update(mouseRaw); mNextBtn->update(mouseRaw); mSkipAnimationBtn->update(mouseRaw);
         mReturnBtn->update(mouseRaw);
 
-        mController.update(dt);
+        if (!mStepMode) {
+            mController.update(dt);
+        } else {
+            if (mStepAnimatingNext) {
+                mController.update(dt);
+                if (mController.t() >= 1.0f) mStepAnimatingNext = false;
+            } else if (mStepAnimatingPrev) {
+                mController.update(dt);
+                if (mController.t() <= 0.0f) mStepAnimatingPrev = false;
+            }
+        }
 
-        window.clear(UITheme::Color::AVLBackground); 
+        window.clear(UITheme::Color::AVLBackground);  
         window.draw(mBgSprite); 
         window.draw(dotGrid); 
 
@@ -495,6 +587,7 @@ void AVLScreen::drawLeftPanel(sf::RenderWindow& window, const sf::Font& font, fl
 
 void AVLScreen::drawRightPanel(sf::RenderWindow& window, const sf::Font& font, float rightBaseX) {
     float winW = window.getSize().x;
+    float TAB_WIDTH = 35.f;
     
     sf::RectangleShape rightMenu(sf::Vector2f(m_rightWidth, window.getSize().y));
     rightMenu.setFillColor(UITheme::Color::AVLPanelBg);
@@ -516,6 +609,30 @@ void AVLScreen::drawRightPanel(sf::RenderWindow& window, const sf::Font& font, f
 
     mCodePanel.highlight(mController.hasSteps() ? mController.currentStep()->codeLineIndex : -1);
     const_cast<CodePanel&>(mCodePanel).draw(window);
+
+    // --- Draw Color Customization UI ---
+    if (m_rightWidth > 50.f) { 
+        sf::Text colorLabel("Node Fill Color", font, 16);
+        colorLabel.setFillColor(sf::Color(200, 200, 210));
+        colorLabel.setPosition(rightBaseX + TAB_WIDTH + 15.f, 390.f + fset);
+        window.draw(colorLabel);
+
+        float swatchX = rightBaseX + TAB_WIDTH + 15.f;
+        float swatchY = 420.f + fset;
+
+        for (size_t i = 0; i < mColorSwatches.size(); ++i) {
+            mColorSwatches[i].setPosition(swatchX + (i * 42.f), swatchY);
+            
+            if (mThemeColors[i] == mCurrentNodeColor) {
+                mColorSwatches[i].setOutlineColor(UITheme::Color::AVLAccent);
+                mColorSwatches[i].setOutlineThickness(3.f);
+            } else {
+                mColorSwatches[i].setOutlineColor(sf::Color(100, 100, 100));
+                mColorSwatches[i].setOutlineThickness(1.5f);
+            }
+            window.draw(mColorSwatches[i]);
+        }
+    }
 }
 
 void AVLScreen::drawTree(sf::RenderWindow& window, const sf::Font& font, float shiftX) {
@@ -550,8 +667,11 @@ void AVLScreen::drawNode(sf::RenderWindow& window, const sf::Font& font,
 
     GraphicNode node(NODE_RADIUS, std::to_string(ns.value), font);
     node.setPosition(pos);
-    node.setFillColor(ns.fillColor);
+    
+    // Override the animation frame's fill color with user-selected color
+    node.setFillColor(mCurrentNodeColor);
     node.setOutlineColor(ns.outlineColor);
+    
     window.draw(node);
 }
 
