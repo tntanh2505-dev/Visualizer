@@ -100,44 +100,11 @@ int DijkstraScreen::run(sf::RenderWindow &window, sf::Font &font) {
 
         if (finishFlag) {
             finishFlag = false;
-            if (sourceNode != -1) {
-                if (isAlgoDone) {
-                    if (selectNode != -1)
-                        pathLimit = path.size();
-                } else {
-                    processingNode = -1;
-                    visitingNode = -1;
-                    visitingList.clear();
-                    while (algorithm.stage(nodes) != -1);
-                    for (size_t i = 0; i < nodes.size(); ++i)
-                        dist[i] = nodes[i].dist;
-                    isAlgoDone = true;
-                }
-            }
+            
         }
 
         if (isAutoMode && tickClock.getElapsedTime().asSeconds() > 0.8f) {
-            if (isAlgoDone) {
-                if (selectNode != -1 && pathLimit < path.size())
-                    pathLimit++;
-            } else if (sourceNode != -1) {
-                if (visitingList.empty()) {
-                    visitingNode = -1;
-                    processingNode = algorithm.stage(nodes);
-                    if (processingNode == -1) {
-                        isAlgoDone = true;
-                        currentLine = 17;
-                    } else {
-                        visitingList = algorithm.getAdjacent(processingNode);
-                        currentLine = 9;
-                    }
-                } else {
-                    visitingNode = visitingList.back();
-                    dist[visitingNode] = nodes[visitingNode].dist;
-                    visitingList.pop_back();
-                    currentLine = 14;
-                }
-            }
+            
             tickClock.restart();
         }
 
@@ -160,7 +127,6 @@ int DijkstraScreen::run(sf::RenderWindow &window, sf::Font &font) {
 }
 
 void DijkstraScreen::initialization() {
-    pathLimit = -1;
     path.clear();
     currentIndex = 1;
     m_edit.clear();
@@ -256,7 +222,6 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
                 visitingList.clear();
                 visitingNode = -1;
                 path.clear();
-                pathLimit = -1;
                 currentLine = 0;
                 algorithm.init(nodes, edges, isDirected);
             }
@@ -293,7 +258,6 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
                     for (size_t i = 0; i < nodes.size(); ++i)
                         nodes[i].isProcessed = false;
                     path.clear();
-                    pathLimit = -1;
                     currentLine = 0;
                 }
             }
@@ -510,14 +474,14 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
                         currentLine = 20;
                         selectNode = hoveredNode;
                         path = algorithm.getShortestPath(nodes, selectNode);
-                        pathLimit = 1;
+                        currentIndex = 1;
                     } else {
-                        if (pathLimit < path.size())
-                            pathLimit++;
+                        if (currentIndex < path.size())
+                            currentIndex++;
                         else {
                             selectNode = -1;
                             path.clear();
-                            pathLimit = -1;
+                            currentIndex = 0;
                         }
                     }
                 } else {
@@ -527,7 +491,6 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
                         isAlgoDone = true;
                         currentIndex = 0;
                         path.clear();
-                        pathLimit = 0;
                     }
                 }
             }
@@ -768,8 +731,8 @@ void DijkstraScreen::drawGraph(sf::RenderWindow &window, sf::Font &font) {
         }
     }
 
-    if (pathLimit != -1)
-        for (int i = 1; i < pathLimit; ++i) {
+    if (isAlgoDone && currentIndex != 0)
+        for (int i = 1; i < currentIndex; ++i) {
             sf::Vector2f A(nodes[path[i - 1]].x, nodes[path[i - 1]].y);
             sf::Vector2f B(nodes[path[i]].x, nodes[path[i]].y);
             drawEdge(A, B, true);
@@ -820,8 +783,8 @@ void DijkstraScreen::drawGraph(sf::RenderWindow &window, sf::Font &font) {
         }
     }
 
-    if (pathLimit != -1)
-        for (int i = 1; i < pathLimit; ++i) {
+    if (isAlgoDone && currentIndex != 0)
+        for (int i = 1; i < currentIndex; ++i) {
             if (path[i] == selectNode)
                 continue;
             sf::CircleShape shape(NODE_RADIUS);
