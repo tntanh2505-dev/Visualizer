@@ -12,18 +12,18 @@ namespace {
     constexpr float PANEL_HEIGHT = 720.f;
 
     // Button
-    constexpr float BUTTON_WIDTH = 92.f;
-    constexpr float BUTTON_HEIGHT = 46.f;
+    constexpr float BUTTON_WIDTH = 82.f;
+    constexpr float BUTTON_HEIGHT = 40.f;
     constexpr float BUTTON_X = 24.f;
     constexpr float BUTTON_GAP_Y = 14.f;
-    constexpr float BUTTON_GAP_X = 12.f;
     constexpr float BUTTON_START_Y = 108.f; 
+    constexpr float BUTTON_GAP_X = 10.f;
     constexpr float BUTTON_X2 = BUTTON_X + BUTTON_WIDTH + BUTTON_GAP_X;
 
     // Input
     constexpr float INPUT_X = 24.f;
     constexpr float INPUT_Y = 24.f;
-    constexpr float INPUT_WIDTH = 176.f;
+    constexpr float INPUT_WIDTH = 174.f;
     constexpr float INPUT_HEIGHT = 44.f;
 
     // Tree + Array
@@ -279,16 +279,14 @@ void HeapVisualizer::update(float deltaTime, const sf::RenderWindow& window) {
     mLeftWidth += (targetLeft - mLeftWidth) * 12.f * deltaTime;
     mRightWidth += (targetRight - mRightWidth) * 12.f * deltaTime;
 
-    float windowWidth = 1280.f; 
-    mWorkspaceCenterX = mLeftWidth + (windowWidth - mLeftWidth - mRightWidth) / 2.f;
+    float cpWidth = 204.f;
+    mCodePanel.setPosition({ 1280.f - cpWidth - 15.f, 24.f});
 
-    mLeftCollapseBtn.setPosition({ mLeftWidth - 15.f, 360.f }); 
-    mRightCollapseBtn.setPosition({ windowWidth - mRightWidth + 15.f, 360.f });
+    mLeftCollapseBtn.setPosition({ mLeftWidth - 15.f, 360.f});
+    mRightCollapseBtn.setPosition({ 1280.f - mRightWidth + 15.f, 360.f });
     mLeftCollapseBtn.setText(mLeftExpanded ? "<<" : ">>");
     mRightCollapseBtn.setText(mRightExpanded ? ">>" : "<<");
 
-    mCodePanel.setPosition({ 1280.f - mRightWidth + 20.f, 24.f });
-    
     mLeftCollapseBtn.update(mouse);
     mRightCollapseBtn.update(mouse);
 
@@ -347,28 +345,27 @@ void HeapVisualizer::render(sf::RenderWindow& window) const {
     window.draw(mBgSprite);
 
     sf::RectangleShape sidebarBg({mLeftWidth, 720.f});
-    sidebarBg.setFillColor(sf::Color(25, 25, 30));
+    sidebarBg.setFillColor(sf::Color(25, 25, 35));
     window.draw(sidebarBg);
 
     sf::RectangleShape codePanelBg({mRightWidth, 720.f});
     codePanelBg.setPosition(1280.f - mRightWidth, 0.f);
-    codePanelBg.setFillColor(sf::Color(25, 25, 30));
+    codePanelBg.setFillColor(sf::Color(25, 25, 35));
     window.draw(codePanelBg);
 
-    if (mLeftWidth > 200.f) {
+    if (mLeftWidth > 180.f) {
         drawInputArea(window);
         drawButtons(window);
         drawLegend(window);
         window.draw(mStatusText);
     }
 
-    if (mRightWidth > 200.f) {
+    if (mRightWidth > 180.f) {
         const_cast<CodePanel&>(mCodePanel).draw(window);
     }
 
     drawTree(window);
     drawArray(window);
-
     window.draw(mLeftCollapseBtn);
     window.draw(mRightCollapseBtn);
 }
@@ -990,11 +987,13 @@ std::vector<int> HeapVisualizer::parseSequence(bool& ok) const {
 // Converts an array index into a tree position by grouping nodes by heap level.
 sf::Vector2f HeapVisualizer::nodePosition(std::size_t index) const {
     const int level = static_cast<int>(std::floor(std::log2(static_cast<float>(index + 1))));
+    const std::size_t nodesInLevel = 1u << level;
+
+    float availableWidth = (1280.f - mLeftWidth - mRightWidth) - 40.f;
+    const float horizontalGap = availableWidth / static_cast<float>(nodesInLevel);
 
     const std::size_t firstIndexInLevel = (1u << level) - 1u;
     const std::size_t positionInLevel = index - firstIndexInLevel;
-    const std::size_t nodesInLevel = 1u << level;
-    const float horizontalGap = TREE_WIDTH / static_cast<float>(nodesInLevel);
 
     float levelWidth = horizontalGap * nodesInLevel;
     float xStartOfLevel = mWorkspaceCenterX - (levelWidth / 2.f);

@@ -78,9 +78,9 @@ private:
     bool mRightExpanded = true;
     float mLeftWidth = 300.f;
     float mRightWidth = 300.f;
-    const float SIDEBAR_MAX_WIDTH = 300.f;
-    const float CODE_PANEL_MAX_WIDTH = 300.f;
-    const float TAB_WIDTH = 40.f;
+    const float SIDEBAR_MAX_WIDTH = 240.f;
+    const float CODE_PANEL_MAX_WIDTH = 260.f;
+    const float TAB_WIDTH = 35.f;
     float mWorkspaceCenterX;
 
     sf::RectangleShape mPanel;
