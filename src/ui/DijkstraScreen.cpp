@@ -305,6 +305,11 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
                     }
 
                     inFile.close();
+
+                    m_edit.clear();
+                    m_edit.push_back({{}, {}});
+                    m_edit.push_back({nodes, edges});
+                    currentIndex = 2;
             }
             else if (button[6]->isClicked(worldPos, true)) { // Nút RANDOM
                 initialization();
@@ -340,12 +345,6 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
             else if (button[7]->isClicked(worldPos, true)) { // Nút RETURN
                 returnFlag = true;
             }
-            else if (button[8]->isClicked(worldPos, true)) { // Nút PREV
-
-            }
-            else if (button[9]->isClicked(worldPos, true)) { // Nút NEXT
-
-            }
             return;
         }
 
@@ -371,15 +370,33 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
 
         bool mouseInSeekBar = (mPos.x >= barCenter - barWidth / 2.f && mPos.x <= barCenter + barWidth / 2.f &&
                                mPos.y >= bottomY - 10.f && mPos.y <= bottomY + 10.f);
-        if (mouseInSeekBar) isDragging = true;
+        isDragging = mouseInSeekBar;
+
+        if (button[8]->isClicked(worldPos, true)) { // Nút PREV
+            if (currentIndex > 1)
+                currentIndex--;
+        }
+        if (button[9]->isClicked(worldPos, true)) { // Nút NEXT
+            if (currentIndex != 0) {
+                if (isEditMode) {
+                    if (currentIndex < m_edit.size())
+                        currentIndex++;
+                } else if (isAlgoDone) {
+                    if (currentIndex < path.size())
+                        currentIndex++;
+                } else {
+                    if (currentIndex < m_run.size())
+                        currentIndex++;
+                }
+            }
+        }
+        
     }
 
+    if (selectNode >= nodes.size())
+        selectNode = -1;
     if (event.type == sf::Event::MouseMoved && isDragging)
         fixedSeekBar(worldPos.x, barCenter - barWidth / 2.f, barWidth);
-
-    if (mPos.x < leftWidth) return;
-    if (mPos.x > winW - rightWidth) return;
-    if (mPos.y > winH - 120.f) return;
 
     // --- 2. XÁC ĐỊNH NODE DƯỚI CON TRỎ CHUỘT ---
     int hoveredNode = -1;
@@ -431,7 +448,7 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
             } else {
                 // CHẾ ĐỘ THÊM / NỐI
                 if (hoveredNode == -1) {
-                    if (isPosValid(worldPos, winW)) {
+                    if (isPosValid(worldPos, winW, winH)) {
                         nodes.emplace_back(Node(std::to_string(nodes.size()), worldPos.x, worldPos.y));
                         selectNode = -1;
                         dist.push_back(INF);
@@ -564,6 +581,8 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
         if (nodes[draggingNode].x < leftWidth + NODE_RADIUS) {
             nodes[draggingNode].x = leftWidth + NODE_RADIUS;
         }
+
+        m_edit[currentIndex - 1].m_nodes = nodes;
     }
 }
 
@@ -575,9 +594,10 @@ bool DijkstraScreen::isSegmentHovering(sf::Vector2f pos, sf::Vector2f A, sf::Vec
     return std::hypot(pos.x - projection.x, pos.y - projection.y) < 8.f;
 }
 
-bool DijkstraScreen::isPosValid(sf::Vector2f pos, float winW, int ignoreNode) {
+bool DijkstraScreen::isPosValid(sf::Vector2f pos, float winW, float winH, int ignoreNode) {
     if (pos.x < leftWidth + NODE_RADIUS) return false;
     if (pos.x > winW - rightWidth - NODE_RADIUS) return false;
+    if (pos.y > winH - 120.f - NODE_RADIUS) return false;
     for (int i = 0; i < (int)nodes.size(); ++i) {
         if (i == ignoreNode) continue;
         float d = std::hypot(nodes[i].x - pos.x, nodes[i].y - pos.y);

@@ -71,7 +71,7 @@ private:
     void initialization();
     void handleInput(sf::RenderWindow &window, sf::Event &event, sf::Vector2i mPos);
     bool isSegmentHovering(sf::Vector2f pos, sf::Vector2f A, sf::Vector2f B);
-    bool isPosValid(sf::Vector2f pos, float winW, int ignoreNode = -1);
+    bool isPosValid(sf::Vector2f pos, float winW, float winH, int ignoreNode = -1);
     void fixedSeekBar(float mouseX, float startX, float barWidth);
     void updateAnimation(float dt);
     sf::Color getNodeColor(sf::RenderWindow &window, int index);
