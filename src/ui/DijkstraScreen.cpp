@@ -49,6 +49,9 @@ int DijkstraScreen::run(sf::RenderWindow &window, sf::Font &font) {
         button[i] = std::make_unique<ModernButton>("", font, sf::Vector2f(160.f, 40.f), 5.f);
         button[i]->setPosition(100.f, 50.f + (i * 50.f));
     }
+    button[8] = std::make_unique<ModernButton>("<< PREV", font, sf::Vector2f(100.f, 40.f), 5.f);
+    button[9] = std::make_unique<ModernButton>("NEXT >>", font, sf::Vector2f(100.f, 40.f), 5.f);
+
 
     sf::Clock deltaClock;
     while (window.isOpen()) {
@@ -202,7 +205,7 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
         return;
     }
 
-    for (int i = 0; i < 8; ++i)
+    for (int i = 0; i < 10; ++i)
         button[i]->update(worldPos);
 
     // --- 1. XỬ LÝ UI PANEL (Ưu tiên các thao tác trên bảng điều khiển) ---
@@ -335,6 +338,12 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
             }
             else if (button[7]->isClicked(worldPos, true)) { // Nút RETURN
                 returnFlag = true;
+            }
+            else if (button[8]->isClicked(worldPos, true)) {
+
+            }
+            else if (button[9]->isClicked(worldPos, true)) {
+
             }
             return;
         }
@@ -1026,4 +1035,9 @@ path from Source to all nodes.
         stepInfo.setFillColor(sf::Color(150, 150, 150));
         window.draw(stepInfo);
     }
+
+    button[8]->setPosition(centerX - (barWidth / 2.f) - 80.f, bottomY);
+    window.draw(*button[8]);
+    button[9]->setPosition(centerX + (barWidth / 2.f) + 80.f, bottomY);
+    window.draw(*button[9]);
 }
