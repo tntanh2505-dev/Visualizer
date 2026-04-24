@@ -297,11 +297,9 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
                 if (mPos.y >= 555.f - 20.f && mPos.y <= 555.f + 20.f && 
                     mPos.x >= 25.f - 10.f && mPos.x <= 25.f + (leftWidth - 85.f) + 10.f) {
                     mIsDraggingSizeSlider = true;
-                    
-                    // Cập nhật giá trị ngay khi vừa nhấn xuống
                     float relativeX = std::max(0.f, std::min((float)mPos.x - 25.f, leftWidth - 85.f));
                     float t = relativeX / (leftWidth - 85.f);
-                    mNodeRadius = 15.f + t * 20.f; // Range: 15 -> 35
+                    mNodeRadius = 15.f + t * 20.f;
                     return;
                 }
             }
@@ -683,12 +681,8 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
         if (mIsDraggingSizeSlider) {
             float sliderX = 25.f;
             float sliderW = leftWidth - 85.f;
-            
-            // Tính toán dựa trên tọa độ X của chuột so với điểm bắt đầu sliderX
             float relativeX = std::max(0.f, std::min((float)mPos.x - sliderX, sliderW));
             float t = relativeX / sliderW;
-            
-            // Cập nhật bán kính (Min: 15, Max: 35)
             mNodeRadius = 15.f + t * 20.f;
         }
     }
@@ -1053,7 +1047,7 @@ void DijkstraScreen::drawGraph(sf::RenderWindow &window, sf::Font &font) {
                 continue;
             sf::CircleShape shape(mNodeRadius);
             shape.setOrigin(mNodeRadius, mNodeRadius);
-            shape.setFillColor(mCurrentNodeColor);
+            shape.setFillColor(sf::Color::Transparent);
             shape.setPosition(nodes[path[i]].x, nodes[path[i]].y); 
             shape.setOutlineThickness(-3.f);
             shape.setOutlineColor(sf::Color::Yellow);
@@ -1097,7 +1091,6 @@ void DijkstraScreen::drawUI(sf::RenderWindow &window, sf::Font &font, sf::Vector
         for (size_t i = 0; i < 8; ++i)
             window.draw(*button[i]);
 
-// --- GIỮ NGUYÊN CÔNG THỨC SPEED CỦA BẠN ---
         float sliderY = 500.f;
         float sliderX = 25.f;
         float sliderW = leftWidth - 85.f;
@@ -1119,8 +1112,6 @@ void DijkstraScreen::drawUI(sf::RenderWindow &window, sf::Font &font, sf::Vector
         thumb.setFillColor(sf::Color::White);
         window.draw(thumb);
 
-        // --- CHỈNH LẠI NODE SIZE SLIDER (Dựa trên ý tưởng và biến của bạn) ---
-        // Đặt thấp xuống một chút (cách Speed Slider 55px)
         float sizeY = 555.f; 
         
         sf::Text sizeLabel("Node Size: " + std::to_string((int)mNodeRadius), font, 14);
@@ -1128,23 +1119,18 @@ void DijkstraScreen::drawUI(sf::RenderWindow &window, sf::Font &font, sf::Vector
         sizeLabel.setFillColor(sf::Color::Yellow);
         window.draw(sizeLabel);
 
-        // Sử dụng đối tượng track của bạn, cập nhật vị trí mới
-        mSizeSliderTrack.setSize(sf::Vector2f(sliderW, 4.f)); // Đồng bộ độ rộng với Speed
+        mSizeSliderTrack.setSize(sf::Vector2f(sliderW, 4.f));
         mSizeSliderTrack.setPosition(sliderX, sizeY);
         mSizeSliderTrack.setFillColor(sf::Color(100, 100, 100));
         window.draw(mSizeSliderTrack);
 
-        // SỬA CÔNG THỨC TẠI ĐÂY:
-        // Giả sử mNodeRadius chạy từ 15.f đến 35.f (khoảng cách là 20.f)
         float t = (mNodeRadius - 15.f) / 20.f; 
         if (t < 0.f) t = 0.f; if (t > 1.f) t = 1.f;
 
-        // Vị trí Knob phải cộng thêm sliderX để không bị nhảy về góc trái màn hình
-        mSizeSliderKnob.setOrigin(8.f, 8.f); // Đảm bảo tâm ở giữa
+        mSizeSliderKnob.setOrigin(8.f, 8.f);
         mSizeSliderKnob.setPosition(sliderX + (t * sliderW), sizeY + 2.f);
         window.draw(mSizeSliderKnob);
 
-        // --- GIỮ NGUYÊN VỊ TRÍ INPUT BOX (600.f) ---
         float inputY = 600.f;
         float inputX = 25.f;
         float inputW = leftWidth - 50.f;
@@ -1167,8 +1153,7 @@ void DijkstraScreen::drawUI(sf::RenderWindow &window, sf::Font &font, sf::Vector
         hint.setFillColor(sf::Color(150, 150, 150));
         window.draw(hint);
 
-        // --- CHỈNH THẤP COLOR PICKER XUỐNG ---
-        float colorLabelY = 710.f; // Đẩy thấp xuống hẳn dưới phần Input
+        float colorLabelY = 710.f;
         sf::Text colorLabel("Node Fill Color", font, 14);
         colorLabel.setPosition(20.f, colorLabelY);
         colorLabel.setFillColor(sf::Color::Yellow);
