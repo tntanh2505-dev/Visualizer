@@ -179,11 +179,10 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
 
     if (event.type == sf::Event::TextEntered) {
         if ((editingNode != -1 || editingEdge != -1)) {
-            if (event.text.unicode == 13) { // Enter để hoàn tất
+            if (event.text.unicode == 13) { // Enter
                 if (editingNode != -1) {
                     nodes[editingNode].label = inputBuffer;
                 } else {
-                    // Chuyển buffer thành số, mặc định là 1 nếu rỗng hoặc lỗi
                     try {
                         edges[editingEdge].weight = inputBuffer.empty() ? 1 : std::stoi(inputBuffer);
                     } catch (...) { edges[editingEdge].weight = 1; }
@@ -217,7 +216,7 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
         }
     }
 
-    // Khi thả chuột trái -> Ngừng trạng thái di chuyển node
+    // Stop dragging
     if (event.type == sf::Event::MouseButtonReleased && event.mouseButton.button == sf::Mouse::Left) {
         isDraggingSpeed = false;
         isDragging = false;
@@ -234,7 +233,7 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
     for (int i = 0; i < 10; ++i)
         button[i]->update(worldPos);
 
-    // --- 1. XỬ LÝ UI PANEL (Ưu tiên các thao tác trên bảng điều khiển) ---
+    //  --- UI PANEL ---
     if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
         bool mouseInSeekBar = (mPos.x >= barCenter - barWidth / 2.f && mPos.x <= barCenter + barWidth / 2.f &&
                                mPos.y >= bottomY - 10.f && mPos.y <= bottomY + 10.f);
@@ -244,7 +243,7 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
             isInputActive = false;
         }
         
-        // --- LEFT TAB ---
+        //  --- LEFT TAB ---
         bool mouseInLeftIcon = (mPos.x >= leftWidth - TAB_WIDTH && mPos.x <= leftWidth &&
                                 mPos.y >= centerY - TAB_HEIGHT / 2.f && mPos.y <= centerY + TAB_HEIGHT / 2.f);
         if (mouseInLeftIcon) {
@@ -266,7 +265,7 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
                 isInputActive = true;
             else
                 isInputActive = false;
-            if (button[0]->isClicked(worldPos, true)) { // Nút MODE
+            if (button[0]->isClicked(worldPos, true)) { // MODE
                 selectNode = -1;
                 isEditMode = !isEditMode;
                 if (isEditMode) {
@@ -287,7 +286,7 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
                 currentLine = 0;
                 algorithm.init(nodes, edges, isDirected);
             }
-            else if (button[1]->isClicked(worldPos, true)) { // Nút INSERT/DELETE // AUTO
+            else if (button[1]->isClicked(worldPos, true)) { // INSERT/DELETE // AUTO
                 selectNode = -1;
                 if (isEditMode) {
                     isDeleting = !isDeleting;
@@ -295,7 +294,7 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
                     isAutoMode = !isAutoMode;
                 }
             }
-            else if (button[2]->isClicked(worldPos, true)) { // Nút DIRECTED/UNDIRECTED // FINISH
+            else if (button[2]->isClicked(worldPos, true)) { // DIRECTED/UNDIRECTED // FINISH
                 if (isEditMode) {
                     selectNode = -1;
                     isDirected = !isDirected;
@@ -303,7 +302,7 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
                     finishFlag = true;
                 }
             }
-            else if (button[3]->isClicked(worldPos, true)) { // Nút CLEAR // RESET
+            else if (button[3]->isClicked(worldPos, true)) { // CLEAR // RESET
                 selectNode = -1;
                 if (isEditMode) {
                     nodes.clear();
@@ -326,7 +325,7 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
                     currentLine = 0;
                 }
             }
-            else if (button[4]->isClicked(worldPos, true)) { // Nút SAVE
+            else if (button[4]->isClicked(worldPos, true)) { // SAVE
                 std::ofstream outFile("data/graph.txt");
                 if (!outFile) return;
 
@@ -340,7 +339,7 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
 
                 outFile.close();
             }
-            else if (button[5]->isClicked(worldPos, true)) { // Nút LOAD
+            else if (button[5]->isClicked(worldPos, true)) { // LOAD
                 std::ifstream inFile("data/graph.txt");
                     if (!inFile) return;
                     initialization();
@@ -370,7 +369,7 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
                     m_edit.push_back({nodes, edges});
                     currentIndex = 2;
             }
-            else if (button[6]->isClicked(worldPos, true)) { // Nút RANDOM
+            else if (button[6]->isClicked(worldPos, true)) { // RANDOM
                 initialization();
 
                 float radius = winW / 8.f;
@@ -401,13 +400,13 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
                 m_edit.push_back({nodes, edges});
                 currentIndex = 2;
             }
-            else if (button[7]->isClicked(worldPos, true)) { // Nút RETURN
+            else if (button[7]->isClicked(worldPos, true)) { // RETURN
                 returnFlag = true;
             }
             return;
         }
 
-        // --- RIGHT TAB ---
+        //  --- RIGHT TAB ---
         bool mouseInRightIcon = (mPos.x >= winW - rightWidth && mPos.x <= winW - rightWidth + TAB_WIDTH &&
                                  mPos.y >= centerY - TAB_HEIGHT / 2.f && mPos.y <= centerY + TAB_HEIGHT / 2.f);
         if (mouseInRightIcon) {
@@ -427,11 +426,11 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
             }
         }
 
-        if (button[8]->isClicked(worldPos, true)) { // Nút PREV
+        if (button[8]->isClicked(worldPos, true)) { // PREV
             if (currentIndex > 1)
                 currentIndex--;
         }
-        if (button[9]->isClicked(worldPos, true)) { // Nút NEXT
+        if (button[9]->isClicked(worldPos, true)) { // NEXT
             if (currentIndex != 0) {
                 if (isEditMode) {
                     if (currentIndex < m_edit.size())
@@ -451,7 +450,6 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
     if (selectNode >= nodes.size())
         selectNode = -1;
 
-    // --- 2. XÁC ĐỊNH NODE DƯỚI CON TRỎ CHUỘT ---
     int hoveredNode = -1;
     for (int i = 0; i < (int)nodes.size(); ++i) {
         if (std::hypot(nodes[i].x - worldPos.x, nodes[i].y - worldPos.y) < NODE_RADIUS) {
@@ -460,19 +458,16 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
         }
     }
 
-    // --- 3. XỬ LÝ CHUỘT TRÁI (TẠO, NỐI, DI CHUYỂN, XÓA) ---
+    //  --- LEFT-CLICK EVENT ---
     if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
         if (isEditMode) {
             fill(dist.begin(), dist.end(), INF);
             if (isDeleting) {
-                // CHẾ ĐỘ XÓA
                 if (hoveredNode != -1) {
                     int id = hoveredNode;
-                    // Xóa các cạnh liên quan
                     edges.erase(std::remove_if(edges.begin(), edges.end(), [&](const Edge& e) {
                         return e.from == id || e.to == id;
                     }), edges.end());
-                    // Cập nhật lại index cho các cạnh còn lại
                     for (auto& e : edges) {
                         if (e.from > id) e.from--;
                         if (e.to > id) e.to--;
@@ -499,7 +494,6 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
                     }
                 }
             } else {
-                // CHẾ ĐỘ THÊM / NỐI
                 if (hoveredNode == -1) {
                     if (isPosValid(worldPos, winW, winH)) {
                         nodes.emplace_back(Node(std::to_string(nodes.size()), worldPos.x, worldPos.y));
@@ -526,7 +520,6 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
                 }
             }
         } else {
-            // CHẾ ĐỘ RUN
             if (sourceNode == -1) {
                 if (hoveredNode == -1)
                     return;
@@ -585,7 +578,7 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
         }
     }
 
-    // --- 4. XỬ LÝ CHUỘT PHẢI (BẮT ĐẦU SỬA NỘI DUNG) ---
+    //  --- RIGHT-CLICK EVENT ---
     if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Right) {
         if (!isEditMode)
             return;
@@ -601,7 +594,7 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
                 
                 if (isSegmentHovering(worldPos, A, B)) {
                     editingEdge = i;
-                    editingNode = -1; // Tắt sửa node nếu đang sửa cạnh
+                    editingNode = -1;
                     inputBuffer = std::to_string(edges[i].weight);
                     break;
                 }
@@ -609,7 +602,7 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
         }
     }
 
-    // --- 5. LOGIC DI CHUYỂN NODE & VẬT LÝ ĐẨY NHAU ---
+    //  --- MOVING EVENT ---
     if (event.type == sf::Event::MouseMoved) {
         if (draggingNode != -1) {
             selectNode = -1;
@@ -645,8 +638,6 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
             float slideW = leftWidth - 85.f;
             float relativeX = std::max(0.f, std::min((float)mPos.x - slideX, slideW));
             float ratio = relativeX / slideW;
-            // ratio = 0 (bên trái) -> delayTime = 2.0s (Chậm)
-            // ratio = 1 (bên phải) -> delayTime = 0.1s (Nhanh)
             delayTime = 2.0f - ratio * (2.0f - 0.1f);
         }
     }
@@ -679,7 +670,6 @@ void DijkstraScreen::processInputBuffer() {
     std::vector<std::string> tokens;
     std::string temp;
 
-    // Tách các từ/số cách nhau bởi dấu cách
     while (ss >> temp) tokens.push_back(temp);
 
     if (tokens.empty()) return;
@@ -692,9 +682,8 @@ void DijkstraScreen::processInputBuffer() {
     };
 
     if (isEditMode) {
-        // --- CHẾ ĐỘ EDIT ---
         bool change = false;
-        // 1. Nhập 1 số: Thêm hoặc chỉnh sửa nhãn của một Đỉnh (Node)
+
         if (tokens.size() == 1) {
             if (findIndex(tokens[0]) != -1)
                 return;
@@ -705,8 +694,7 @@ void DijkstraScreen::processInputBuffer() {
             nodes.emplace_back(Node(tokens[0], x, y));
             dist.push_back(INF);
         }
-        
-        // 2. Nhập 2 số: Thêm cạnh giữa 2 đỉnh với trọng số mặc định là 1 (Cú pháp: u v)
+
         else if (tokens.size() == 2) {
             int u = findIndex(tokens[0]);
             int v = findIndex(tokens[1]);
@@ -715,8 +703,7 @@ void DijkstraScreen::processInputBuffer() {
                 edges.emplace_back(Edge(u, v, 1));
             }
         }
-        
-        // 3. Nhập 3 số: Thêm cạnh có trọng số tùy chỉnh (Cú pháp: u v w)
+
         else if (tokens.size() == 3) {
             int u = findIndex(tokens[0]);
             int v = findIndex(tokens[1]);
@@ -732,7 +719,6 @@ void DijkstraScreen::processInputBuffer() {
             }
         }
 
-        // Sau khi thay đổi đồ thị, cập nhật lịch sử (m_edit) cho thanh Seekbar
         if (change) {
             while (m_edit.size() > (size_t)currentIndex) m_edit.pop_back();
             m_edit.push_back({nodes, edges});
@@ -740,7 +726,6 @@ void DijkstraScreen::processInputBuffer() {
         }
     } 
     else {
-        // --- CHẾ ĐỘ RUN ---
         auto runAlgorithm = [&](int s) {
             sourceNode = s;
             selectNode = -1;
@@ -789,7 +774,6 @@ void DijkstraScreen::processInputBuffer() {
             path = algorithm.getShortestPath(nodes, selectNode);
             currentIndex = path.size();
         }
-        // 1 số: Chọn đỉnh nguồn (Source) và chạy lại thuật toán
         else if (sourceNode == -1) {
             int s = findIndex(tokens[0]);
 
@@ -822,7 +806,6 @@ void DijkstraScreen::fixedSeekBar(float mouseX, float startX, float barWidth) {
     float clampedX = std::max(startX, std::min(mouseX, startX + barWidth));
     float ratio = (clampedX - startX) / barWidth;
 
-    // 3. Xác định tổng số bước dựa trên Mode hiện tại
     size_t totalSteps = 0;
     if (isEditMode) totalSteps = m_edit.size();
     else if (!isAlgoDone) totalSteps = m_run.size();
@@ -863,7 +846,6 @@ sf::Color DijkstraScreen::getNodeColor(sf::RenderWindow &window, int index) {
 void DijkstraScreen::drawGraph(sf::RenderWindow &window, sf::Font &font) {
     sf::Vector2f worldPos = window.mapPixelToCoords(sf::Mouse::getPosition(window));
 
-    // Xác định node đang hover (để vẽ hiệu ứng)
     int hoveredNode = -1;
     for (size_t i = 0; i < nodes.size(); ++i) {
         if (std::hypot(nodes[i].x - worldPos.x, nodes[i].y - worldPos.y) < NODE_RADIUS) {
@@ -872,7 +854,7 @@ void DijkstraScreen::drawGraph(sf::RenderWindow &window, sf::Font &font) {
         }
     }
 
-    //  Draw edges
+    //  --- DRAW EDGES ---
     auto drawEdge = [&](sf::Vector2f A, sf::Vector2f B, bool condition) -> void {
         sf::Vector2f direction = B - A;
         float length = std::sqrt(direction.x * direction.x + direction.y * direction.y);
@@ -890,28 +872,19 @@ void DijkstraScreen::drawGraph(sf::RenderWindow &window, sf::Font &font) {
         if (condition)
             line.setFillColor(sf::Color::Yellow);
         window.draw(line);
-        
-        // --- VẼ HÌNH TAM GIÁC (MŨI TÊN) Ở CUỐI ĐƯỜNG NỐI ---
-        // 1. Tính toán vector hướng và độ dài
 
         if (isDirected && length > 0) {
-            sf::Vector2f unitDir = direction / length; // Vector đơn vị
-            // 2. Tạo hình tam giác
+            sf::Vector2f unitDir = direction / length;
             float arrowSize = 12.f; 
             sf::ConvexShape arrow;
             arrow.setPointCount(3);
-            // Đỉnh nhọn hướng về phía trước (trục X)
-            arrow.setPoint(0, sf::Vector2f(0, 0));                          // Đỉnh nhọn
-            arrow.setPoint(1, sf::Vector2f(-arrowSize, -arrowSize / 1.8f)); // Cánh trên
-            arrow.setPoint(2, sf::Vector2f(-arrowSize, arrowSize / 1.8f));  // Cánh dưới
-            // 3. Vị trí: Tiếp xúc ngay mép Node đích
-            // Vị trí = Tâm Node B - (hướng * bán kính Node)
+            arrow.setPoint(0, sf::Vector2f(0, 0));
+            arrow.setPoint(1, sf::Vector2f(-arrowSize, -arrowSize / 1.8f));
+            arrow.setPoint(2, sf::Vector2f(-arrowSize, arrowSize / 1.8f));
             sf::Vector2f arrowPos = B - unitDir * NODE_RADIUS;
             arrow.setPosition(arrowPos);
-            // 4. Xoay tam giác theo hướng của cạnh
             arrow.setRotation(angle);
 
-            // 5. Màu sắc (Đổi màu nếu cạnh đang được hover hoặc trong đường đi)
             if (isEditMode && isSegmentHovering(worldPos, A, B) && hoveredNode == -1)
                 arrow.setFillColor(sf::Color::White);
             else if (condition)
@@ -927,12 +900,8 @@ void DijkstraScreen::drawGraph(sf::RenderWindow &window, sf::Font &font) {
         sf::Vector2f midPoint = (A + B) / 2.f;
         sf::Vector2f direction = B - A;
         float length = std::sqrt(direction.x * direction.x + direction.y * direction.y);
-        if (length < 1.f) return midPoint; // Tránh chia cho 0
-
-        // Tính vector pháp tuyến (vuông góc)
+        if (length < 1.f) return midPoint;
         sf::Vector2f normal(-direction.y / length, direction.x / length);
-        
-        // Đảm bảo vector pháp tuyến luôn hướng lên trên màn hình (y âm) để nhất quán
         if (normal.y > 0) normal = -normal;
 
         return midPoint + normal * offset;
@@ -948,7 +917,6 @@ void DijkstraScreen::drawGraph(sf::RenderWindow &window, sf::Font &font) {
 
         drawEdge(A, B, condition);
         if (editingEdge == i) {
-            // Vẽ nền cho ô nhập trọng số
             sf::RectangleShape box(sf::Vector2f(40, 20));
             box.setOrigin(20, 10);
             box.setPosition(labelPos);
@@ -965,13 +933,11 @@ void DijkstraScreen::drawGraph(sf::RenderWindow &window, sf::Font &font) {
             itxt.setPosition(labelPos);
             window.draw(itxt);
         } else {
-            // Tạo văn bản trọng số
             sf::Text wText(std::to_string(weight), font, 16);
-            wText.setFillColor(sf::Color::White); // MÀU TRẮNG PURE
-            wText.setOutlineColor(sf::Color(20, 20, 25, 150)); // Thêm viền mờ màu nền để tăng tương phản
-            wText.setOutlineThickness(1.5f); // Viền giúp chữ nổi trên các cạnh khác nếu bị đè
+            wText.setFillColor(sf::Color::White);
+            wText.setOutlineColor(sf::Color(20, 20, 25, 150));
+            wText.setOutlineThickness(1.5f);
 
-            // Căn giữa văn bản tại vị trí đã tính
             sf::FloatRect b = wText.getLocalBounds();
             wText.setOrigin(b.left + b.width / 2.f, b.top + b.height / 2.f);
             wText.setPosition(labelPos);
@@ -987,7 +953,7 @@ void DijkstraScreen::drawGraph(sf::RenderWindow &window, sf::Font &font) {
             drawEdge(A, B, true);
         }
 
-    //  Draw nodes
+    //  --- DRAW NODES ---
     for (size_t i = 0; i < nodes.size(); ++i) {
         sf::CircleShape shape(NODE_RADIUS);
         shape.setOrigin(NODE_RADIUS, NODE_RADIUS);
@@ -1005,9 +971,7 @@ void DijkstraScreen::drawGraph(sf::RenderWindow &window, sf::Font &font) {
 
         window.draw(shape);
 
-        // Hiển thị nhãn hoặc ô nhập liệu
         if (i == editingNode) {
-            // Vẽ khung nền cho ô nhập liệu
             sf::RectangleShape inputBg(sf::Vector2f(60, 25));
             inputBg.setOrigin(30, 12.5f);
             inputBg.setPosition(nodes[i].x, nodes[i].y);
@@ -1082,39 +1046,33 @@ void DijkstraScreen::drawUI(sf::RenderWindow &window, sf::Font &font, sf::Vector
         for (size_t i = 0; i < 8; ++i)
             window.draw(*button[i]);
 
-        float sliderY = 500.f; // Điều chỉnh Y cho phù hợp với danh sách nút của bạn
+        float sliderY = 500.f;
         float sliderX = 25.f;
         float sliderW = leftWidth - 85.f;
 
-        // Tính % tốc độ hiển thị cho người dùng (Chậm: 0%, Nhanh: 100%)
-        // Công thức: nghịch đảo của delayTime
         int speedPercent = static_cast<int>((2.0f - delayTime) / (2.0f - 0.1f) * 100.f);
         
         sf::Text speedText("Speed: " + std::to_string(speedPercent) + "%", font, 16);
         speedText.setPosition(sliderX, sliderY - 30.f);
         window.draw(speedText);
 
-        // Vẽ thanh nền
         sf::RectangleShape track(sf::Vector2f(sliderW, 4.f));
         track.setPosition(sliderX, sliderY);
         track.setFillColor(sf::Color(0, 122, 255));
         window.draw(track);
 
-        // Vẽ nút trượt (Thumb)
         sf::CircleShape thumb(8.f);
         thumb.setOrigin(8.f, 8.f);
-        // Vị trí: delay 2.0s nằm bên trái (0%), delay 0.1s nằm bên phải (100%)
         float ratio = (2.0f - delayTime) / (2.0f - 0.1f);
         thumb.setPosition(sliderX + ratio * sliderW, sliderY + 2.f);
         thumb.setFillColor(sf::Color::White);
         window.draw(thumb);
 
-        float inputY = 600.f; // Dưới slider một chút
+        float inputY = 600.f;
         float inputX = 25.f;
         float inputW = leftWidth - 50.f;
         float inputH = 40.f;
 
-        // Vẽ khung bảng nhập
         sf::RectangleShape inputRect(sf::Vector2f(inputW, inputH));
         inputRect.setPosition(inputX, inputY);
         inputRect.setFillColor(isInputActive ? sf::Color(50, 50, 50) : sf::Color(30, 30, 30));
@@ -1122,28 +1080,24 @@ void DijkstraScreen::drawUI(sf::RenderWindow &window, sf::Font &font, sf::Vector
         inputRect.setOutlineColor(isInputActive ? sf::Color::Cyan : sf::Color(100, 100, 100));
         window.draw(inputRect);
 
-        // Vẽ văn bản trong bảng nhập
         sf::Text inputText(isInputActive ? inputBuffer +  "_" : "Enter here...",font, 18);
         inputText.setPosition(inputX + 10.f, inputY + 8.f);
         inputText.setFillColor(isInputActive ? sf::Color::White : sf::Color(100, 100, 100));
         window.draw(inputText);
 
-        // Vẽ hướng dẫn nhỏ bên dưới
         sf::Text hint("Keyboard", font, 12);
         hint.setPosition(inputX, inputY + inputH + 5.f);
         hint.setFillColor(sf::Color(150, 150, 150));
         window.draw(hint);
     }
 
-    // ----- RIGHT PANEL -----
-    // 1. Vẽ nền Panel
+    //  ----- RIGHT PANEL -----
     sf::RectangleShape rightMenu(sf::Vector2f(rightWidth, winH));
-    rightMenu.setOrigin(rightWidth, 0); // Đặt gốc bên phải để giãn về bên trái
+    rightMenu.setOrigin(rightWidth, 0);
     rightMenu.setPosition(winW, 0);
     rightMenu.setFillColor(sf::Color(35, 35, 40));
     window.draw(rightMenu);
 
-    // 2. Nút Tab Collapse (Mũi tên lật ngược lại so với bên trái)
     sf::RectangleShape rightTab(sf::Vector2f(TAB_WIDTH, TAB_HEIGHT));
     rightTab.setFillColor(sf::Color(45, 45, 50));
     rightTab.setPosition(winW - rightWidth, centerY - TAB_HEIGHT / 2.f);
@@ -1158,17 +1112,14 @@ void DijkstraScreen::drawUI(sf::RenderWindow &window, sf::Font &font, sf::Vector
     rightIcon.setFillColor(sf::Color::Yellow);
     window.draw(rightIcon);
 
-    // 3. Nội dung bên trong khi mở rộng
     if (rightExpanded && rightWidth > 250.f) {
         float panelStart = winW - rightWidth + TAB_WIDTH;
         float tabAreaWidth = RIGHT_PANEL_WIDTH - TAB_WIDTH;
 
-        // Vẽ 3 Thanh Tab nhỏ ở trên cùng
         std::vector<std::string> labels = {"INFO", "DIST", "CODE"};
         float tabW = tabAreaWidth / 3.f;
 
         for (int i = 0; i < 3; ++i) {
-            // Khung tab
             TabState state = static_cast<TabState>(i);
             sf::RectangleShape tRect(sf::Vector2f(tabW - 4.f, 30.f));
             tRect.setPosition(panelStart + i * tabW, 10.f);
@@ -1177,7 +1128,6 @@ void DijkstraScreen::drawUI(sf::RenderWindow &window, sf::Font &font, sf::Vector
             tRect.setOutlineColor(sf::Color::Yellow);
             window.draw(tRect);
 
-            // Chữ tab
             sf::Text tText(labels[i], font, 14);
             sf::FloatRect tb = tText.getLocalBounds();
             tText.setOrigin(tb.left + tb.width/2.f, tb.top + tb.height / 2.f);
@@ -1186,9 +1136,9 @@ void DijkstraScreen::drawUI(sf::RenderWindow &window, sf::Font &font, sf::Vector
             window.draw(tText);
         }
 
-        // --- NỘI DUNG TỪNG TRANG ---
+        //  --- CONTENT ---
         float contentY = 60.f;
-        if (activeTab == TabState::Info) { // TRANG INFO
+        if (activeTab == TabState::Info) {
             sf::Text title("DIJKSTRA'S ALGORITHM", font, 16);
             title.setStyle(sf::Text::Bold);
             title.setFillColor(sf::Color::Yellow);
@@ -1237,8 +1187,6 @@ path from Source to all nodes.
             float circleRadius = 6.f;
             float itemSpacing = 22.f;
 
-            // Danh sách các trạng thái cần hiển thị
-
             std::vector<std::pair<sf::Color, std::string>> legends = {
                 {sf::Color::White,         "Hovering"},
                 {sf::Color::Magenta,       "Selecting"},
@@ -1251,88 +1199,75 @@ path from Source to all nodes.
             for (int i = 0; i < legends.size(); ++i) {
                 float yPos = legendStartY + (i * itemSpacing);
 
-                // Vẽ hình tròn màu
                 sf::CircleShape circle(circleRadius);
                 circle.setFillColor(legends[i].first);
                 circle.setOutlineThickness(1.f);
-                circle.setOutlineColor(sf::Color(255, 255, 255, 50)); // Viền mờ cho đẹp
+                circle.setOutlineColor(sf::Color(255, 255, 255, 50));
                 circle.setPosition(panelStart + 15.f, yPos + 3.f);
                 window.draw(circle);
 
-                // Vẽ nhãn văn bản
                 sf::Text label(legends[i].second, font, 12);
                 label.setPosition(panelStart + 15.f + circleRadius * 2 + 10.f, yPos);
                 label.setFillColor(sf::Color(180, 180, 180));
                 window.draw(label);
             }
         }
-        else if (activeTab == TabState::Dist) { // TRANG DIST
+        else if (activeTab == TabState::Dist) {
             sf::Text title("DIAGNOSTICS", font, 16);
             title.setStyle(sf::Text::Bold);
             title.setFillColor(sf::Color::Yellow);
             title.setPosition(panelStart + 10.f, contentY);
             window.draw(title);
 
-            // 2. Định nghĩa các cột (Anchor points)
             float colStatusX = panelStart + 15.f;
             float colNodeX   = panelStart + 75.f;
             float colDistX   = panelStart + 140.f;
             float headerY    = contentY + 35.f;
             float rowHeight  = 28.f;
 
-            // Vẽ Header của bảng
             sf::Text h1("STATUS", font, 12); h1.setPosition(colStatusX, headerY); h1.setFillColor(sf::Color(120, 120, 120));
             sf::Text h2("NODE", font, 12); h2.setPosition(colNodeX, headerY); h2.setFillColor(sf::Color(120, 120, 120));
             sf::Text h3("DISTANCE", font, 12); h3.setPosition(colDistX, headerY); h3.setFillColor(sf::Color(120, 120, 120));
             window.draw(h1); window.draw(h2); window.draw(h3);
 
-            // Đường kẻ phân cách Header
             sf::RectangleShape line(sf::Vector2f(tabAreaWidth - 25.f, 1.f));
             line.setPosition(panelStart + 10.f, headerY + 20.f);
             line.setFillColor(sf::Color(80, 80, 80));
             window.draw(line);
 
-            // 3. Vẽ dữ liệu các hàng
             float startTableY = headerY + 30.f;
 
             for (size_t i = 0; i < nodes.size(); ++i) {
                 float yPos = startTableY + (i * rowHeight);
-
-                // --- CỘT 1: STATUS (Hình tròn màu) ---
                 sf::CircleShape statusCircle(5.f);
                 statusCircle.setPosition(colStatusX + 8.f, yPos + 3.f);
                 
-                // Màu sắc dựa trên trạng thái của node (logic của bạn)
                 statusCircle.setFillColor(getNodeColor(window, i)); 
                 window.draw(statusCircle);
 
-                // --- CỘT 2: NODE (Tên/Nhãn) ---
                 sf::Text nodeTxt(nodes[i].label, font, 14);
                 nodeTxt.setPosition(colNodeX + 8.f, yPos);
                 nodeTxt.setFillColor(sf::Color::White);
                 window.draw(nodeTxt);
 
-                // --- CỘT 3: DISTANCE ---
                 if (!isEditMode) {
                     std::string dStr = (dist[i] == INF) ? "INF" : std::to_string(dist[i]);
                     sf::Text distTxt(dStr, font, 14);
                     distTxt.setPosition(colDistX + 8.f, yPos);
-                    
-                    // Tô màu cột Dist cho sinh động
+
                     if (dStr == "INF") distTxt.setFillColor(sf::Color(100, 100, 100));
                     else distTxt.setFillColor(getNodeColor(window, i));
 
                     window.draw(distTxt);
                 }
 
-                // Đường kẻ mờ giữa các hàng
                 sf::RectangleShape rowLine(sf::Vector2f(tabAreaWidth - 25.f, 0.5f));
                 rowLine.setPosition(panelStart + 10.f, yPos + rowHeight - 2.f);
                 rowLine.setFillColor(sf::Color(50, 50, 50));
                 window.draw(rowLine);
             }
         } 
-        else if (activeTab == TabState::Code) { // TRANG CODE
+        else if (activeTab == TabState::Code) {
             sf::Vector2f panelPos(winW - RIGHT_PANEL_WIDTH + TAB_WIDTH + 5.f, contentY + 10.f);
             sf::Vector2f panelSize(tabAreaWidth - 10.f, winH - contentY - 30.f);
             panel = CodePanel(font, panelPos, panelSize);
@@ -1343,21 +1278,19 @@ path from Source to all nodes.
         }
     }
 
-    // --- SEEK BAR
+    //  ----- SEEK BAR -----
     float availableAreaStart = LEFT_PANEL_WIDTH;
     float availableAreaEnd = winW - RIGHT_PANEL_WIDTH;
     float centerX = availableAreaStart + (availableAreaEnd - availableAreaStart) / 2.f;
-    float bottomY = winH - 60.f; // Cách đáy màn hình 60px
+    float bottomY = winH - 60.f;
 
-    // 2. Cấu hình kích thước thanh Seek Bar
-    float barWidth = (availableAreaEnd - availableAreaStart) * 0.7f; // Dài bằng 70% vùng trống
+    float barWidth = (availableAreaEnd - availableAreaStart) * 0.7f;
     float barHeight = 6.f;
 
-    // 3. Vẽ thanh nền (Background Bar) - Màu tối
     sf::RectangleShape barBg(sf::Vector2f(barWidth, barHeight));
     barBg.setOrigin(barWidth / 2.f, barHeight / 2.f);
     barBg.setPosition(centerX, bottomY);
-    barBg.setFillColor(sf::Color(45, 45, 55)); // Màu xám xanh đậm
+    barBg.setFillColor(sf::Color(45, 45, 55));
     window.draw(barBg);
 
     float progressFactor = 0.0f; 
@@ -1379,16 +1312,14 @@ path from Source to all nodes.
     barFill.setFillColor(sf::Color(0, 122, 255));
     window.draw(barFill);
 
-    // 5. Vẽ nút tròn điều khiển (Handle) - Màu trắng
-    sf::CircleShape handle(8.f); // Bán kính 8px
+    sf::CircleShape handle(8.f);
     handle.setOrigin(8.f, 8.f);
     handle.setPosition(centerX - barWidth / 2.f + barWidth * progressFactor, bottomY);
     handle.setFillColor(sf::Color::White);
     handle.setOutlineThickness(1.5f);
     handle.setOutlineColor(sf::Color(100, 100, 100));
     window.draw(handle);
-    
-    // 6. Vẽ text hiển thị số bước ở ngay dưới thanh bar
+
     sf::Text stepInfo("", font, 16);
     if (isEditMode)
         stepInfo.setString(std::to_string(currentIndex) + '/' + std::to_string(m_edit.size()));
