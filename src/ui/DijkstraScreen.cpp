@@ -236,6 +236,14 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
 
     // --- 1. XỬ LÝ UI PANEL (Ưu tiên các thao tác trên bảng điều khiển) ---
     if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
+        bool mouseInSeekBar = (mPos.x >= barCenter - barWidth / 2.f && mPos.x <= barCenter + barWidth / 2.f &&
+                               mPos.y >= bottomY - 10.f && mPos.y <= bottomY + 10.f);
+        isDragging = false;
+        if (mouseInSeekBar) {
+            isDragging = true;
+            isInputActive = false;
+        }
+        
         // --- LEFT TAB ---
         bool mouseInLeftIcon = (mPos.x >= leftWidth - TAB_WIDTH && mPos.x <= leftWidth &&
                                 mPos.y >= centerY - TAB_HEIGHT / 2.f && mPos.y <= centerY + TAB_HEIGHT / 2.f);
@@ -419,10 +427,6 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
             }
         }
 
-        bool mouseInSeekBar = (mPos.x >= barCenter - barWidth / 2.f && mPos.x <= barCenter + barWidth / 2.f &&
-                               mPos.y >= bottomY - 10.f && mPos.y <= bottomY + 10.f);
-        isDragging = mouseInSeekBar;
-
         if (button[8]->isClicked(worldPos, true)) { // Nút PREV
             if (currentIndex > 1)
                 currentIndex--;
@@ -446,9 +450,6 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
 
     if (selectNode >= nodes.size())
         selectNode = -1;
-
-    if (worldPos.y > winH - 120.f)
-        return;
 
     // --- 2. XÁC ĐỊNH NODE DƯỚI CON TRỎ CHUỘT ---
     int hoveredNode = -1;
@@ -637,9 +638,9 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
 
             m_edit[currentIndex - 1].m_nodes = nodes;
         }
-        if (isDragging)
+        else if (isDragging)
             fixedSeekBar(worldPos.x, barCenter - barWidth / 2.f, barWidth);
-        if (isDraggingSpeed) {
+        else if (isDraggingSpeed) {
             float slideX = 25.f;
             float slideW = leftWidth - 85.f;
             float relativeX = std::max(0.f, std::min((float)mPos.x - slideX, slideW));
