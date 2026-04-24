@@ -57,8 +57,8 @@ HeapVisualizer::HeapVisualizer(const sf::Font& font)
     , mPlaceholderText(makeText(font, "Enter value...", 18, sf::Color(120, 112, 138, 190), {INPUT_X + 14.f, INPUT_Y + 8.f}))
     , mInputText(makeText(font, "", 22, sf::Color::White, {INPUT_X + 14.f, INPUT_Y + 8.f}))
     , mHintText(makeText(font, "Build format: 1, 2, 3...", 14, sf::Color(150, 150, 150), {INPUT_X, INPUT_Y + 55.f}))
-    , mStatusText(makeText(font, "", 16, sf::Color(251, 209, 101), {420.f, 640.f}))
-    
+    , mStatusText(makeText(font, "", 16, sf::Color(251, 209, 101), {350.f, 640.f}))
+    , mNodeRadius(24.f)
     // Button
     , mInsertButton("Insert", font, {BUTTON_WIDTH, BUTTON_HEIGHT})
     , mDeleteButton("Delete", font, {BUTTON_WIDTH, BUTTON_HEIGHT})
@@ -76,11 +76,14 @@ HeapVisualizer::HeapVisualizer(const sf::Font& font)
     , mRightCollapseBtn("<<", font, {30.f, 60.f}, 5.f)
     , mDarkThemeBtn("Dark", font, {80.f, 30.f})
     , mLightThemeBtn("Light", font, {80.f, 30.f})
+    , mBgDefaultBtn("PNG", font, {60.f, 30.f})
+    , mBgWhiteBtn("White", font, {60.f, 30.f})
+    , mBgBlackBtn("Black", font, {60.f, 30.f})
 {
     // Panel
     float cpX = 1058.f;
     float cpY = 24.f;
-    float cpWidth = 204.f;
+    float cpWidth = 214.f;
     float cpHeight = 318.f;
     mPanel.setSize({PANEL_WIDTH, PANEL_HEIGHT});
     mPanel.setFillColor(sf::Color(10, 10, 15));
@@ -154,6 +157,21 @@ HeapVisualizer::HeapVisualizer(const sf::Font& font)
         mColorSwatches.push_back(swatch);
     }
 
+    mSizeLabel = makeText(font, "Node Size: 24", 14, sf::Color::White, {0.f, 0.f});
+    mSizeSliderTrack.setSize({150.f, 4.f});
+    mSizeSliderTrack.setFillColor(sf::Color(60, 60, 80));
+    mSizeSliderKnob.setRadius(8.f);
+    mSizeSliderKnob.setOrigin(8.f, 8.f);
+    mSizeSliderKnob.setFillColor(sf::Color(181, 58, 199));
+
+    float rightBaseX = 1280.f - mRightWidth;
+    float startX = rightBaseX + 50.f;
+    float startY = 640.f;
+
+    mBgDefaultBtn.setPosition({startX + 30.f, startY + 25.f});
+    mBgWhiteBtn.setPosition({startX + 95.f, startY + 25.f});
+    mBgBlackBtn.setPosition({startX + 160.f, startY + 25.f});
+
     setStatus("Ready.");
 }
 
@@ -170,10 +188,12 @@ void HeapVisualizer::handleEvent(const sf::Event& event, const sf::RenderWindow&
         if (mPendingActions.empty()) {
             const std::size_t visibleNodes = std::min(mDisplayArray.size(), MAX_RENDERED_NODES);
             for (std::size_t i = 0; i < visibleNodes; ++i) {
-                sf::FloatRect nodeBounds(nodePosition(i).x - NODE_RADIUS, nodePosition(i).y - NODE_RADIUS, NODE_RADIUS * 2, NODE_RADIUS * 2);
-                if (nodeBounds.contains(mouse)) {
+                float currentR = (i >= 15) ? mNodeRadius * 0.8f : mNodeRadius;
+                sf::Vector2f pos = nodePosition(i);
+                float dx = mouse.x - pos.x;
+                float dy = mouse.y - pos.y;
+                if (dx * dx + dy * dy <= currentR * currentR) {
                     mSelectedIndex = static_cast<int>(i);
-                    mInputFocused = true;
                     mInputBuffer.clear();
                     mInputText.setString("");
                     setStatus("Node " + std::to_string(i) + " (value " + std::to_string(mDisplayArray[i]) + ") selected.");
@@ -186,25 +206,11 @@ void HeapVisualizer::handleEvent(const sf::Event& event, const sf::RenderWindow&
             return;
         }
 
-        //Slider Drag
+        //Speed Slider
         sf::FloatRect knobBounds = mSliderKnob.getGlobalBounds();
-        knobBounds.left -= 10.f; knobBounds.width += 20.f;
-        knobBounds.top -= 10.f;  knobBounds.height += 20.f;
 
         if (knobBounds.contains(mouse) || mSliderTrack.getGlobalBounds().contains(mouse)) {
             mIsDraggingSlider = true;
-
-            const float left = mSliderTrack.getPosition().x;
-            const float width = mSliderTrack.getSize().x;
-            const float newX = std::max(left, std::min(mouse.x, left + width));
-            mSliderKnob.setPosition(newX, mSliderKnob.getPosition().y);
-
-            const float t = (newX - left) / width;
-            mActionInterval = MAX_INTERVAL - t * (MAX_INTERVAL - MIN_INTERVAL);
-
-            std::stringstream ss;
-            ss << "Speed: " << std::fixed << std::setprecision(2) << mActionInterval << "s";
-            mSpeedLabel.setString(ss.str());
         }
         
         //Color selection
@@ -215,21 +221,31 @@ void HeapVisualizer::handleEvent(const sf::Event& event, const sf::RenderWindow&
                     setStatus("Node color updated.");
                     return; 
                 }
-                }
+            }
+        }
+
+        //Size Slider
+        sf::FloatRect sizeKnobBounds = mSizeSliderKnob.getGlobalBounds();
+        if (sizeKnobBounds.contains(mouse) || mSizeSliderTrack.getGlobalBounds().contains(mouse)) {
+            mIsDraggingSizeSlider = true;
         }
     }
 
     if (event.type == sf::Event::MouseButtonReleased && event.mouseButton.button == sf::Mouse::Left) {
         mIsDraggingSlider = false;
+        mIsDraggingSizeSlider = false;
 
         if (!mouseOverButtons && !mouseOverSlider) {
             bool mouseOverNode = false;
             const std::size_t visibleNodes = std::min(mDisplayArray.size(), MAX_RENDERED_NODES);
             for (std::size_t i = 0; i < visibleNodes; ++i) {
-                sf::FloatRect nodeBounds(nodePosition(i).x - NODE_RADIUS, nodePosition(i).y - NODE_RADIUS, NODE_RADIUS * 2, NODE_RADIUS * 2);
-                if (nodeBounds.contains(mouse)) {
+                float currentR = (i >= 15) ? mNodeRadius * 0.8f : mNodeRadius;
+                sf::Vector2f pos = nodePosition(i);
+                float dx = mouse.x - pos.x;
+                float dy = mouse.y - pos.y;
+                if (dx * dx + dy * dy <= currentR * currentR) {
                     mouseOverNode = true;
-                    break;
+                    break; 
                 }
             }
 
@@ -283,6 +299,18 @@ void HeapVisualizer::handleEvent(const sf::Event& event, const sf::RenderWindow&
         if (mLightThemeBtn.isClicked(mouse, true)) {
             mIsDarkMode = false;
             applyTheme();
+        }
+        if (mBgDefaultBtn.isClicked(mouse, true)) {
+            mBgType = BackgroundType::Default;
+            setStatus("Background set to PNG.");
+        }
+        if (mBgWhiteBtn.isClicked(mouse, true)) {
+            mBgType = BackgroundType::White;
+            setStatus("Background set to White.");
+        }
+        if (mBgBlackBtn.isClicked(mouse, true)) {
+            mBgType = BackgroundType::Black;
+            setStatus("Background set to Black.");
         }
         if (mStepButton.isClicked(mouse, true)) {
             mIsPlaying = false;
@@ -346,6 +374,9 @@ void HeapVisualizer::update(float deltaTime, const sf::RenderWindow& window) {
     mPrevButton.update(mouse);
     mLoadButton.update(mouse);
     mReturnButton.update(mouse);
+    mBgDefaultBtn.update(mouse);
+    mBgWhiteBtn.update(mouse);
+    mBgBlackBtn.update(mouse);
 
     mInputBox.setOutlineColor(mInputFocused ? sf::Color(181, 58, 199, 200) : sf::Color(181, 58, 199, 120));
     mInputText.setString(mInputBuffer + (mInputFocused ? "|" : ""));
@@ -365,8 +396,28 @@ void HeapVisualizer::update(float deltaTime, const sf::RenderWindow& window) {
         mSpeedLabel.setString(ss.str());
     }
 
+    float rightBaseX = 1280.f - mRightWidth;
+    float startX = rightBaseX + 50.f;
+    float startY = 485.f;
+    mSizeLabel.setPosition({startX, startY});
+    mSizeSliderTrack.setPosition({startX, startY + 25.f});
+
+    if (mIsDraggingSizeSlider) {
+        float trackX = mSizeSliderTrack.getPosition().x;
+        float trackWidth = mSizeSliderTrack.getSize().x;
+        float newX = std::max(trackX, std::min(mouse.x, trackX + trackWidth));
+        float t = (newX - trackX) / trackWidth;
+        mNodeRadius = 15.f + t * 15.f;
+        mSizeSliderKnob.setPosition(newX, startY + 27.f);
+        mSizeLabel.setString("Node Size: " + std::to_string((int)mNodeRadius));
+    } 
+    else {
+        float t = (mNodeRadius - 15.f) / 15.f;
+        mSizeSliderKnob.setPosition(startX + t * 150.f, startY + 27.f);
+    }
+
     if (mInputFocused) {
-        mInputBox.setOutlineColor(sf::Color(181, 58, 199));
+        mInputBox.setOutlineColor(sf::Color(181, 58, 199, 120));
         mInputBox.setOutlineThickness(3.f);
     } else {
         mInputBox.setOutlineColor(sf::Color(100, 100, 100));
@@ -386,18 +437,29 @@ void HeapVisualizer::update(float deltaTime, const sf::RenderWindow& window) {
 
 // Draws the heap screen in layers so the panel, controls, and visualization stay separated.
 void HeapVisualizer::render(sf::RenderWindow& window) const {
-    window.draw(mBgSprite);
+    if (mBgType == BackgroundType::Default) {
+        window.draw(mBgSprite);
+    } 
+    else {
+        sf::RectangleShape solidBg({1280.f, 720.f});
+        if (mBgType == BackgroundType::White) 
+            solidBg.setFillColor(sf::Color::White);
+        else 
+            solidBg.setFillColor(sf::Color::Black);
+        window.draw(solidBg);
+    }
+    drawTree(window);
+    drawArray(window);
+    drawLegend(window);
 
+    sf::Color panelColor = mIsDarkMode ? sf::Color(25, 25, 35, 150) : sf::Color(220, 220, 230, 150);
     sf::RectangleShape sidebarBg({mLeftWidth, 720.f});
-    sidebarBg.setFillColor(sf::Color(25, 25, 35));
+    sidebarBg.setFillColor(panelColor);
     window.draw(sidebarBg);
-
     sf::RectangleShape codePanelBg({mRightWidth, 720.f});
     codePanelBg.setPosition(1280.f - mRightWidth, 0.f);
-    codePanelBg.setFillColor(sf::Color(25, 25, 35));
+    codePanelBg.setFillColor(panelColor);
     window.draw(codePanelBg);
-    window.draw(mStatusText);
-    drawLegend(window);
 
     if (mLeftWidth > 180.f) {
         drawInputArea(window);
@@ -408,10 +470,13 @@ void HeapVisualizer::render(sf::RenderWindow& window) const {
         const_cast<CodePanel&>(mCodePanel).draw(window);
         drawColorPicker(window);
         drawThemeToggle(window);
+        window.draw(mSizeLabel);
+        window.draw(mSizeSliderTrack);
+        window.draw(mSizeSliderKnob);
+        drawBackgroundToggle(window);
     }
 
-    drawTree(window);
-    drawArray(window);
+    window.draw(mStatusText);
     window.draw(mLeftCollapseBtn);
     window.draw(mRightCollapseBtn);
 }
@@ -419,9 +484,14 @@ void HeapVisualizer::render(sf::RenderWindow& window) const {
 // Clears temporary UI state when the user leaves and re-enters the heap screen.
 void HeapVisualizer::reset() {
     mInputFocused = false;
+    mInputBuffer.clear();
+    mInputText.setString("");
     mPendingActions.clear();
+    mHistory.clear();
     mHighlight = {};
     mActionTimer = 0.f;
+    mSelectedIndex = -1;
+    mIsPlaying = false;
 }
 
 void HeapVisualizer::runLoadFile() {
@@ -870,6 +940,14 @@ void HeapVisualizer::drawArray(sf::RenderWindow& window) const {
     const float totalArrayWidth = (visibleNodes * cellWidth) + ((visibleNodes - 1) * gap);
 
     const float startX = mWorkspaceCenterX - (totalArrayWidth / 2.f);
+    sf::Color indexColor;
+
+    if (mBgType != BackgroundType::Black) {
+        indexColor = sf::Color(50, 50, 60);
+    } 
+    else {
+        indexColor = sf::Color(200, 200, 210);
+    }
 
     for (std::size_t i = 0; i < visibleNodes; ++i) {
         float currentX = startX + i * (cellWidth + gap);
@@ -877,7 +955,7 @@ void HeapVisualizer::drawArray(sf::RenderWindow& window) const {
         sf::RectangleShape cell({cellWidth, cellWidth});
         cell.setPosition({currentX, ARRAY_Y});
         cell.setFillColor(mCurrentNodeColor);
-        cell.setOutlineThickness(2.f);
+        cell.setOutlineThickness(3.f);
 
         sf::Color currentOutlineColor = nodeColor(i);
         if (mSelectedIndex == static_cast<int>(i)) {
@@ -896,7 +974,7 @@ void HeapVisualizer::drawArray(sf::RenderWindow& window) const {
         valueText.setPosition({currentX + cellWidth / 2.f, ARRAY_Y + cellWidth / 2.f - 2.f});
         window.draw(valueText);
 
-        sf::Text indexText = makeText(mFont, std::to_string(i), 12, sf::Color(189, 198, 214), {0.f, 0.f});
+        sf::Text indexText = makeText(mFont, std::to_string(i), 12, indexColor, {0.f, 0.f});
         sf::FloatRect idxBounds = indexText.getLocalBounds();
         indexText.setOrigin(idxBounds.left + idxBounds.width / 2.f, 0.f);
         indexText.setPosition({currentX + cellWidth / 2.f, ARRAY_Y - 18.f});
@@ -907,21 +985,39 @@ void HeapVisualizer::drawArray(sf::RenderWindow& window) const {
 // Draws the node-link tree representation using heap indices to derive parent-child edges.
 void HeapVisualizer::drawTree(sf::RenderWindow& window) const {
     const std::size_t visibleNodes = std::min(mDisplayArray.size(), MAX_RENDERED_NODES);
+
+    sf::Color edgeColor;
+    if (mBgType == BackgroundType::Default) {
+        edgeColor = sf::Color::Black;
+    } 
+    else if (mBgType == BackgroundType::White) {
+        edgeColor = sf::Color::Black;
+    }
+     else {
+        edgeColor = sf::Color(136, 155, 184);
+    }
+
     for (std::size_t i = 1; i < visibleNodes; ++i) {
         const std::size_t parent = (i - 1) / 2;
-        const sf::Vector2f start = nodePosition(parent);
-        const sf::Vector2f end = nodePosition(i);
-        sf::Vertex line[] = {
-            sf::Vertex(start, sf::Color(136, 155, 184)),
-            sf::Vertex(end, sf::Color(136, 155, 184))
-        };
-        window.draw(line, 2, sf::Lines);
+        sf::Vector2f start = nodePosition(parent);
+        sf::Vector2f end = nodePosition(i);
+        sf::Vector2f direction = end - start;
+        float length = std::sqrt(direction.x * direction.x + direction.y * direction.y);
+        float angle = std::atan2(direction.y, direction.x) * 180.f / 3.14159f;
+        sf::RectangleShape line({length, 3.0f});
+        line.setOrigin({0.f, 1.5f});
+        line.setPosition(start);
+        line.setRotation(angle);
+        line.setFillColor(edgeColor);
+
+        window.draw(line);
     }
 
     for (std::size_t i = 0; i < visibleNodes; ++i) {
-        float Radius = (i >= 15) ? NODE_RADIUS - 5.0f : NODE_RADIUS;
-        sf::CircleShape node(Radius);
-        node.setOrigin({Radius, Radius});
+        float currentRadius = (i >= 15) ? mNodeRadius * 0.8f : mNodeRadius;
+        
+        sf::CircleShape node(currentRadius);
+        node.setOrigin({currentRadius, currentRadius});
         node.setPosition(nodePosition(i));
         node.setFillColor(mCurrentNodeColor);
         node.setOutlineThickness(4.f);
@@ -929,13 +1025,14 @@ void HeapVisualizer::drawTree(sf::RenderWindow& window) const {
         sf::Color currentOutlineColor = nodeColor(i);
         if (mSelectedIndex == static_cast<int>(i)) {
             currentOutlineColor = sf::Color(34, 139, 34);
-            node.setOutlineThickness(6.f);
+            node.setOutlineThickness(currentRadius * 0.25f);
         }
         node.setOutlineColor(currentOutlineColor);
-
         window.draw(node);
 
-        sf::Text valueText = makeText(mFont, std::to_string(mDisplayArray[i]), 18, sf::Color(20, 28, 40), {0.f, 0.f});
+        unsigned int dynamicFontSize = static_cast<unsigned int>(currentRadius * 0.75f);
+        sf::Text valueText = makeText(mFont, std::to_string(mDisplayArray[i]), dynamicFontSize, sf::Color(20, 28, 40), {0.f, 0.f});
+        
         sf::FloatRect bounds = valueText.getLocalBounds();
         valueText.setOrigin(bounds.left + bounds.width / 2.f, bounds.top + bounds.height / 2.f);
         valueText.setPosition({node.getPosition().x, node.getPosition().y - 1.f});
@@ -945,6 +1042,7 @@ void HeapVisualizer::drawTree(sf::RenderWindow& window) const {
 
 // Draws the animation status and the color legend for compare, swap, and focus states.
 void HeapVisualizer::drawLegend(sf::RenderWindow& window) const {
+    sf::Color legendTextColor = (mBgType == BackgroundType::Black) ? sf::Color::White : sf::Color(20, 28, 40);
     // Step
     constexpr float LEGEND_Y = 570.f;
     if (!mHighlight.label.empty()) {
@@ -959,7 +1057,7 @@ void HeapVisualizer::drawLegend(sf::RenderWindow& window) const {
     compare.setFillColor(sf::Color(0, 255, 255));
     compare.setPosition({itemX, LEGEND_Y + 4.f});
     window.draw(compare);
-    window.draw(makeText(mFont, "Compare", 15, sf::Color::White, {itemX + 25.f, LEGEND_Y}));
+    window.draw(makeText(mFont, "Compare", 15, legendTextColor, {itemX + 25.f, LEGEND_Y}));
 
     // Swap
     itemX += 120.f;
@@ -967,7 +1065,7 @@ void HeapVisualizer::drawLegend(sf::RenderWindow& window) const {
     swap.setFillColor(sf::Color(255, 124, 124));
     swap.setPosition({itemX, LEGEND_Y + 4.f});
     window.draw(swap);
-    window.draw(makeText(mFont, "Swap", 15, sf::Color::White, {itemX + 25.f, LEGEND_Y}));
+    window.draw(makeText(mFont, "Swap", 15, legendTextColor, {itemX + 25.f, LEGEND_Y}));
 
     // Focused
     itemX += 90.f;
@@ -975,7 +1073,7 @@ void HeapVisualizer::drawLegend(sf::RenderWindow& window) const {
     focus.setFillColor(sf::Color(248, 196, 76));
     focus.setPosition({itemX, LEGEND_Y + 4.f});
     window.draw(focus);
-    window.draw(makeText(mFont, "Focused", 15, sf::Color::White, {itemX + 25.f, LEGEND_Y}));
+    window.draw(makeText(mFont, "Focused", 15, legendTextColor, {itemX + 25.f, LEGEND_Y}));
 
     //Selected
     itemX += 110.f;
@@ -983,7 +1081,7 @@ void HeapVisualizer::drawLegend(sf::RenderWindow& window) const {
     selected.setFillColor(sf::Color(34, 139, 34));
     selected.setPosition({itemX, LEGEND_Y + 4.f});
     window.draw(selected);
-    window.draw(makeText(mFont, "Selected", 15, sf::Color::White, {itemX + 25.f, LEGEND_Y}));
+    window.draw(makeText(mFont, "Selected", 15, legendTextColor, {itemX + 25.f, LEGEND_Y}));
 }
 
 void HeapVisualizer::drawCodeSnippet(sf::RenderWindow& window) const {
@@ -1019,7 +1117,7 @@ void HeapVisualizer::drawColorPicker(sf::RenderWindow& window) const {
     float startX = rightBaseX + 50.f;
     float startY = 380.f;
 
-    sf::Text label = makeText(mFont, "Node Fill Color", 14, sf::Color(200, 200, 210), {startX, startY});
+    sf::Text label = makeText(mFont, "Node Fill Color", 14, mIsDarkMode ? sf::Color(200, 200, 210) : sf::Color(50, 50, 60), {startX, startY});
     window.draw(label);
 
     for (size_t i = 0; i < mColorSwatches.size(); ++i) {
@@ -1040,74 +1138,137 @@ void HeapVisualizer::drawColorPicker(sf::RenderWindow& window) const {
     }
 }
 
-    void HeapVisualizer::drawThemeToggle(sf::RenderWindow& window) const {
-        float rightBaseX = 1280.f - mRightWidth;
-        float startX = rightBaseX + 50.f;
-        float startY = 480.f;
-        sf::Text label = makeText(mFont, "UI Theme", 14, 
-            mIsDarkMode ? sf::Color(200, 200, 210) : sf::Color(50, 50, 60), {startX, startY});
-        window.draw(label);
+void HeapVisualizer::drawBackgroundToggle(sf::RenderWindow& window) const {
+    float rightBaseX = 1280.f - mRightWidth;
+    float startX = rightBaseX + 50.f;
+    float startY = 610.f;
 
-        auto& btnD = const_cast<ModernButton&>(mDarkThemeBtn);
-        auto& btnL = const_cast<ModernButton&>(mLightThemeBtn);
-        btnD.setPosition({startX + 40.f, startY + 45.f});
-        btnL.setPosition({startX + 130.f, startY + 45.f});
+    sf::Text label = makeText(mFont, "Background Style", 14, 
+        mIsDarkMode ? sf::Color(200, 200, 210) : sf::Color(50, 50, 60), {startX, startY});
+    window.draw(label);
 
-        sf::Color darkTop(32, 26, 43);
-        sf::Color darkBot(20, 16, 27);
-        sf::Color lightTop(230, 230, 240);
-        sf::Color lightBot(200, 200, 215);
-        sf::Color activeBorder = sf::Color::Cyan;
-        sf::Color inactiveBorder = sf::Color(100, 100, 100, 150);
+    auto& btnD = const_cast<ModernButton&>(mBgDefaultBtn);
+    auto& btnW = const_cast<ModernButton&>(mBgWhiteBtn);
+    auto& btnB = const_cast<ModernButton&>(mBgBlackBtn);
 
-        btnD.setColors(darkTop, darkBot, mIsDarkMode ? activeBorder : inactiveBorder);
-        btnL.setColors(lightTop, lightBot, !mIsDarkMode ? activeBorder : inactiveBorder);
-        window.draw(btnD);
-        window.draw(btnL);
+    sf::Color currentTop, currentBot, inactiveBorder, textColor;
+    if (mIsDarkMode) {
+        currentTop = sf::Color(32, 26, 43);
+        currentBot = sf::Color(20, 16, 27);
+        inactiveBorder = sf::Color(100, 100, 100, 150);
+        textColor = sf::Color::White;
+    } else {
+        currentTop = sf::Color(230, 230, 240);
+        currentBot = sf::Color(200, 200, 215);
+        inactiveBorder = sf::Color(150, 150, 160);
+        textColor = sf::Color(40, 40, 50); 
     }
 
-    void HeapVisualizer::applyTheme() {
-        if (mIsDarkMode) {
-            mPanel.setFillColor(sf::Color(10, 10, 15));
-            mControlPanelBg.setFillColor(sf::Color(25, 25, 35, 230));
-            mCodeBox.setFillColor(sf::Color(25, 25, 35, 230));
-            mInputBox.setFillColor(sf::Color(32, 26, 43));
-            mInsertButton.setColors(sf::Color(32, 26, 43), sf::Color(20, 16, 27), sf::Color(181, 58, 199));
-            mDeleteButton.setColors(sf::Color(32, 26, 43), sf::Color(20, 16, 27), sf::Color(181, 58, 199));
-            mBuildButton.setColors(sf::Color(32, 26, 43), sf::Color(20, 16, 27), sf::Color(181, 58, 199));
-            mClearButton.setColors(sf::Color(32, 26, 43), sf::Color(20, 16, 27), sf::Color(181, 58, 199));
-            mReturnButton.setColors(sf::Color(32, 26, 43), sf::Color(20, 16, 27), sf::Color(181, 58, 199));
-            mPlayPauseButton.setColors(sf::Color(32, 26, 43), sf::Color(20, 16, 27), sf::Color(181, 58, 199));
-            mStepButton.setColors(sf::Color(32, 26, 43), sf::Color(20, 16, 27), sf::Color(181, 58, 199));
-            mLoadButton.setColors(sf::Color(32, 26, 43), sf::Color(20, 16, 27), sf::Color(181, 58, 199));
-            mRandomButton.setColors(sf::Color(32, 26, 43), sf::Color(20, 16, 27), sf::Color(181, 58, 199));
-            mSkipButton.setColors(sf::Color(32, 26, 43), sf::Color(20, 16, 27), sf::Color(181, 58, 199));
-            mUpdateButton.setColors(sf::Color(32, 26, 43), sf::Color(20, 16, 27), sf::Color(181, 58, 199));
-            mLeftCollapseBtn.setColors(sf::Color(32, 26, 43), sf::Color(20, 16, 27), sf::Color(181, 58, 199));
-            mRightCollapseBtn.setColors(sf::Color(32, 26, 43), sf::Color(20, 16, 27), sf::Color(181, 58, 199));
-            mPrevButton.setColors(sf::Color(32, 26, 43), sf::Color(20, 16, 27), sf::Color(181, 58, 199));
-        } 
-        else {
-            mPanel.setFillColor(sf::Color(240, 240, 245));
-            mControlPanelBg.setFillColor(sf::Color(220, 220, 230, 230));
-            mCodeBox.setFillColor(sf::Color(220, 220, 230, 230));
-            mInputBox.setFillColor(sf::Color(255, 255, 255));
-            mInsertButton.setColors(sf::Color(230, 230, 240), sf::Color(200, 200, 215), sf::Color(150, 150, 160), sf::Color(40, 40, 50));
-            mDeleteButton.setColors(sf::Color(230, 230, 240), sf::Color(200, 200, 215), sf::Color(150, 150, 160), sf::Color(40, 40, 50));
-            mBuildButton.setColors(sf::Color(230, 230, 240), sf::Color(200, 200, 215), sf::Color(150, 150, 160), sf::Color(40, 40, 50));
-            mClearButton.setColors(sf::Color(230, 230, 240), sf::Color(200, 200, 215), sf::Color(150, 150, 160), sf::Color(40, 40, 50));
-            mReturnButton.setColors(sf::Color(230, 230, 240), sf::Color(200, 200, 215), sf::Color(150, 150, 160), sf::Color(40, 40, 50));
-            mRandomButton.setColors(sf::Color(230, 230, 240), sf::Color(200, 200, 215), sf::Color(150, 150, 160), sf::Color(40, 40, 50));
-            mPlayPauseButton.setColors(sf::Color(230, 230, 240), sf::Color(200, 200, 215), sf::Color(150, 150, 160), sf::Color(40, 40, 50));
-            mStepButton.setColors(sf::Color(230, 230, 240), sf::Color(200, 200, 215), sf::Color(150, 150, 160), sf::Color(40, 40, 50));
-            mPrevButton.setColors(sf::Color(230, 230, 240), sf::Color(200, 200, 215), sf::Color(150, 150, 160), sf::Color(40, 40, 50));
-            mLoadButton.setColors(sf::Color(230, 230, 240), sf::Color(200, 200, 215), sf::Color(150, 150, 160), sf::Color(40, 40, 50));
-            mSkipButton.setColors(sf::Color(230, 230, 240), sf::Color(200, 200, 215), sf::Color(150, 150, 160), sf::Color(40, 40, 50));
-            mUpdateButton.setColors(sf::Color(230, 230, 240), sf::Color(200, 200, 215), sf::Color(150, 150, 160), sf::Color(40, 40, 50));
-            mLeftCollapseBtn.setColors(sf::Color(230, 230, 240), sf::Color(200, 200, 215), sf::Color(150, 150, 160), sf::Color(40, 40, 50));
-            mRightCollapseBtn.setColors(sf::Color(230, 230, 240), sf::Color(200, 200, 215), sf::Color(150, 150, 160), sf::Color(40, 40, 50));
-        }
+    sf::Color activeBorder = sf::Color::Cyan;
+    btnD.setPosition({startX + 30.f, startY + 45.f});
+    btnW.setPosition({startX + 95.f, startY + 45.f});
+    btnB.setPosition({startX + 160.f, startY + 45.f});
+
+    btnD.setColors(currentTop, currentBot, mBgType == BackgroundType::Default ? activeBorder : inactiveBorder, textColor);
+    btnW.setColors(currentTop, currentBot, mBgType == BackgroundType::White ? activeBorder : inactiveBorder, textColor);
+    btnB.setColors(currentTop, currentBot, mBgType == BackgroundType::Black ? activeBorder : inactiveBorder, textColor);
+
+    window.draw(btnD);
+    window.draw(btnW);
+    window.draw(btnB);
+}
+
+void HeapVisualizer::drawThemeToggle(sf::RenderWindow& window) const {
+    float rightBaseX = 1280.f - mRightWidth;
+    float startX = rightBaseX + 50.f;
+    float startY = 530.f;
+    sf::Text label = makeText(mFont, "UI Theme", 14, 
+        mIsDarkMode ? sf::Color(200, 200, 210) : sf::Color(50, 50, 60), {startX, startY});
+    window.draw(label);
+
+    auto& btnD = const_cast<ModernButton&>(mDarkThemeBtn);
+    auto& btnL = const_cast<ModernButton&>(mLightThemeBtn);
+    btnD.setPosition({startX + 40.f, startY + 45.f});
+    btnL.setPosition({startX + 130.f, startY + 45.f});
+
+    sf::Color darkTop(32, 26, 43);
+    sf::Color darkBot(20, 16, 27);
+    sf::Color lightTop(230, 230, 240);
+    sf::Color lightBot(200, 200, 215);
+    sf::Color activeBorder = sf::Color::Cyan;
+    sf::Color inactiveBorder = sf::Color(100, 100, 100, 150);
+
+    btnD.setColors(darkTop, darkBot, mIsDarkMode ? activeBorder : inactiveBorder);
+    btnL.setColors(lightTop, lightBot, !mIsDarkMode ? activeBorder : inactiveBorder);
+    window.draw(btnD);
+    window.draw(btnL);
+}
+
+void HeapVisualizer::applyTheme() {
+    if (mIsDarkMode) {
+        mPanel.setFillColor(sf::Color(10, 10, 15));
+        mControlPanelBg.setFillColor(sf::Color(25, 25, 35, 230));
+        mCodeBox.setFillColor(sf::Color(25, 25, 35, 230));
+        mInputBox.setFillColor(sf::Color(32, 26, 43));
+        mInputText.setFillColor(sf::Color::White);
+        mSliderTrack.setFillColor(sf::Color(60, 60, 80));
+        mSliderTrack.setOutlineColor(sf::Color(100, 100, 150));
+        mSliderKnob.setFillColor(sf::Color(181, 58, 199));
+        mSpeedLabel.setFillColor(sf::Color::White);
+        mSizeSliderKnob.setFillColor(sf::Color(181, 58, 199));
+        mSizeLabel.setFillColor(sf::Color::White);
+        mSizeSliderTrack.setFillColor(sf::Color(60, 60, 80));
+        mInsertButton.setColors(sf::Color(32, 26, 43), sf::Color(20, 16, 27), sf::Color(181, 58, 199, 120));
+        mDeleteButton.setColors(sf::Color(32, 26, 43), sf::Color(20, 16, 27), sf::Color(181, 58, 199, 120));
+        mBuildButton.setColors(sf::Color(32, 26, 43), sf::Color(20, 16, 27), sf::Color(181, 58, 199, 120));
+        mClearButton.setColors(sf::Color(32, 26, 43), sf::Color(20, 16, 27), sf::Color(181, 58, 199, 120));
+        mReturnButton.setColors(sf::Color(32, 26, 43), sf::Color(20, 16, 27), sf::Color(181, 58, 199, 120));
+        mPlayPauseButton.setColors(sf::Color(32, 26, 43), sf::Color(20, 16, 27), sf::Color(181, 58, 199, 120));
+        mStepButton.setColors(sf::Color(32, 26, 43), sf::Color(20, 16, 27), sf::Color(181, 58, 199, 120));
+        mLoadButton.setColors(sf::Color(32, 26, 43), sf::Color(20, 16, 27), sf::Color(181, 58, 199, 120));
+        mRandomButton.setColors(sf::Color(32, 26, 43), sf::Color(20, 16, 27), sf::Color(181, 58, 199, 120));
+        mSkipButton.setColors(sf::Color(32, 26, 43), sf::Color(20, 16, 27), sf::Color(181, 58, 199, 120));
+        mUpdateButton.setColors(sf::Color(32, 26, 43), sf::Color(20, 16, 27), sf::Color(181, 58, 199, 120));
+        mLeftCollapseBtn.setColors(sf::Color(32, 26, 43), sf::Color(20, 16, 27), sf::Color(181, 58, 199, 120));
+        mRightCollapseBtn.setColors(sf::Color(32, 26, 43), sf::Color(20, 16, 27), sf::Color(181, 58, 199, 120));
+        mPrevButton.setColors(sf::Color(32, 26, 43), sf::Color(20, 16, 27), sf::Color(181, 58, 199, 120));
+        mBgDefaultBtn.setColors(sf::Color(32, 26, 43), sf::Color(20, 16, 27), sf::Color(181, 58, 199, 120));
+        mBgWhiteBtn.setColors(sf::Color(32, 26, 43), sf::Color(20, 16, 27), sf::Color(181, 58, 199, 120));
+        mBgBlackBtn.setColors(sf::Color(32, 26, 43), sf::Color(20, 16, 27), sf::Color(181, 58, 199, 120));
+    } 
+    else {
+        mPanel.setFillColor(sf::Color(240, 240, 245));
+        mControlPanelBg.setFillColor(sf::Color(220, 220, 230, 230));
+        mCodeBox.setFillColor(sf::Color(220, 220, 230, 230));
+        mInputBox.setFillColor(sf::Color(255, 255, 255));
+        mInputText.setFillColor(sf::Color(20, 28, 40));
+        mHintText.setFillColor(sf::Color(60, 60, 70));
+        mSliderTrack.setFillColor(sf::Color(200, 200, 210));
+        mSliderTrack.setOutlineColor(sf::Color(160, 160, 170));
+        mSliderKnob.setFillColor(sf::Color(52, 152, 219));
+        mSpeedLabel.setFillColor(sf::Color::Black);
+        mSizeSliderKnob.setFillColor(sf::Color(52, 152, 219));
+        mSizeLabel.setFillColor(sf::Color(50, 50, 60));
+        mSizeSliderTrack.setFillColor(sf::Color(180, 180, 190));
+        mInsertButton.setColors(sf::Color(230, 230, 240), sf::Color(200, 200, 215), sf::Color(150, 150, 160), sf::Color(40, 40, 50));
+        mDeleteButton.setColors(sf::Color(230, 230, 240), sf::Color(200, 200, 215), sf::Color(150, 150, 160), sf::Color(40, 40, 50));
+        mBuildButton.setColors(sf::Color(230, 230, 240), sf::Color(200, 200, 215), sf::Color(150, 150, 160), sf::Color(40, 40, 50));
+        mClearButton.setColors(sf::Color(230, 230, 240), sf::Color(200, 200, 215), sf::Color(150, 150, 160), sf::Color(40, 40, 50));
+        mReturnButton.setColors(sf::Color(230, 230, 240), sf::Color(200, 200, 215), sf::Color(150, 150, 160), sf::Color(40, 40, 50));
+        mRandomButton.setColors(sf::Color(230, 230, 240), sf::Color(200, 200, 215), sf::Color(150, 150, 160), sf::Color(40, 40, 50));
+        mPlayPauseButton.setColors(sf::Color(230, 230, 240), sf::Color(200, 200, 215), sf::Color(150, 150, 160), sf::Color(40, 40, 50));
+        mStepButton.setColors(sf::Color(230, 230, 240), sf::Color(200, 200, 215), sf::Color(150, 150, 160), sf::Color(40, 40, 50));
+        mPrevButton.setColors(sf::Color(230, 230, 240), sf::Color(200, 200, 215), sf::Color(150, 150, 160), sf::Color(40, 40, 50));
+        mLoadButton.setColors(sf::Color(230, 230, 240), sf::Color(200, 200, 215), sf::Color(150, 150, 160), sf::Color(40, 40, 50));
+        mSkipButton.setColors(sf::Color(230, 230, 240), sf::Color(200, 200, 215), sf::Color(150, 150, 160), sf::Color(40, 40, 50));
+        mUpdateButton.setColors(sf::Color(230, 230, 240), sf::Color(200, 200, 215), sf::Color(150, 150, 160), sf::Color(40, 40, 50));
+        mLeftCollapseBtn.setColors(sf::Color(230, 230, 240), sf::Color(200, 200, 215), sf::Color(150, 150, 160), sf::Color(40, 40, 50));
+        mRightCollapseBtn.setColors(sf::Color(230, 230, 240), sf::Color(200, 200, 215), sf::Color(150, 150, 160), sf::Color(40, 40, 50));
+        mBgDefaultBtn.setColors(sf::Color(230, 230, 240), sf::Color(200, 200, 215), sf::Color(150, 150, 160), sf::Color(40, 40, 50));
+        mBgWhiteBtn.setColors(sf::Color(230, 230, 240), sf::Color(200, 200, 215), sf::Color(150, 150, 160));
+        mBgBlackBtn.setColors(sf::Color(230, 230, 240), sf::Color(200, 200, 215), sf::Color(150, 150, 160));
     }
+}
 
 // Adds a character to the input buffer while keeping the field length bounded.
 void HeapVisualizer::appendDigit(char digit) {
@@ -1209,17 +1370,21 @@ void HeapVisualizer::clearInput() {
 }
 
 int HeapVisualizer::run(sf::RenderWindow& window, sf::Font& font) {
+    reset();
     sf::View originalView = window.getView(); 
     sf::View heapView;
     heapView.setSize(1280.f, 720.f); 
     heapView.setCenter(640.f, 360.f);
     window.setView(heapView);
 
-    if (!mBgTexture.loadFromFile("assets/textures/avl_background.png")) {
-        std::cerr << "Failed to load background.png\n";
+    if (notLoaded) {
+        if (!mBgTexture.loadFromFile("assets/textures/heap_background.png")) {
+            std::cerr << "Failed to load background.png\n";
+        }
+        notLoaded = false;
+        mBgSprite.setTexture(mBgTexture);
+        mBgSprite.setScale(1280.f / mBgTexture.getSize().x, 720.f / mBgTexture.getSize().y);
     }
-    mBgSprite.setTexture(mBgTexture);
-    mBgSprite.setScale(1280.f / mBgTexture.getSize().x, 720.f / mBgTexture.getSize().y);
 
     sf::Clock clock;
 
@@ -1238,9 +1403,10 @@ int HeapVisualizer::run(sf::RenderWindow& window, sf::Font& font) {
             if (event.type == sf::Event::MouseButtonReleased &&
                 event.mouseButton.button == sf::Mouse::Left &&
                 mReturnButton.isClicked(mouse, true)) {
-                window.setView(originalView);
-                return 0;
-            }
+                    runSkip();
+                    window.setView(originalView);
+                    return 0;
+                }
 
             if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape) {
                 window.setView(originalView);

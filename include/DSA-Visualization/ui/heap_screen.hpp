@@ -127,12 +127,11 @@ private:
     ModernButton mUpdateButton;
     ModernButton mLeftCollapseBtn;
     ModernButton mRightCollapseBtn;
-    ModernButton mDarkThemeBtn;
-    ModernButton mLightThemeBtn;
 
     //Background
     sf::Texture mBgTexture;
     sf::Sprite mBgSprite;
+    bool notLoaded = true;
 
     //Animation
     std::string mInputBuffer;
@@ -143,10 +142,30 @@ private:
     float mActionInterval = 0.6f;
 
     //Customization
+
+    //1.Color
     sf::Color mCurrentNodeColor;
     std::vector<sf::Color> mThemeColors;
     std::vector<sf::RectangleShape> mColorSwatches;
     void drawColorPicker(sf::RenderWindow& window) const;
+
+    //2.Theme
+    ModernButton mDarkThemeBtn;
+    ModernButton mLightThemeBtn;
     bool mIsDarkMode = true;
 
+    //3.Size (Slider)
+    float mNodeRadius;
+    sf::RectangleShape mSizeSliderTrack;
+    sf::CircleShape mSizeSliderKnob;
+    sf::Text mSizeLabel;
+    bool mIsDraggingSizeSlider = false;
+
+    //4.Background
+    enum class BackgroundType { Default, White, Black };
+    BackgroundType mBgType = BackgroundType::Default;
+    ModernButton mBgDefaultBtn;
+    ModernButton mBgWhiteBtn;
+    ModernButton mBgBlackBtn;
+    void drawBackgroundToggle(sf::RenderWindow& window) const;
 };
