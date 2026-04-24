@@ -1412,7 +1412,6 @@ int HeapVisualizer::run(sf::RenderWindow& window, sf::Font& font) {
                 window.setView(originalView);
                 return 0;
             }
-
             handleEvent(event, window);
         }
 
