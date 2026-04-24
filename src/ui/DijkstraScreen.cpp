@@ -4,7 +4,6 @@
 #include <fstream>
 #include <sstream>
 
-const float NODE_RADIUS = 25.f;
 const float LEFT_PANEL_WIDTH = 250.f;
 const float RIGHT_PANEL_WIDTH = 300.f;
 const float TAB_WIDTH = 35.f;
@@ -154,6 +153,31 @@ void DijkstraScreen::initialization() {
 
     currentLine = 0;
     activeTab = TabState::Info;
+
+    mNodeRadius = 25.f;
+    mCurrentNodeColor = sf::Color(50, 50, 50);
+    mIsDraggingSizeSlider = false;
+
+    // Thiết lập bảng màu
+    mThemeColors = {
+        sf::Color(50, 50, 50), sf::Color(181, 58, 199), sf::Color(52, 152, 219),
+        sf::Color(231, 76, 60), sf::Color(241, 196, 15), sf::Color(46, 204, 113)
+    };
+
+    mColorSwatches.clear();
+    for (const auto& color : mThemeColors) {
+        sf::RectangleShape swatch({25.f, 25.f});
+        swatch.setFillColor(color);
+        swatch.setOutlineThickness(1.5f);
+        mColorSwatches.push_back(swatch);
+    }
+
+    // Khởi tạo Slider
+    mSizeSliderTrack.setSize({180.f, 4.f});
+    mSizeSliderTrack.setFillColor(sf::Color(80, 80, 100));
+    mSizeSliderKnob.setRadius(8.f);
+    mSizeSliderKnob.setOrigin(8.f, 8.f);
+    mSizeSliderKnob.setFillColor(sf::Color::Cyan);
 }
 
 void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf::Vector2i mPos) {
@@ -221,6 +245,7 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
         isDraggingSpeed = false;
         isDragging = false;
         draggingNode = -1;
+        mIsDraggingSizeSlider = false;
     }
 
     if ((editingNode != -1 || editingEdge != -1) && event.type == sf::Event::MouseButtonPressed) {
@@ -242,7 +267,7 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
             isDragging = true;
             isInputActive = false;
         }
-        
+
         //  --- LEFT TAB ---
         bool mouseInLeftIcon = (mPos.x >= leftWidth - TAB_WIDTH && mPos.x <= leftWidth &&
                                 mPos.y >= centerY - TAB_HEIGHT / 2.f && mPos.y <= centerY + TAB_HEIGHT / 2.f);
@@ -444,6 +469,21 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
                 }
             }
         }
+        if (rightExpanded && activeTab == TabState::Info) {
+            // Kiểm tra click chọn màu
+            for (size_t i = 0; i < mColorSwatches.size(); ++i) {
+                if (mColorSwatches[i].getGlobalBounds().contains(worldPos)) {
+                    mCurrentNodeColor = mThemeColors[i]; // Cập nhật màu
+                    return;
+                }
+            }
+            // Kiểm tra click vào Slider Size
+            if (mSizeSliderKnob.getGlobalBounds().contains(worldPos) || 
+                mSizeSliderTrack.getGlobalBounds().contains(worldPos)) {
+                mIsDraggingSizeSlider = true;
+                return;
+            }
+        }
         
     }
 
@@ -452,7 +492,7 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
 
     int hoveredNode = -1;
     for (int i = 0; i < (int)nodes.size(); ++i) {
-        if (std::hypot(nodes[i].x - worldPos.x, nodes[i].y - worldPos.y) < NODE_RADIUS) {
+        if (std::hypot(nodes[i].x - worldPos.x, nodes[i].y - worldPos.y) < mNodeRadius) {
             hoveredNode = i;
             break;
         }
@@ -616,7 +656,7 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
                 float dx = nodes[draggingNode].x - nodes[i].x;
                 float dy = nodes[draggingNode].y - nodes[i].y;
                 float dist = std::hypot(dx, dy);
-                float minSafe = NODE_RADIUS * 2.5f;
+                float minSafe = mNodeRadius * 2.5f;
 
                 if (dist < minSafe && dist > 0.01f) {
                     float overlap = minSafe - dist;
@@ -625,8 +665,8 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
                 }
             }
 
-            if (nodes[draggingNode].x < leftWidth + NODE_RADIUS) {
-                nodes[draggingNode].x = leftWidth + NODE_RADIUS;
+            if (nodes[draggingNode].x < leftWidth + mNodeRadius) {
+                nodes[draggingNode].x = leftWidth + mNodeRadius;
             }
 
             m_edit[currentIndex - 1].m_nodes = nodes;
@@ -640,6 +680,14 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
             float ratio = relativeX / slideW;
             delayTime = 2.0f - ratio * (2.0f - 0.1f);
         }
+        if (mIsDraggingSizeSlider) {
+            float panelStart = winW - rightWidth + TAB_WIDTH;
+            float trackX = panelStart + 15.f; 
+            float trackWidth = 180.f; // Khớp với initialization
+            float newX = std::max(trackX, std::min(worldPos.x, trackX + trackWidth));
+            float t = (newX - trackX) / trackWidth;
+            mNodeRadius = 15.f + t * 20.f; // Cập nhật size từ 15 đến 35
+        }
     }
 }
 
@@ -652,13 +700,13 @@ bool DijkstraScreen::isSegmentHovering(sf::Vector2f pos, sf::Vector2f A, sf::Vec
 }
 
 bool DijkstraScreen::isPosValid(sf::Vector2f pos, float winW, float winH, int ignoreNode) {
-    if (pos.x < leftWidth + NODE_RADIUS) return false;
-    if (pos.x > winW - rightWidth - NODE_RADIUS) return false;
-    if (pos.y > winH - 120.f - NODE_RADIUS) return false;
+    if (pos.x < leftWidth + mNodeRadius) return false;
+    if (pos.x > winW - rightWidth - mNodeRadius) return false;
+    if (pos.y > winH - 120.f - mNodeRadius) return false;
     for (int i = 0; i < (int)nodes.size(); ++i) {
         if (i == ignoreNode) continue;
         float d = std::hypot(nodes[i].x - pos.x, nodes[i].y - pos.y);
-        if (d < NODE_RADIUS * 2.5f) return false;
+        if (d < mNodeRadius * 2.5f) return false;
     }
     return true;
 }
@@ -848,7 +896,7 @@ void DijkstraScreen::drawGraph(sf::RenderWindow &window, sf::Font &font) {
 
     int hoveredNode = -1;
     for (size_t i = 0; i < nodes.size(); ++i) {
-        if (std::hypot(nodes[i].x - worldPos.x, nodes[i].y - worldPos.y) < NODE_RADIUS) {
+        if (std::hypot(nodes[i].x - worldPos.x, nodes[i].y - worldPos.y) < mNodeRadius) {
             hoveredNode = i;
             break;
         }
@@ -881,7 +929,7 @@ void DijkstraScreen::drawGraph(sf::RenderWindow &window, sf::Font &font) {
             arrow.setPoint(0, sf::Vector2f(0, 0));
             arrow.setPoint(1, sf::Vector2f(-arrowSize, -arrowSize / 1.8f));
             arrow.setPoint(2, sf::Vector2f(-arrowSize, arrowSize / 1.8f));
-            sf::Vector2f arrowPos = B - unitDir * NODE_RADIUS;
+            sf::Vector2f arrowPos = B - unitDir * mNodeRadius;
             arrow.setPosition(arrowPos);
             arrow.setRotation(angle);
 
@@ -955,10 +1003,10 @@ void DijkstraScreen::drawGraph(sf::RenderWindow &window, sf::Font &font) {
 
     //  --- DRAW NODES ---
     for (size_t i = 0; i < nodes.size(); ++i) {
-        sf::CircleShape shape(NODE_RADIUS);
-        shape.setOrigin(NODE_RADIUS, NODE_RADIUS);
+        sf::CircleShape shape(mNodeRadius);
+        shape.setOrigin(mNodeRadius, mNodeRadius);
+        shape.setFillColor(mCurrentNodeColor);
         shape.setPosition(nodes[i].x, nodes[i].y);
-        shape.setFillColor(sf::Color(50, 50, 50)); 
         shape.setOutlineThickness(-3.f);
 
         shape.setOutlineColor(getNodeColor(window, i));
@@ -1000,10 +1048,10 @@ void DijkstraScreen::drawGraph(sf::RenderWindow &window, sf::Font &font) {
         for (int i = 1; i < currentIndex; ++i) {
             if (path[i] == selectNode)
                 continue;
-            sf::CircleShape shape(NODE_RADIUS);
-            shape.setOrigin(NODE_RADIUS, NODE_RADIUS);
+            sf::CircleShape shape(mNodeRadius);
+            shape.setOrigin(mNodeRadius, mNodeRadius);
+            shape.setFillColor(mCurrentNodeColor);
             shape.setPosition(nodes[path[i]].x, nodes[path[i]].y); 
-            shape.setFillColor(sf::Color::Transparent);
             shape.setOutlineThickness(-3.f);
             shape.setOutlineColor(sf::Color::Yellow);
             window.draw(shape);
@@ -1211,6 +1259,45 @@ path from Source to all nodes.
                 label.setFillColor(sf::Color(180, 180, 180));
                 window.draw(label);
             }
+
+            float customY = contentY + 850.f; // Vị trí bắt đầu của vùng Custom
+
+            // 1. Vẽ Label và các ô màu (Color Picker)
+            sf::Text colorLabel("Node Fill Color", font, 14);
+            colorLabel.setPosition(panelStart + 10, customY);
+            colorLabel.setFillColor(sf::Color::Yellow);
+            window.draw(colorLabel);
+
+            for (size_t i = 0; i < mColorSwatches.size(); ++i) {
+                float x = panelStart + 15.f + (i % 3) * 35.f;
+                float y = customY + 25.f + (i / 3) * 35.f;
+                mColorSwatches[i].setPosition(x, y);
+
+                // Highlight ô đang chọn bằng viền Cyan
+                if (mThemeColors[i] == mCurrentNodeColor) {
+                    mColorSwatches[i].setOutlineColor(sf::Color::Cyan);
+                    mColorSwatches[i].setOutlineThickness(2.0f);
+                } else {
+                    mColorSwatches[i].setOutlineColor(sf::Color(100, 100, 100));
+                    mColorSwatches[i].setOutlineThickness(1.5f);
+                }
+                window.draw(mColorSwatches[i]);
+            }
+
+            // 2. Vẽ Label và Slider Size
+            float sliderY = customY + 110.f;
+            sf::Text sizeLabel("Node Size: " + std::to_string((int)mNodeRadius), font, 14);
+            sizeLabel.setPosition(panelStart + 10, sliderY);
+            sizeLabel.setFillColor(sf::Color::Yellow);
+            window.draw(sizeLabel);
+
+            mSizeSliderTrack.setPosition(panelStart + 15, sliderY + 30.f);
+            window.draw(mSizeSliderTrack);
+
+            // Cập nhật vị trí Knob theo kích thước hiện tại
+            float t = (mNodeRadius - 15.f) / 20.f;
+            mSizeSliderKnob.setPosition(panelStart + 15 + t * 180.f, sliderY + 32.f);
+            window.draw(mSizeSliderKnob);
         }
         else if (activeTab == TabState::Dist) {
             sf::Text title("DIAGNOSTICS", font, 16);

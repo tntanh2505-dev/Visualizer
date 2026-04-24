@@ -81,4 +81,15 @@ private:
     sf::Color getNodeColor(sf::RenderWindow &window, int index);
     void drawGraph(sf::RenderWindow &window, sf::Font &font);
     void drawUI(sf::RenderWindow &window, sf::Font &font, sf::Vector2i mPos);
+
+    // --- Node Customization ---
+    float mNodeRadius;
+    sf::Color mCurrentNodeColor;
+    std::vector<sf::Color> mThemeColors;
+    std::vector<sf::RectangleShape> mColorSwatches;
+
+    // --- Slider UI ---
+    sf::RectangleShape mSizeSliderTrack;
+    sf::CircleShape mSizeSliderKnob;
+    bool mIsDraggingSizeSlider;
 };
