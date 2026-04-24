@@ -52,7 +52,6 @@ int DijkstraScreen::run(sf::RenderWindow &window, sf::Font &font) {
     button[8] = std::make_unique<ModernButton>("<< PREV", font, sf::Vector2f(100.f, 40.f), 5.f);
     button[9] = std::make_unique<ModernButton>("NEXT >>", font, sf::Vector2f(100.f, 40.f), 5.f);
 
-
     sf::Clock deltaClock;
     while (window.isOpen()) {
         sf::Event event;
@@ -290,6 +289,22 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
                 isInputActive = true;
             else
                 isInputActive = false;
+            for (size_t i = 0; i < mColorSwatches.size(); ++i) {
+                if (mColorSwatches[i].getGlobalBounds().contains(worldPos)) {
+                    mCurrentNodeColor = mThemeColors[i]; // Cập nhật màu
+                    return;
+                }
+                if (mPos.y >= 555.f - 20.f && mPos.y <= 555.f + 20.f && 
+                    mPos.x >= 25.f - 10.f && mPos.x <= 25.f + (leftWidth - 85.f) + 10.f) {
+                    mIsDraggingSizeSlider = true;
+                    
+                    // Cập nhật giá trị ngay khi vừa nhấn xuống
+                    float relativeX = std::max(0.f, std::min((float)mPos.x - 25.f, leftWidth - 85.f));
+                    float t = relativeX / (leftWidth - 85.f);
+                    mNodeRadius = 15.f + t * 20.f; // Range: 15 -> 35
+                    return;
+                }
+            }
             if (button[0]->isClicked(worldPos, true)) { // MODE
                 selectNode = -1;
                 isEditMode = !isEditMode;
@@ -467,21 +482,6 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
                     if (currentIndex < m_run.size())
                         currentIndex++;
                 }
-            }
-        }
-        if (rightExpanded && activeTab == TabState::Info) {
-            // Kiểm tra click chọn màu
-            for (size_t i = 0; i < mColorSwatches.size(); ++i) {
-                if (mColorSwatches[i].getGlobalBounds().contains(worldPos)) {
-                    mCurrentNodeColor = mThemeColors[i]; // Cập nhật màu
-                    return;
-                }
-            }
-            // Kiểm tra click vào Slider Size
-            if (mSizeSliderKnob.getGlobalBounds().contains(worldPos) || 
-                mSizeSliderTrack.getGlobalBounds().contains(worldPos)) {
-                mIsDraggingSizeSlider = true;
-                return;
             }
         }
         
@@ -681,12 +681,15 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
             delayTime = 2.0f - ratio * (2.0f - 0.1f);
         }
         if (mIsDraggingSizeSlider) {
-            float panelStart = winW - rightWidth + TAB_WIDTH;
-            float trackX = panelStart + 15.f; 
-            float trackWidth = 180.f; // Khớp với initialization
-            float newX = std::max(trackX, std::min(worldPos.x, trackX + trackWidth));
-            float t = (newX - trackX) / trackWidth;
-            mNodeRadius = 15.f + t * 20.f; // Cập nhật size từ 15 đến 35
+            float sliderX = 25.f;
+            float sliderW = leftWidth - 85.f;
+            
+            // Tính toán dựa trên tọa độ X của chuột so với điểm bắt đầu sliderX
+            float relativeX = std::max(0.f, std::min((float)mPos.x - sliderX, sliderW));
+            float t = relativeX / sliderW;
+            
+            // Cập nhật bán kính (Min: 15, Max: 35)
+            mNodeRadius = 15.f + t * 20.f;
         }
     }
 }
@@ -1094,12 +1097,12 @@ void DijkstraScreen::drawUI(sf::RenderWindow &window, sf::Font &font, sf::Vector
         for (size_t i = 0; i < 8; ++i)
             window.draw(*button[i]);
 
+// --- GIỮ NGUYÊN CÔNG THỨC SPEED CỦA BẠN ---
         float sliderY = 500.f;
         float sliderX = 25.f;
         float sliderW = leftWidth - 85.f;
 
         int speedPercent = static_cast<int>((2.0f - delayTime) / (2.0f - 0.1f) * 100.f);
-        
         sf::Text speedText("Speed: " + std::to_string(speedPercent) + "%", font, 16);
         speedText.setPosition(sliderX, sliderY - 30.f);
         window.draw(speedText);
@@ -1116,6 +1119,32 @@ void DijkstraScreen::drawUI(sf::RenderWindow &window, sf::Font &font, sf::Vector
         thumb.setFillColor(sf::Color::White);
         window.draw(thumb);
 
+        // --- CHỈNH LẠI NODE SIZE SLIDER (Dựa trên ý tưởng và biến của bạn) ---
+        // Đặt thấp xuống một chút (cách Speed Slider 55px)
+        float sizeY = 555.f; 
+        
+        sf::Text sizeLabel("Node Size: " + std::to_string((int)mNodeRadius), font, 14);
+        sizeLabel.setPosition(sliderX, sizeY - 25.f);
+        sizeLabel.setFillColor(sf::Color::Yellow);
+        window.draw(sizeLabel);
+
+        // Sử dụng đối tượng track của bạn, cập nhật vị trí mới
+        mSizeSliderTrack.setSize(sf::Vector2f(sliderW, 4.f)); // Đồng bộ độ rộng với Speed
+        mSizeSliderTrack.setPosition(sliderX, sizeY);
+        mSizeSliderTrack.setFillColor(sf::Color(100, 100, 100));
+        window.draw(mSizeSliderTrack);
+
+        // SỬA CÔNG THỨC TẠI ĐÂY:
+        // Giả sử mNodeRadius chạy từ 15.f đến 35.f (khoảng cách là 20.f)
+        float t = (mNodeRadius - 15.f) / 20.f; 
+        if (t < 0.f) t = 0.f; if (t > 1.f) t = 1.f;
+
+        // Vị trí Knob phải cộng thêm sliderX để không bị nhảy về góc trái màn hình
+        mSizeSliderKnob.setOrigin(8.f, 8.f); // Đảm bảo tâm ở giữa
+        mSizeSliderKnob.setPosition(sliderX + (t * sliderW), sizeY + 2.f);
+        window.draw(mSizeSliderKnob);
+
+        // --- GIỮ NGUYÊN VỊ TRÍ INPUT BOX (600.f) ---
         float inputY = 600.f;
         float inputX = 25.f;
         float inputW = leftWidth - 50.f;
@@ -1128,7 +1157,7 @@ void DijkstraScreen::drawUI(sf::RenderWindow &window, sf::Font &font, sf::Vector
         inputRect.setOutlineColor(isInputActive ? sf::Color::Cyan : sf::Color(100, 100, 100));
         window.draw(inputRect);
 
-        sf::Text inputText(isInputActive ? inputBuffer +  "_" : "Enter here...",font, 18);
+        sf::Text inputText(isInputActive ? inputBuffer + "_" : "Enter here...", font, 18);
         inputText.setPosition(inputX + 10.f, inputY + 8.f);
         inputText.setFillColor(isInputActive ? sf::Color::White : sf::Color(100, 100, 100));
         window.draw(inputText);
@@ -1137,6 +1166,28 @@ void DijkstraScreen::drawUI(sf::RenderWindow &window, sf::Font &font, sf::Vector
         hint.setPosition(inputX, inputY + inputH + 5.f);
         hint.setFillColor(sf::Color(150, 150, 150));
         window.draw(hint);
+
+        // --- CHỈNH THẤP COLOR PICKER XUỐNG ---
+        float colorLabelY = 710.f; // Đẩy thấp xuống hẳn dưới phần Input
+        sf::Text colorLabel("Node Fill Color", font, 14);
+        colorLabel.setPosition(20.f, colorLabelY);
+        colorLabel.setFillColor(sf::Color::Yellow);
+        window.draw(colorLabel);
+
+        for (size_t i = 0; i < mColorSwatches.size(); ++i) {
+            float x = 30.f + (i % 3) * 35.f;
+            float y = colorLabelY + 30.f + (i / 3) * 35.f;
+            mColorSwatches[i].setPosition(x, y);
+
+            if (mThemeColors[i] == mCurrentNodeColor) {
+                mColorSwatches[i].setOutlineColor(sf::Color::Cyan);
+                mColorSwatches[i].setOutlineThickness(2.0f);
+            } else {
+                mColorSwatches[i].setOutlineColor(sf::Color(100, 100, 100));
+                mColorSwatches[i].setOutlineThickness(1.5f);
+            }
+            window.draw(mColorSwatches[i]);
+        }
     }
 
     //  ----- RIGHT PANEL -----
@@ -1260,44 +1311,6 @@ path from Source to all nodes.
                 window.draw(label);
             }
 
-            float customY = contentY + 850.f; // Vị trí bắt đầu của vùng Custom
-
-            // 1. Vẽ Label và các ô màu (Color Picker)
-            sf::Text colorLabel("Node Fill Color", font, 14);
-            colorLabel.setPosition(panelStart + 10, customY);
-            colorLabel.setFillColor(sf::Color::Yellow);
-            window.draw(colorLabel);
-
-            for (size_t i = 0; i < mColorSwatches.size(); ++i) {
-                float x = panelStart + 15.f + (i % 3) * 35.f;
-                float y = customY + 25.f + (i / 3) * 35.f;
-                mColorSwatches[i].setPosition(x, y);
-
-                // Highlight ô đang chọn bằng viền Cyan
-                if (mThemeColors[i] == mCurrentNodeColor) {
-                    mColorSwatches[i].setOutlineColor(sf::Color::Cyan);
-                    mColorSwatches[i].setOutlineThickness(2.0f);
-                } else {
-                    mColorSwatches[i].setOutlineColor(sf::Color(100, 100, 100));
-                    mColorSwatches[i].setOutlineThickness(1.5f);
-                }
-                window.draw(mColorSwatches[i]);
-            }
-
-            // 2. Vẽ Label và Slider Size
-            float sliderY = customY + 110.f;
-            sf::Text sizeLabel("Node Size: " + std::to_string((int)mNodeRadius), font, 14);
-            sizeLabel.setPosition(panelStart + 10, sliderY);
-            sizeLabel.setFillColor(sf::Color::Yellow);
-            window.draw(sizeLabel);
-
-            mSizeSliderTrack.setPosition(panelStart + 15, sliderY + 30.f);
-            window.draw(mSizeSliderTrack);
-
-            // Cập nhật vị trí Knob theo kích thước hiện tại
-            float t = (mNodeRadius - 15.f) / 20.f;
-            mSizeSliderKnob.setPosition(panelStart + 15 + t * 180.f, sliderY + 32.f);
-            window.draw(mSizeSliderKnob);
         }
         else if (activeTab == TabState::Dist) {
             sf::Text title("DIAGNOSTICS", font, 16);
