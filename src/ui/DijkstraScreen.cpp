@@ -1212,12 +1212,28 @@ path from Source to all nodes.
 - Step 3: Select Target Node
 - Step 4: Observe Final Path
 (All actions via Left-Click)
+
+[ KEYBOARD ]
+  Input format
+
+  * In [ MODE: EDIT ]
+  - A     : create node
+  - A B   : create edge (A-B)
+  - A B C : create edge (A-B)
+        with weight C (integer)
+
+  * In [ MODE: RUN ]
+  - X   : select source or
+        target if source existed
+  - X Y : select source X and
+        target node Y
+        
 )", font, 16);
             info.setPosition(panelStart + 10, contentY + 25.f);
             info.setFillColor(sf::Color(220, 220, 220));
             window.draw(info);
 
-            float legendStartY = contentY + 400.f;
+            float legendStartY = contentY + 700.f;
             float circleRadius = 6.f;
             float itemSpacing = 22.f;
 
