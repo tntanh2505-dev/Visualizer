@@ -484,9 +484,14 @@ void HeapVisualizer::render(sf::RenderWindow& window) const {
 // Clears temporary UI state when the user leaves and re-enters the heap screen.
 void HeapVisualizer::reset() {
     mInputFocused = false;
+    mInputBuffer.clear();
+    mInputText.setString("");
     mPendingActions.clear();
+    mHistory.clear();
     mHighlight = {};
     mActionTimer = 0.f;
+    mSelectedIndex = -1;
+    mIsPlaying = false;
 }
 
 void HeapVisualizer::runLoadFile() {
@@ -1363,6 +1368,7 @@ void HeapVisualizer::clearInput() {
 }
 
 int HeapVisualizer::run(sf::RenderWindow& window, sf::Font& font) {
+    reset();
     sf::View originalView = window.getView(); 
     sf::View heapView;
     heapView.setSize(1280.f, 720.f); 
