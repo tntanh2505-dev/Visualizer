@@ -11,7 +11,10 @@
 #include "DSA-Visualization/ui/button.hpp"
 #include "DSA-Visualization/heap/heap.hpp"
 
-class HeapVisualizer : public Screen{
+// Define the Tab State for the Right Panel
+enum class HeapRightTabState { INFO, CODE };
+
+class HeapVisualizer : public Screen {
 public:
     HeapVisualizer();
     int run(sf::RenderWindow& window, sf::Font& font) override;
@@ -48,7 +51,6 @@ private:
     void loadHeapifyCode();
     void loadInsertCode();
 
-    void drawPanel(sf::RenderWindow& window) const;
     void drawInputArea(sf::RenderWindow& window) const;
     void drawButtons(sf::RenderWindow& window) const;
     void drawArray(sf::RenderWindow& window) const;
@@ -67,7 +69,12 @@ private:
     sf::Vector2f nodePosition(std::size_t index) const;
     sf::Color nodeColor(std::size_t index) const;
 
-    //Panels
+    // --- Properties for Resizing & Workspace ---
+    float mBaseWidth = 1280.f;
+    float mBaseHeight = 720.f;
+    sf::RectangleShape mWorkspaceBg;
+
+    // Panels
     CodePanel mCodePanel;
     const sf::Font& mFont;
     MaxHeap mHeap;
@@ -79,28 +86,27 @@ private:
     std::vector<std::string> mCurrentCode;
     int mActiveLine = -1;
     int mSelectedIndex = -1;
+    
+    // Layout logic synced with Linked List
     bool mLeftExpanded = true;
     bool mRightExpanded = true;
-    float mLeftWidth = 240.f;  
-    float mRightWidth = 260.f;
-    const float SIDEBAR_MAX_WIDTH = 240.f;
-    const float CODE_PANEL_MAX_WIDTH = 260.f;
+    float mLeftWidth = 300.f;  
+    float mRightWidth = 450.f;
+    const float SIDEBAR_MAX_WIDTH = 300.f;
+    const float CODE_PANEL_MAX_WIDTH = 450.f;
     const float TAB_WIDTH = 35.f;
     float mWorkspaceCenterX = 640.f;
 
-    sf::RectangleShape mPanel;
     sf::RectangleShape mInputBox;
-    sf::RectangleShape mControlPanelBg;
-    sf::RectangleShape mCodeBox;
 
-    //Slider
+    // Slider
     sf::RectangleShape mSliderTrack;
     sf::CircleShape mSliderKnob;
     bool mIsDraggingSlider = false;
     const float MIN_INTERVAL = 0.1f;
     const float MAX_INTERVAL = 2.0f;
 
-    //Texts
+    // Texts
     sf::Text mTitleText;
     sf::Text mSubtitleText;
     sf::Text mInputLabel;
@@ -111,8 +117,9 @@ private:
     sf::Text mStatusText;
     sf::Text mRootText;
     sf::Text mLegendText;
+    sf::Text mInfoTextDisplay;
 
-    //Buttons
+    // Buttons (Resized to match Linked List)
     ModernButton mInsertButton;
     ModernButton mDeleteButton;
     ModernButton mBuildButton;
@@ -125,15 +132,18 @@ private:
     ModernButton mRandomButton;
     ModernButton mSkipButton;
     ModernButton mUpdateButton;
-    ModernButton mLeftCollapseBtn;
-    ModernButton mRightCollapseBtn;
 
-    //Background
+    // Tab Buttons and State
+    HeapRightTabState mRightTabState = HeapRightTabState::CODE;
+    ModernButton mInfoTabBtn;
+    ModernButton mCodeTabBtn;
+
+    // Background
     sf::Texture mBgTexture;
     sf::Sprite mBgSprite;
     bool notLoaded = true;
 
-    //Animation
+    // Animation
     std::string mInputBuffer;
     std::string mStatusMessage;
     bool mInputFocused = false;
@@ -141,27 +151,29 @@ private:
     float mActionTimer = 0.f;
     float mActionInterval = 0.6f;
 
-    //Customization
+    // Customization Vectors for positioning
+    sf::Vector2f mColorLabelPos;
+    sf::Vector2f mThemeLabelPos;
 
-    //1.Color
+    // 1. Color
     sf::Color mCurrentNodeColor;
     std::vector<sf::Color> mThemeColors;
     std::vector<sf::RectangleShape> mColorSwatches;
     void drawColorPicker(sf::RenderWindow& window) const;
 
-    //2.Theme
+    // 2. Theme
     ModernButton mDarkThemeBtn;
     ModernButton mLightThemeBtn;
     bool mIsDarkMode = true;
 
-    //3.Size (Slider)
+    // 3. Size (Slider)
     float mNodeRadius;
     sf::RectangleShape mSizeSliderTrack;
     sf::CircleShape mSizeSliderKnob;
     sf::Text mSizeLabel;
     bool mIsDraggingSizeSlider = false;
 
-    //4.Background
+    // 4. Background
     enum class BackgroundType { Default, White, Black };
     BackgroundType mBgType = BackgroundType::Default;
     ModernButton mBgDefaultBtn;
