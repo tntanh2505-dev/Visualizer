@@ -29,7 +29,7 @@ struct Edge {
 
 class Dijkstra {
 public:
-    void init(std::vector<Node> &nodes, std::vector<Edge> &edges, int source);
+    void init(std::vector<Node> &nodes, std::vector<Edge> &edges, bool isDirected, int source = -1);
     int stage(std::vector<Node> &nodes);
     std::vector<int> getShortestPath(std::vector<Node> &nodes, int target);
     std::vector<int> getAdjacent(int index);

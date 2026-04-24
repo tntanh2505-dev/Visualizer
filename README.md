@@ -38,7 +38,7 @@ Each data structure supports the following operations:
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/data-structure-visualizer.git
+git clone https://github.com/tntanh2505-dev/Visualizer.git
 cd data-structure-visualizer
 
 # Create a build directory
