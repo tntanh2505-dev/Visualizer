@@ -1,5 +1,8 @@
 #include "DSA-Visualization/ui/DijkstraScreen.hpp"
 #include <cmath>
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
 #include <random>
 #include <fstream>
 #include <sstream>
@@ -9,6 +12,7 @@ const float LEFT_PANEL_WIDTH = 250.f;
 const float RIGHT_PANEL_WIDTH = 300.f;
 const float TAB_WIDTH = 35.f;
 const float TAB_HEIGHT = 50.f;
+
 const std::vector<std::string> pseudoCode = {
     "Dijkstra(Graph, source)",        
     "  dist[source] = 0",                     
