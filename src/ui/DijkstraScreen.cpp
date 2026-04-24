@@ -210,6 +210,8 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
                         edges[editingEdge].weight = inputBuffer.empty() ? 1 : std::stoi(inputBuffer);
                     } catch (...) { edges[editingEdge].weight = 1; }
                 }
+                m_edit[currentIndex - 1].m_nodes = nodes;
+                m_edit[currentIndex - 1].m_edges = edges;
                 editingNode = -1;
                 editingEdge = -1;
                 inputBuffer = "";
