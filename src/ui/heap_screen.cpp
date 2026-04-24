@@ -1214,6 +1214,7 @@ void HeapVisualizer::applyTheme() {
         mSliderTrack.setFillColor(sf::Color(60, 60, 80));
         mSliderTrack.setOutlineColor(sf::Color(100, 100, 150));
         mSliderKnob.setFillColor(sf::Color(181, 58, 199));
+        mSpeedLabel.setFillColor(sf::Color::White);
         mSizeSliderKnob.setFillColor(sf::Color(181, 58, 199));
         mSizeLabel.setFillColor(sf::Color::White);
         mSizeSliderTrack.setFillColor(sf::Color(60, 60, 80));
@@ -1245,6 +1246,7 @@ void HeapVisualizer::applyTheme() {
         mSliderTrack.setFillColor(sf::Color(200, 200, 210));
         mSliderTrack.setOutlineColor(sf::Color(160, 160, 170));
         mSliderKnob.setFillColor(sf::Color(52, 152, 219));
+        mSpeedLabel.setFillColor(sf::Color::Black);
         mSizeSliderKnob.setFillColor(sf::Color(52, 152, 219));
         mSizeLabel.setFillColor(sf::Color(50, 50, 60));
         mSizeSliderTrack.setFillColor(sf::Color(180, 180, 190));
@@ -1375,11 +1377,14 @@ int HeapVisualizer::run(sf::RenderWindow& window, sf::Font& font) {
     heapView.setCenter(640.f, 360.f);
     window.setView(heapView);
 
-    if (!mBgTexture.loadFromFile("assets/textures/heap_background.png")) {
-        std::cerr << "Failed to load background.png\n";
+    if (notLoaded) {
+        if (!mBgTexture.loadFromFile("assets/textures/heap_background.png")) {
+            std::cerr << "Failed to load background.png\n";
+        }
+        notLoaded = false;
+        mBgSprite.setTexture(mBgTexture);
+        mBgSprite.setScale(1280.f / mBgTexture.getSize().x, 720.f / mBgTexture.getSize().y);
     }
-    mBgSprite.setTexture(mBgTexture);
-    mBgSprite.setScale(1280.f / mBgTexture.getSize().x, 720.f / mBgTexture.getSize().y);
 
     sf::Clock clock;
 
@@ -1398,9 +1403,10 @@ int HeapVisualizer::run(sf::RenderWindow& window, sf::Font& font) {
             if (event.type == sf::Event::MouseButtonReleased &&
                 event.mouseButton.button == sf::Mouse::Left &&
                 mReturnButton.isClicked(mouse, true)) {
-                window.setView(originalView);
-                return 0;
-            }
+                    runSkip();
+                    window.setView(originalView);
+                    return 0;
+                }
 
             if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape) {
                 window.setView(originalView);

@@ -131,6 +131,7 @@ private:
     //Background
     sf::Texture mBgTexture;
     sf::Sprite mBgSprite;
+    bool notLoaded = true;
 
     //Animation
     std::string mInputBuffer;
