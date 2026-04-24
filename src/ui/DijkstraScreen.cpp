@@ -2,6 +2,7 @@
 #include <cmath>
 #include <random>
 #include <fstream>
+#include <sstream>
 
 const float NODE_RADIUS = 25.f;
 const float LEFT_PANEL_WIDTH = 250.f;
@@ -61,30 +62,6 @@ int DijkstraScreen::run(sf::RenderWindow &window, sf::Font &font) {
 
         while (window.pollEvent(event)) {
             if (event.type == sf::Event::Closed) return -1;
-
-            // Xử lý nhập liệu bàn phím khi đang sửa Label
-            if ((editingNode != -1 || editingEdge != -1) && event.type == sf::Event::TextEntered) {
-                if (event.text.unicode == 13) { // Enter để hoàn tất
-                    if (editingNode != -1) {
-                        nodes[editingNode].label = inputBuffer;
-                    } else {
-                        // Chuyển buffer thành số, mặc định là 1 nếu rỗng hoặc lỗi
-                        try {
-                            edges[editingEdge].weight = inputBuffer.empty() ? 1 : std::stoi(inputBuffer);
-                        } catch (...) { edges[editingEdge].weight = 1; }
-                    }
-                    editingNode = -1;
-                    editingEdge = -1;
-                    inputBuffer = "";
-                }
-                else if (event.text.unicode == 8) { // Backspace
-                    if (!inputBuffer.empty()) inputBuffer.pop_back();
-                }
-                else if (event.text.unicode < 128 && inputBuffer.length() < 5) { // Chỉ nhận ASCII và giới hạn 5 ký tự
-                    inputBuffer += static_cast<char>(event.text.unicode);
-                }
-            }
-
             handleInput(window, event, mPos);
         }
 
@@ -161,6 +138,7 @@ void DijkstraScreen::initialization() {
     isDirected = false;
     isAlgoDone = false;
     isDragging = false;
+    isInputActive = false;
     isDraggingSpeed = false;
 
     sourceNode = -1;
@@ -199,6 +177,46 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
         window.setView(sf::View(visibleArea));
     }
 
+    if (event.type == sf::Event::TextEntered) {
+        if ((editingNode != -1 || editingEdge != -1)) {
+            if (event.text.unicode == 13) { // Enter để hoàn tất
+                if (editingNode != -1) {
+                    nodes[editingNode].label = inputBuffer;
+                } else {
+                    // Chuyển buffer thành số, mặc định là 1 nếu rỗng hoặc lỗi
+                    try {
+                        edges[editingEdge].weight = inputBuffer.empty() ? 1 : std::stoi(inputBuffer);
+                    } catch (...) { edges[editingEdge].weight = 1; }
+                }
+                editingNode = -1;
+                editingEdge = -1;
+                inputBuffer = "";
+            }
+            else if (event.text.unicode == 8) { // Backspace
+                if (!inputBuffer.empty()) inputBuffer.pop_back();
+            }
+            else if (event.text.unicode < 128 && inputBuffer.length() < 5) { // Chỉ nhận ASCII và giới hạn 5 ký tự
+                inputBuffer += static_cast<char>(event.text.unicode);
+            }
+        }
+        if (isInputActive) {
+            if (event.text.unicode == 8) { // Backspace
+                if (!inputBuffer.empty()) inputBuffer.pop_back();
+            } else if (event.text.unicode == 13) { // Enter
+                processInputBuffer();
+                inputBuffer.clear();
+                isInputActive = false;
+            } else if ((event.text.unicode >= '0' && event.text.unicode <= '9') || 
+             (event.text.unicode >= 'a' && event.text.unicode <= 'z') || 
+             (event.text.unicode >= 'A' && event.text.unicode <= 'Z') || 
+             event.text.unicode == ' ') {
+                if (inputBuffer.length() < 20) {
+                    inputBuffer += static_cast<char>(event.text.unicode);
+                }
+    }
+        }
+    }
+
     // Khi thả chuột trái -> Ngừng trạng thái di chuyển node
     if (event.type == sf::Event::MouseButtonReleased && event.mouseButton.button == sf::Mouse::Left) {
         isDraggingSpeed = false;
@@ -233,8 +251,13 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
                 float ratio = relativeX / slideW;
                 delayTime = 2.0f - ratio * (2.0f - 0.1f); 
                 
-                return; // Thoát để không click nhầm vào các thành phần dưới UI
+                return;
             }
+            if (mPos.x >= 25 && mPos.x <= leftWidth - 25 &&
+                mPos.y >= 600 && mPos.y <= 640)
+                isInputActive = true;
+            else
+                isInputActive = false;
             if (button[0]->isClicked(worldPos, true)) { // Nút MODE
                 selectNode = -1;
                 isEditMode = !isEditMode;
@@ -648,6 +671,151 @@ bool DijkstraScreen::isPosValid(sf::Vector2f pos, float winW, float winH, int ig
     return true;
 }
 
+void DijkstraScreen::processInputBuffer() {
+    if (inputBuffer.empty()) return;
+
+    std::stringstream ss(inputBuffer);
+    std::vector<std::string> tokens;
+    std::string temp;
+
+    // Tách các từ/số cách nhau bởi dấu cách
+    while (ss >> temp) tokens.push_back(temp);
+
+    if (tokens.empty()) return;
+
+    auto findIndex = [&](const std::string &label) -> int {
+        for (size_t i = 0; i < nodes.size(); ++i)
+            if (nodes[i].label == label)
+                return i;
+        return -1;
+    };
+
+    if (isEditMode) {
+        // --- CHẾ ĐỘ EDIT ---
+        bool change = false;
+        // 1. Nhập 1 số: Thêm hoặc chỉnh sửa nhãn của một Đỉnh (Node)
+        if (tokens.size() == 1) {
+            if (findIndex(tokens[0]) != -1)
+                return;
+            change = true;
+            // Tạo node mới tại vị trí ngẫu nhiên trong vùng hợp lệ để tránh chồng lấp
+            float x = 300.f + (rand() % 400);
+            float y = 200.f + (rand() % 300);
+            nodes.emplace_back(Node(tokens[0], x, y));
+            dist.push_back(INF);
+        }
+        
+        // 2. Nhập 2 số: Thêm cạnh giữa 2 đỉnh với trọng số mặc định là 1 (Cú pháp: u v)
+        else if (tokens.size() == 2) {
+            int u = findIndex(tokens[0]);
+            int v = findIndex(tokens[1]);
+            if (u != -1 && v != -1 && u != v) {
+                change = true;
+                edges.emplace_back(Edge(u, v, 1));
+            }
+        }
+        
+        // 3. Nhập 3 số: Thêm cạnh có trọng số tùy chỉnh (Cú pháp: u v w)
+        else if (tokens.size() == 3) {
+            int u = findIndex(tokens[0]);
+            int v = findIndex(tokens[1]);
+            int w = 1;
+            try {
+                w = std::stoi(tokens[2]);
+            } catch (...) {
+                w = 1;
+            }
+            if (u != -1 && v != -1 && u != v) {
+                change = true;
+                edges.emplace_back(Edge(u, v, w));
+            }
+        }
+
+        // Sau khi thay đổi đồ thị, cập nhật lịch sử (m_edit) cho thanh Seekbar
+        if (change) {
+            while (m_edit.size() > (size_t)currentIndex) m_edit.pop_back();
+            m_edit.push_back({nodes, edges});
+            currentIndex = m_edit.size();
+        }
+    } 
+    else {
+        // --- CHẾ ĐỘ RUN ---
+        auto runAlgorithm = [&](int s) {
+            sourceNode = s;
+            selectNode = -1;
+            isAlgoDone = false;
+            dist.assign(nodes.size(), INF);
+            dist[sourceNode] = 0;
+            for (auto& n : nodes) {
+                n.isProcessed = false;
+                n.dist = INF; // Đảm bảo node data cũng sạch
+            }
+            nodes[sourceNode].dist = 0;
+
+            algorithm.init(nodes, edges, isDirected, sourceNode);
+            m_run.clear();
+            m_run.push_back({1, -1, -1, nodes, dist});
+
+            while (true) {
+                visitingNode = -1;
+                processingNode = algorithm.stage(nodes);
+                if (processingNode == -1) {
+                    m_run.push_back({17, -1, -1, nodes, dist});
+                    break;
+                }
+                m_run.push_back({9, -1, processingNode, nodes, dist});
+                std::vector<int> adj = algorithm.getAdjacent(processingNode);
+                for (int v : adj) {
+                    visitingNode = v;
+                    dist[v] = nodes[v].dist;
+                    m_run.push_back({14, visitingNode, processingNode, nodes, dist});
+                }
+            }
+
+            currentIndex = 1;
+        };
+        
+        if (tokens.size() >= 2) {
+            int s = findIndex(tokens[0]);
+            int t = findIndex(tokens[1]);
+
+            if (s == -1 || t == -1) return;
+
+            runAlgorithm(s);
+            isAlgoDone = true;
+            selectNode = t;
+            path.clear();
+            path = algorithm.getShortestPath(nodes, selectNode);
+            currentIndex = path.size();
+        }
+        // 1 số: Chọn đỉnh nguồn (Source) và chạy lại thuật toán
+        else if (sourceNode == -1) {
+            int s = findIndex(tokens[0]);
+
+            if (s == -1) return;
+            runAlgorithm(s);
+            isAlgoDone = false;
+        } else {
+
+            int t = findIndex(tokens[0]);
+
+            if (t == -1) return;
+
+            currentLine = m_run.back().m_currentLine;
+            visitingNode = m_run.back().m_visitingNode;
+            processingNode = m_run.back().m_processingNode;
+            nodes = m_run.back().m_nodes;
+            dist = m_run.back().m_dist;
+            isAlgoDone = true;
+
+            selectNode = t;
+            path.clear();
+            path = algorithm.getShortestPath(nodes, selectNode);
+            currentIndex = path.size();
+        }
+    }
+}
+
 void DijkstraScreen::fixedSeekBar(float mouseX, float startX, float barWidth) {
     float relativeX = std::max(0.f, std::min(mouseX - startX, barWidth));
     float clampedX = std::max(startX, std::min(mouseX, startX + barWidth));
@@ -938,7 +1106,32 @@ void DijkstraScreen::drawUI(sf::RenderWindow &window, sf::Font &font, sf::Vector
         float ratio = (2.0f - delayTime) / (2.0f - 0.1f);
         thumb.setPosition(sliderX + ratio * sliderW, sliderY + 2.f);
         thumb.setFillColor(sf::Color::White);
-        window.draw(thumb);    
+        window.draw(thumb);
+
+        float inputY = 600.f; // Dưới slider một chút
+        float inputX = 25.f;
+        float inputW = leftWidth - 50.f;
+        float inputH = 40.f;
+
+        // Vẽ khung bảng nhập
+        sf::RectangleShape inputRect(sf::Vector2f(inputW, inputH));
+        inputRect.setPosition(inputX, inputY);
+        inputRect.setFillColor(isInputActive ? sf::Color(50, 50, 50) : sf::Color(30, 30, 30));
+        inputRect.setOutlineThickness(1.5f);
+        inputRect.setOutlineColor(isInputActive ? sf::Color::Cyan : sf::Color(100, 100, 100));
+        window.draw(inputRect);
+
+        // Vẽ văn bản trong bảng nhập
+        sf::Text inputText(isInputActive ? inputBuffer +  "_" : "Enter here...",font, 18);
+        inputText.setPosition(inputX + 10.f, inputY + 8.f);
+        inputText.setFillColor(isInputActive ? sf::Color::White : sf::Color(100, 100, 100));
+        window.draw(inputText);
+
+        // Vẽ hướng dẫn nhỏ bên dưới
+        sf::Text hint("Keyboard", font, 12);
+        hint.setPosition(inputX, inputY + inputH + 5.f);
+        hint.setFillColor(sf::Color(150, 150, 150));
+        window.draw(hint);
     }
 
     // ----- RIGHT PANEL -----
@@ -1179,20 +1372,18 @@ path from Source to all nodes.
     window.draw(handle);
     
     // 6. Vẽ text hiển thị số bước ở ngay dưới thanh bar
-    /*if (!history.empty())*/ {
-        sf::Text stepInfo("", font, 16);
-        if (isEditMode)
-            stepInfo.setString(std::to_string(currentIndex) + '/' + std::to_string(m_edit.size()));
-        else if (isAlgoDone)
-            stepInfo.setString(std::to_string(currentIndex) + '/' + std::to_string(path.size()));
-        else
-            stepInfo.setString(std::to_string(currentIndex) + '/' + std::to_string(m_run.size()));
-        sf::FloatRect textRect = stepInfo.getLocalBounds();
-        stepInfo.setOrigin(textRect.left + textRect.width / 2.0f, 0);
-        stepInfo.setPosition(centerX, bottomY + 20.f);
-        stepInfo.setFillColor(sf::Color(150, 150, 150));
-        window.draw(stepInfo);
-    }
+    sf::Text stepInfo("", font, 16);
+    if (isEditMode)
+        stepInfo.setString(std::to_string(currentIndex) + '/' + std::to_string(m_edit.size()));
+    else if (isAlgoDone)
+        stepInfo.setString(std::to_string(currentIndex) + '/' + std::to_string(path.size()));
+    else
+        stepInfo.setString(std::to_string(currentIndex) + '/' + std::to_string(m_run.size()));
+    sf::FloatRect textRect = stepInfo.getLocalBounds();
+    stepInfo.setOrigin(textRect.left + textRect.width / 2.0f, 0);
+    stepInfo.setPosition(centerX, bottomY + 20.f);
+    stepInfo.setFillColor(sf::Color(150, 150, 150));
+    window.draw(stepInfo);
 
     button[8]->setPosition(centerX - (barWidth / 2.f) - 80.f, bottomY);
     window.draw(*button[8]);
