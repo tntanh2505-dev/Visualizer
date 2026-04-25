@@ -96,7 +96,9 @@ private:
     AVLRightTabState mRightTabState = AVLRightTabState::CODE;
     std::optional<ModernButton> mInfoTabBtn;
     std::optional<ModernButton> mCodeTabBtn;
-    sf::Text mInfoTextDisplay;
+    
+    // --- Replaced single string with structured vector ---
+    std::vector<sf::Text> mInfoTexts;
 
     sf::Vector2f mColorLabelPos;
     sf::Vector2f mThemeLabelPos;

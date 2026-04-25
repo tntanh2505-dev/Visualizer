@@ -117,7 +117,9 @@ private:
     sf::Text mStatusText;
     sf::Text mRootText;
     sf::Text mLegendText;
-    sf::Text mInfoTextDisplay;
+    
+    // --- Replaced single string with structured vector ---
+    std::vector<sf::Text> mInfoTexts;
 
     // Buttons (Resized to match Linked List)
     ModernButton mInsertButton;
@@ -175,7 +177,7 @@ private:
 
     // 4. Background
     enum class BackgroundType { Default, White, Black };
-    BackgroundType mBgType = BackgroundType::Default;
+    BackgroundType mBgType = BackgroundType::Black;
     ModernButton mBgDefaultBtn;
     ModernButton mBgWhiteBtn;
     ModernButton mBgBlackBtn;

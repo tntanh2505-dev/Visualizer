@@ -47,7 +47,7 @@ HeapVisualizer::HeapVisualizer(const sf::Font& font)
     , mPlayPauseButton("PAUSE", font, {70.f, 40.f})
     , mStepButton("NEXT", font, {70.f, 40.f})
     , mReturnButton("MENU", font, {80.f, 40.f})
- // Customization & Theme Buttons
+    // Customization & Theme Buttons
     , mDarkThemeBtn("Dark", font, {80.f, 30.f})
     , mLightThemeBtn("Light", font, {80.f, 30.f})
     , mBgDefaultBtn("PNG", font, {70.f, 30.f})
@@ -59,9 +59,38 @@ HeapVisualizer::HeapVisualizer(const sf::Font& font)
 {
     // Right Panel Tabs Setup
     mRightTabState = HeapRightTabState::CODE;
-    mInfoTextDisplay.setFont(font);
-    mInfoTextDisplay.setCharacterSize(15);
-    mInfoTextDisplay.setString("Max Heap\n\n- O(1) Get Max\n- O(log N) Insert\n- O(log N) Extract Max\n\nA complete binary tree where each\nparent is greater than or equal\nto its children.");
+    
+    // Parse the provided HEAP.txt structured information
+    std::vector<std::string> infoLines = {
+        "HEAP",
+        "[WHAT IS IT]",
+        "It's a chain of node where each node hold it's",
+        "value and a pointer to the next node.",
+        "We maintain the root as a pointer to the first",
+        "node of the chain for processing.",
+        "",
+        "[FUNCTION TIME COMPLEXITY]",
+        "Insert/Delete       O(logN)",
+        "Search              O(logN)",
+        "CLEAR ALL           O(1)",
+        "",
+        "[CONTROL BUTTON]",
+        "Play/Pause: Auto-play animation",
+        "Prev/Next: Watch step by step",
+        "Skip: Watch run at once"
+    };
+
+    for (const auto& line : infoLines) {
+        sf::Text t(line, font, 14);
+        if (line == "HEAP") {
+            t.setCharacterSize(20);
+            t.setStyle(sf::Text::Bold);
+        } else if (!line.empty() && line.front() == '[' && line.back() == ']') {
+            t.setCharacterSize(16);
+            t.setStyle(sf::Text::Bold);
+        }
+        mInfoTexts.push_back(t);
+    }
 
     mWorkspaceBg.setSize({mBaseWidth, mBaseHeight});
     
@@ -88,7 +117,7 @@ HeapVisualizer::HeapVisualizer(const sf::Font& font)
     // Customization Init
     mCurrentNodeColor = sf::Color(245, 249, 255); 
     mThemeColors = {
-        sf::Color(45, 45, 55), sf::Color(181, 58, 199),
+        sf::Color(245, 249, 255), sf::Color(181, 58, 199),
         sf::Color(52, 152, 219), sf::Color(231, 76, 60),
         sf::Color(241, 196, 15), sf::Color(46, 204, 113)
     };
@@ -273,36 +302,20 @@ void HeapVisualizer::update(float deltaTime, const sf::RenderWindow& window) {
         float y = currentY + 25.f + (i / 3) * 35.f;
         mColorSwatches[i].setPosition({x, y});
     }
+    
     currentY += 100.f;
     mThemeLabelPos = {startX_custom, currentY};
     mDarkThemeBtn.setPosition({startX_custom + 40.f, currentY + 45.f});
     mLightThemeBtn.setPosition({startX_custom + 130.f, currentY + 45.f});
 
-    // INCREASED SPACING: Moved Node Size further down below the Dark/Light buttons
-    currentY += 80.f;
+    currentY += 105.f;
     mSizeLabel.setPosition({startX_custom, currentY});
     mSizeSliderTrack.setPosition({startX_custom, currentY + 25.f});
 
-    // INCREASED SPACING: Moved Background Style further down
-    currentY += 50.f;
+    currentY += 75.f;
     mBgDefaultBtn.setPosition({startX_custom + 35.f, currentY + 45.f});
     mBgWhiteBtn.setPosition({startX_custom + 110.f, currentY + 45.f});
     mBgBlackBtn.setPosition({startX_custom + 185.f, currentY + 45.f});
-    
-    // currentY += 100.f;
-    // mThemeLabelPos = {startX_custom, currentY};
-    // mDarkThemeBtn.setPosition({startX_custom + 40.f, currentY + 45.f});
-    // mLightThemeBtn.setPosition({startX_custom + 130.f, currentY + 45.f});
-
-    // // Added: Bring Node Size and Background to Left Panel
-    // currentY += 80.f;
-    // mSizeLabel.setPosition({startX_custom, currentY});
-    // mSizeSliderTrack.setPosition({startX_custom, currentY + 25.f});
-
-    // currentY += 50.f;
-    // mBgDefaultBtn.setPosition({startX_custom + 35.f, currentY + 25.f});
-    // mBgWhiteBtn.setPosition({startX_custom + 110.f, currentY + 25.f});
-    // mBgBlackBtn.setPosition({startX_custom + 185.f, currentY + 25.f});
 
     // --- Smooth Right Panel Layout Mathematics ---
     float rightBaseX = mBaseWidth - mRightWidth;
@@ -312,7 +325,12 @@ void HeapVisualizer::update(float deltaTime, const sf::RenderWindow& window) {
     if (mRightTabState == HeapRightTabState::CODE) {
         mCodePanel.setPosition({rightBaseX + TAB_WIDTH + 15.f, 80.f});
     } else {
-        mInfoTextDisplay.setPosition({rightBaseX + TAB_WIDTH + 15.f, 80.f});
+        float startX = rightBaseX + TAB_WIDTH + 15.f;
+        float textY = 80.f;
+        for (auto& text : mInfoTexts) {
+            text.setPosition({startX, textY});
+            textY += text.getCharacterSize() + (text.getString().isEmpty() ? 5.f : 8.f);
+        }
     }
 
     // Dynamically Center Status Text
@@ -391,14 +409,20 @@ void HeapVisualizer::update(float deltaTime, const sf::RenderWindow& window) {
 }
 
 void HeapVisualizer::render(sf::RenderWindow& window) const {
-    if (mBgType == BackgroundType::Default) {
-        window.draw(mBgSprite);
-    } 
-    else {
-        sf::RectangleShape solidBg({mBaseWidth, mBaseHeight});
-        if (mBgType == BackgroundType::White) solidBg.setFillColor(sf::Color::White);
-        else solidBg.setFillColor(sf::Color::Black);
+    sf::RectangleShape solidBg({mBaseWidth, mBaseHeight});
+    if (mBgType == BackgroundType::Black) {
+        solidBg.setFillColor(sf::Color::Black);
         window.draw(solidBg);
+    }
+    else {
+        
+        if (mBgType == BackgroundType::White) 
+        {
+            solidBg.setFillColor(sf::Color::White);
+            window.draw(solidBg);
+        }
+        else window.draw(mBgSprite);
+        
     }
     
     drawTree(window);
@@ -448,7 +472,6 @@ void HeapVisualizer::render(sf::RenderWindow& window) const {
         drawButtons(window);
         drawColorPicker(window);
         drawThemeToggle(window);
-        // Moved from Right Panel to Left Panel
         window.draw(mSizeLabel);
         window.draw(mSizeSliderTrack);
         window.draw(mSizeSliderKnob);
@@ -465,7 +488,9 @@ void HeapVisualizer::render(sf::RenderWindow& window) const {
         if (mRightTabState == HeapRightTabState::INFO) {
             underline.setPosition({mInfoTabBtn.getPosition().x, mInfoTabBtn.getPosition().y + 18.f});
             window.draw(underline);
-            window.draw(mInfoTextDisplay);
+            for (const auto& text : mInfoTexts) {
+                window.draw(text);
+            }
         } else {
             underline.setPosition({mCodeTabBtn.getPosition().x, mCodeTabBtn.getPosition().y + 18.f});
             window.draw(underline);
@@ -1104,7 +1129,6 @@ void HeapVisualizer::applyTheme() {
 
         mInfoTabBtn.setColors(sf::Color(32, 26, 43), sf::Color(20, 16, 27), sf::Color(181, 58, 199, 120), sf::Color::White);
         mCodeTabBtn.setColors(sf::Color(32, 26, 43), sf::Color(20, 16, 27), sf::Color(181, 58, 199, 120), sf::Color::White);
-        mInfoTextDisplay.setFillColor(sf::Color(245, 245, 250));
     } 
     else {
         mInputBox.setFillColor(sf::Color(255, 255, 255));
@@ -1137,7 +1161,18 @@ void HeapVisualizer::applyTheme() {
 
         mInfoTabBtn.setColors(sf::Color(230, 230, 240), sf::Color(200, 200, 215), sf::Color(150, 150, 160), sf::Color(40, 40, 50));
         mCodeTabBtn.setColors(sf::Color(230, 230, 240), sf::Color(200, 200, 215), sf::Color(150, 150, 160), sf::Color(40, 40, 50));
-        mInfoTextDisplay.setFillColor(sf::Color::Black);
+    }
+    
+    // Update Info Texts Color safely
+    for (auto& text : mInfoTexts) {
+        std::string s = text.getString();
+        if (s == "HEAP") {
+            text.setFillColor(mIsDarkMode ? sf::Color(251, 209, 101) : sf::Color(200, 150, 0));
+        } else if (!s.empty() && s.front() == '[' && s.back() == ']') {
+            text.setFillColor(mIsDarkMode ? sf::Color(110, 247, 242) : sf::Color(0, 150, 200));
+        } else {
+            text.setFillColor(mIsDarkMode ? sf::Color(245, 245, 250) : sf::Color::Black);
+        }
     }
 }
 

@@ -112,9 +112,53 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
     
     // Right Panel Tabs Setup
     mRightTabState = AVLRightTabState::CODE;
-    mInfoTextDisplay.setFont(font);
-    mInfoTextDisplay.setCharacterSize(15);
-    mInfoTextDisplay.setString("AVL Tree\n\n- O(log N) Insert\n- O(log N) Delete\n- O(log N) Search\n\nA self-balancing binary search tree\nwhere heights of child subtrees\ndiffer by at most one.");
+
+    // Parse the provided AVL.txt structured information
+    mInfoTexts.clear();
+    std::vector<std::string> infoLines = {
+        "AVL Tree",
+        "[WHAT IS IT]",
+        "A binary search tree that maintain it's balance by rotating",
+        "",
+        "[FUNCTION TIME COMPLEXITY]",
+        "Insert/Delete         O(logN)",
+        "Rotate for insertion  O(1)",
+        "Rotate for deletion   O(logN)",
+        "Search                O(logN)",
+        "CLEAR ALL             O(N)",
+        "",
+        "[CONTROL BUTTON]",
+        "Play/Pause: Auto-play animation",
+        "Prev/Next: Watch step by step",
+        "Skip: Watch run at once"
+    };
+
+    for (const auto& line : infoLines) {
+        sf::Text t(line, font, 14);
+        if (line == "AVL Tree") {
+            t.setCharacterSize(20);
+            t.setStyle(sf::Text::Bold);
+        } else if (!line.empty() && line.front() == '[' && line.back() == ']') {
+            t.setCharacterSize(16);
+            t.setStyle(sf::Text::Bold);
+        }
+        mInfoTexts.push_back(t);
+    }
+
+    // Initial Button Sizes (Preserving requested dimensions)
+    mInsertBtn.emplace("Insert",  font, sf::Vector2f(105.f, 40.f));
+    mDeleteBtn.emplace("Delete",  font, sf::Vector2f(105.f, 40.f));
+    mSearchBtn.emplace("Search",  font, sf::Vector2f(105.f, 40.f));
+    mUpdateBtn.emplace("Update",  font, sf::Vector2f(105.f,40.f));
+
+    mRandomBtn.emplace("Random",  font, sf::Vector2f(105.f, 40.f));
+    mClearBtn .emplace("Clear",   font, sf::Vector2f(105.f, 40.f));
+    mLoadFileBtn.emplace("Load File", font, sf::Vector2f(220.f, 40.f));
+
+    mPrevBtn  .emplace("< Prev",  font, sf::Vector2f(105.f,  40.f));
+    mNextBtn  .emplace("Next >",  font, sf::Vector2f(105.f,  40.f));
+    mSkipAnimationBtn.emplace("Skip Animation", font, sf::Vector2f(220.f, 40.f));
+    mReturnBtn.emplace("Return",  font, sf::Vector2f(80.f, 40.f));
 
     mSliderTrack = sf::RectangleShape({220.f, 6.f});
     mSliderTrack.setFillColor(UITheme::Color::SliderTrack);
@@ -130,7 +174,7 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
 
     mCurrentNodeColor = sf::Color(245, 249, 255); 
     mThemeColors = {
-        sf::Color(45, 45, 55), sf::Color(181, 58, 199),
+        sf::Color(245, 249, 255), sf::Color(181, 58, 199),
         sf::Color(52, 152, 219), sf::Color(231, 76, 60),
         sf::Color(241, 196, 15), sf::Color(46, 204, 113)
     };
@@ -452,7 +496,7 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
             mColorSwatches[i].setPosition({x, y});
         }
         
-        currentY += 105.f;
+        currentY += 100.f;
         mThemeLabelPos = {startX_custom, currentY};
         mDarkThemeBtn->setPosition({startX_custom + 40.f, currentY + 45.f});
         mLightThemeBtn->setPosition({startX_custom + 130.f, currentY + 45.f});
@@ -464,7 +508,12 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
         if (mRightTabState == AVLRightTabState::CODE) {
             mCodePanel.setPosition(sf::Vector2f(rightBaseX + TAB_WIDTH + 15.f, 80.f));
         } else {
-            mInfoTextDisplay.setPosition({rightBaseX + TAB_WIDTH + 15.f, 80.f});
+            float startX = rightBaseX + TAB_WIDTH + 15.f;
+            float textY = 80.f;
+            for (auto& text : mInfoTexts) {
+                text.setPosition({startX, textY});
+                textY += text.getCharacterSize() + (text.getString().isEmpty() ? 5.f : 8.f);
+            }
         }
 
         // Update hovers
@@ -632,13 +681,17 @@ void AVLScreen::drawRightPanel(sf::RenderWindow& window, const sf::Font& font, f
         window.draw(*mInfoTabBtn);
         window.draw(*mCodeTabBtn);
 
+        // Active Tab Underline Effect
         sf::RectangleShape underline({80.f, 2.f});
         underline.setFillColor(sf::Color::Cyan);
         underline.setOrigin(40.f, 1.f);
+
         if (mRightTabState == AVLRightTabState::INFO) {
             underline.setPosition({mInfoTabBtn->getPosition().x, mInfoTabBtn->getPosition().y + 18.f});
             window.draw(underline);
-            window.draw(mInfoTextDisplay);
+            for (const auto& text : mInfoTexts) {
+                window.draw(text);
+            }
         } else {
             underline.setPosition({mCodeTabBtn->getPosition().x, mCodeTabBtn->getPosition().y + 18.f});
             window.draw(underline);
@@ -827,13 +880,23 @@ void AVLScreen::applyTheme(sf::Font& font) {
         
         mInfoTabBtn->setColors(UITheme::Color::ModernBtnTop, UITheme::Color::ModernBtnBottom, UITheme::Color::ModernBtnBorder, sf::Color(40,40,50));
         mCodeTabBtn->setColors(UITheme::Color::ModernBtnTop, UITheme::Color::ModernBtnBottom, UITheme::Color::ModernBtnBorder, sf::Color(40,40,50));
-        mInfoTextDisplay.setFillColor(sf::Color::Black);
     } else {
         mDarkThemeBtn->setColors(UITheme::Color::ModernBtnTop, UITheme::Color::ModernBtnBottom, sf::Color::Cyan, sf::Color::White);
         mLightThemeBtn->setColors(UITheme::Color::LightButtonFill, UITheme::Color::LightButtonBot, UITheme::Color::ButtonInactiveBorder, UITheme::Color::LightTextPrimary);
 
         mInfoTabBtn->setColors(UITheme::Color::ModernBtnTop, UITheme::Color::ModernBtnBottom, UITheme::Color::ModernBtnBorder, sf::Color::White);
         mCodeTabBtn->setColors(UITheme::Color::ModernBtnTop, UITheme::Color::ModernBtnBottom, UITheme::Color::ModernBtnBorder, sf::Color::White);
-        mInfoTextDisplay.setFillColor(sf::Color(245, 245, 250));
+    }
+    
+    // Update Info Texts Color safely
+    for (auto& text : mInfoTexts) {
+        std::string s = text.getString();
+        if (s == "AVL Tree") {
+            text.setFillColor(m_isLightMode ? sf::Color(200, 150, 0) : sf::Color(251, 209, 101));
+        } else if (!s.empty() && s.front() == '[' && s.back() == ']') {
+            text.setFillColor(m_isLightMode ? sf::Color(0, 150, 200) : sf::Color(110, 247, 242));
+        } else {
+            text.setFillColor(m_isLightMode ? sf::Color::Black : sf::Color(245, 245, 250));
+        }
     }
 }

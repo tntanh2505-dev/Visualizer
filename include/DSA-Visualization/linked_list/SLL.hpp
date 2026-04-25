@@ -3,9 +3,6 @@
 #include "DSA-Visualization/ui/UI_Theme.hpp"
 
 namespace SLL {
-
-enum class RightTabState { INFO, CODE };
-
 struct SLLNode {
     int val;
     int UID; 
@@ -149,6 +146,8 @@ inline int Search_Visual(SLLNode* head, int targetValue, std::vector<Snapshot>& 
 }
 
 // --- SLL Scene ---
+enum class SLLTabState { Info, Code };
+
 class LinkedListScene : public Scene {
 private:
     float baseWidth;
@@ -169,6 +168,7 @@ private:
     sf::Color mCurrentNodeColor;
     std::vector<sf::Color> mThemeColors;
     std::vector<sf::RectangleShape> mColorSwatches;
+    float mColorSwatchesStartY;
     bool mIsDarkMode;
     ModernButton mDarkThemeBtn;
     ModernButton mLightThemeBtn;
@@ -176,14 +176,11 @@ private:
     sf::RectangleShape mWorkspaceBg;
     sf::Color mPanelBgColor;
 
-    sf::Vector2f mColorLabelPos;
-    sf::Vector2f mThemeLabelPos;
-
-    // --- Tab Properties ---
-    RightTabState mRightTabState;
+    // --- Right Panel Tabs ---
+    SLLTabState activeTab;
     ModernButton mInfoTabBtn;
     ModernButton mCodeTabBtn;
-    sf::Text mInfoTextDisplay;
+    std::vector<sf::Text> mInfoTexts;
 
     // --- Sliding Panel Layout Properties ---
     float leftWidth;
@@ -215,11 +212,8 @@ private:
             menuBtn.setColors(dTop, dBot, dBorder, dText);
             mDarkThemeBtn.setColors(dTop, dBot, sf::Color::Cyan, dText);
             mLightThemeBtn.setColors(UITheme::Color::LightButtonFill, UITheme::Color::LightButtonBot, UITheme::Color::ButtonInactiveBorder, UITheme::Color::LightTextPrimary);
-
-            // Tab Buttons
             mInfoTabBtn.setColors(dTop, dBot, dBorder, dText);
             mCodeTabBtn.setColors(dTop, dBot, dBorder, dText);
-            mInfoTextDisplay.setFillColor(sf::Color(245, 245, 250));
 
             // Update Node Panel
             nodePanel.bg.setFillColor(UITheme::Color::PanelBg);
@@ -247,18 +241,27 @@ private:
             menuBtn.setColors(lTop, lBot, lBorder, lText);
             mDarkThemeBtn.setColors(UITheme::Color::GlobalButtonFill, UITheme::Color::GlobalButtonBot, UITheme::Color::ButtonInactiveBorder, UITheme::Color::GlobalTextPrimary);
             mLightThemeBtn.setColors(lTop, lBot, sf::Color::Cyan, lText);
-
-            // Tab Buttons
             mInfoTabBtn.setColors(lTop, lBot, lBorder, lText);
             mCodeTabBtn.setColors(lTop, lBot, lBorder, lText);
-            mInfoTextDisplay.setFillColor(sf::Color::Black);
 
             // Update Node Panel
             nodePanel.bg.setFillColor(UITheme::Color::LightPanelBg);
-            nodePanel.infoText.setFillColor(sf::Color::Black); // FIX: Ensure text is readable in light mode
+            nodePanel.infoText.setFillColor(UITheme::Color::LightTextPrimary);
             nodePanel.changeBtn.setColors(lTop, lBot, lBorder, lText);
             nodePanel.deleteBtn.setColors(UITheme::Color::ButtonDangerFill, UITheme::Color::ButtonDangerBot, UITheme::Color::ButtonDangerBorder, UITheme::Color::GlobalTextPrimary);
             nodePanel.closeBtn.setColors(UITheme::Color::ButtonDangerFill, UITheme::Color::ButtonDangerBot, UITheme::Color::ButtonDangerBorder, UITheme::Color::GlobalTextPrimary);
+        }
+        
+        // Dynamically correct text color for structured array based on selected theme
+        for (auto& text : mInfoTexts) {
+            std::string s = text.getString();
+            if (s == "SINGLY LINKED LIST") {
+                text.setFillColor(mIsDarkMode ? sf::Color(251, 209, 101) : sf::Color(200, 150, 0));
+            } else if (!s.empty() && s.front() == '[' && s.back() == ']') {
+                text.setFillColor(mIsDarkMode ? sf::Color(110, 247, 242) : sf::Color(0, 150, 200));
+            } else {
+                text.setFillColor(mIsDarkMode ? UITheme::Color::GlobalTextPrimary : sf::Color::Black);
+            }
         }
     }
 
@@ -285,12 +288,8 @@ public:
         rightWidth = TAB_WIDTH;
         leftExpanded = true;
         rightExpanded = true;
-
-        // Tabs Initialization
-        mRightTabState = RightTabState::CODE;
-        mInfoTextDisplay.setFont(font);
-        mInfoTextDisplay.setCharacterSize(16);
-        mInfoTextDisplay.setString("Singly Linked List\n\n- O(1) Insert Front\n- O(N) Search\n- O(N) Delete Back\n\nNodes are dynamically allocated\nin memory. Each node points\nto the next node in the sequence.");
+        activeTab = SLLTabState::Code;
+        mColorSwatchesStartY = 0.f;
 
         // Theme Initialization
         mWorkspaceBg.setSize({windowWidth, windowHeight});
@@ -298,13 +297,14 @@ public:
         mCurrentNodeColor = UITheme::Color::GlobalNodeFill;
         
         mThemeColors = {
-            sf::Color(45, 45, 55), // Gray
+            sf::Color(245, 249, 255), // White
             sf::Color(181, 58, 199),  // Accent Purple
             sf::Color(52, 152, 219),  // Blue
             sf::Color(231, 76, 60),   // Red
             sf::Color(241, 196, 15),  // Yellow
             sf::Color(46, 204, 113)   // Green
         };
+
         for (const auto& color : mThemeColors) {
             sf::RectangleShape swatch(sf::Vector2f(25.f, 25.f));
             swatch.setFillColor(color);
@@ -316,7 +316,41 @@ public:
         mStatusText.setFont(font);
         mStatusText.setCharacterSize(16);
         mStatusText.setFillColor(sf::Color(251, 209, 101));
-        mStatusText.setPosition({350.f, 570.f}); // Aligned with the heap screen logic
+        mStatusText.setPosition({350.f, 570.f}); 
+
+        // Load Structured Info Texts matching Dijkstra format
+        std::vector<std::string> infoLines = {
+            "SINGLY LINKED LIST",
+            "[WHAT IS IT]",
+            "It's a chain of node where each node hold it's",
+            "value and a pointer to the next node.",
+            "We maintain the root as a pointer to the first",
+            "node of the chain for processing.",
+            "",
+            "[FUNCTION TIME COMPLEXITY]",
+            "Insert/Delete Front O(1)",
+            "Insert/Delete Back  O(N)",
+            "Search              O(N)",
+            "CLEAR ALL           O(N)",
+            "",
+            "[CONTROL BUTTON]",
+            "Play/Pause: Auto-play animation",
+            "Prev/Next: Watch step by step",
+            "Back/Skip: Watch run at once",
+            "Skip to last: Skip to presence"
+        };
+
+        for (const auto& line : infoLines) {
+            sf::Text t(line, font, 14);
+            if (line == "SINGLY LINKED LIST") {
+                t.setCharacterSize(20);
+                t.setStyle(sf::Text::Bold);
+            } else if (!line.empty() && line.front() == '[' && line.back() == ']') {
+                t.setCharacterSize(16);
+                t.setStyle(sf::Text::Bold);
+            }
+            mInfoTexts.push_back(t);
+        }
 
         std::map<std::string, std::vector<std::string>> llSnippets;
         llSnippets["InsertFront"] = { 
@@ -371,7 +405,7 @@ public:
         buttons.push_back(ModernButton("CLEAR ALL", font, {220.f, 40.f})); // 11
         buttons.push_back(ModernButton("ADD FILE", font, {220.f, 40.f}));  // 12     
         buttons.push_back(ModernButton("CREATE RANDOM", font, {220.f, 40.f})); // 13
-        buttons.push_back(ModernButton("SKIP TO LAST", font, {220.f, 40.f})); // 14 NEW
+        buttons.push_back(ModernButton("SKIP TO LAST", font, {220.f, 40.f})); // 14
 
         applyTheme();
 
@@ -416,11 +450,7 @@ public:
             if (mDarkThemeBtn.isClicked(mPos, true)) { mIsDarkMode = true; applyTheme(); }
             if (mLightThemeBtn.isClicked(mPos, true)) { mIsDarkMode = false; applyTheme(); }
             
-            // Info/Code Tab clicks
-            if (mInfoTabBtn.isClicked(mPos, true)) { mRightTabState = RightTabState::INFO; }
-            if (mCodeTabBtn.isClicked(mPos, true)) { mRightTabState = RightTabState::CODE; }
-            
-            // Color Swatch Clicks (Moved to Left Panel logic)
+            // Color Swatch Clicks (Moved to Left Panel logic area)
             if (leftExpanded && mPos.x < leftWidth) {
                 for (size_t i = 0; i < mColorSwatches.size(); ++i) {
                     if (mColorSwatches[i].getGlobalBounds().contains(mPos)) {
@@ -435,6 +465,8 @@ public:
                 for (auto& node : nodes) { if (node.contains(mPos) && node.isVisible) { nodePanel.show(&node); break; } }
             }
             if (menuBtn.isClicked(mPos, true)) { nextScene = SceneType::MAIN_MENU; return; }
+            if (mInfoTabBtn.isClicked(mPos, true)) { activeTab = SLLTabState::Info; }
+            if (mCodeTabBtn.isClicked(mPos, true)) { activeTab = SLLTabState::Code; }
         }
 
         PanelResult pResult = nodePanel.HandleEvent(event, window);
@@ -486,19 +518,13 @@ public:
                 }
                 isAutoPlaying = true;
             }
-            // NEW SKIP TO LAST logic
-            else if (buttons[14].isClicked(mPos, true)) {
-                isAutoPlaying = false; 
-                buttons[3].setText("PLAY"); 
-                currentFrame = timeline.size() - 1; 
-                UpdateVisualsFromFrame();
-            }
             else if (buttons[2].isClicked(mPos, true)) { isAutoPlaying = false; buttons[3].setText("PLAY"); if (currentFrame > 0) { currentFrame--; UpdateVisualsFromFrame(); } }
             else if (buttons[3].isClicked(mPos, true)) { if (!isAutoPlaying && currentFrame == timeline.size() - 1) currentFrame = 0; isAutoPlaying = !isAutoPlaying; buttons[3].setText(isAutoPlaying ? "PAUSE" : "PLAY"); }
             else if (buttons[4].isClicked(mPos, true)) { isAutoPlaying = false; buttons[3].setText("PLAY"); if (currentFrame < timeline.size() - 1) { currentFrame++; UpdateVisualsFromFrame(); } }
             else if (buttons[7].isClicked(mPos, true)) { int randomVal = (rand() % 199) - 99; boxes[0].input = std::to_string(randomVal); boxes[0].text.setString(boxes[0].input); boxes[0].text.setFillColor(UITheme::Color::TextDark); }
             else if (buttons[9].isClicked(mPos, true)) { isAutoPlaying = false; buttons[3].setText("PLAY"); int target = timeline.size() - 1; for (int i = currentFrame + 1; i < timeline.size(); i++) { if (timeline[i].isKeyStage) { target = i; break; } } if (currentFrame != target) { currentFrame = target; UpdateVisualsFromFrame(); } }
             else if (buttons[10].isClicked(mPos, true)) { isAutoPlaying = false; buttons[3].setText("PLAY"); int target = 0; for (int i = currentFrame - 1; i >= 0; i--) { if (timeline[i].isKeyStage) { target = i; break; } } if (currentFrame != target) { currentFrame = target; UpdateVisualsFromFrame(); } }
+            else if (buttons[14].isClicked(mPos, true)) { isAutoPlaying = false; buttons[3].setText("PLAY"); if (currentFrame != timeline.size() - 1) { currentFrame = timeline.size() - 1; UpdateVisualsFromFrame(); } }
         }
     }
 
@@ -525,7 +551,7 @@ public:
         buttons[7].setPosition({leftBaseX + 145.f + 52.5f, currentY + 20.f}); currentY += 50.f; // RANDOM
         buttons[11].setPosition({leftBaseX + 30.f + 110.f, currentY + 20.f}); currentY += 70.f; // CLEAR ALL
         
-        // Original Playback Controls Position
+        // Playback Controls Position 
         buttons[4].setPosition({leftBaseX + 180.f + 35.f, currentY + 20.f});    // NEXT
         buttons[2].setPosition({leftBaseX + 30.f + 35.f, currentY + 20.f});     // PREV
         buttons[3].setPosition({leftBaseX + 105.f + 35.f, currentY + 20.f}); currentY += 50.f; // PLAY/PAUSE
@@ -533,44 +559,40 @@ public:
         buttons[10].setPosition({leftBaseX + 30.f + 35.f, currentY + 20.f});    // BACK
         buttons[9].setPosition({leftBaseX + 180.f + 35.f, currentY + 20.f}); currentY += 60.f; // SKIP
         
-        // Added SKIP TO LAST below Back and Skip
-        buttons[14].setPosition({leftBaseX + 30.f + 110.f, currentY + 20.f}); currentY += 60.f; // SKIP TO LAST
-        
-        // Pushed everything below further down to make space
+        // --- Squeezed SKIP TO LAST Button under Back/Skip ---
+        buttons[14].setPosition({leftBaseX + 30.f + 110.f, currentY + 20.f}); currentY += 50.f; // SKIP TO LAST
+
         speedCtrl.setPosition({leftBaseX + 30.f, currentY}); currentY += 60.f;
         speedCtrl.update(window);
         boxes[1].setPosition({leftBaseX + 30.f, currentY}); currentY += 50.f;
         buttons[12].setPosition({leftBaseX + 30.f + 110.f, currentY + 20.f}); currentY += 50.f;
-        buttons[13].setPosition({leftBaseX + 30.f + 110.f, currentY + 20.f}); currentY += 50.f; // CREATE RANDOM
+        buttons[13].setPosition({leftBaseX + 30.f + 110.f, currentY + 20.f}); currentY += 60.f; // CREATE RANDOM
 
-        // --- Relocated Customization Properties to Left Panel Bottom ---
-        float startX_custom = leftBaseX + 30.f;
-        float startY_color = currentY + 10.f;
-        
-        mColorLabelPos = {startX_custom, startY_color};
-        for (size_t i = 0; i < mColorSwatches.size(); ++i) {
-            float x = startX_custom + (i % 3) * 35.f;
-            float y = startY_color + 25.f + (i / 3) * 35.f;
-            mColorSwatches[i].setPosition({x, y});
-        }
-        
-        float startY_theme = startY_color + 100.f;
-        mThemeLabelPos = {startX_custom, startY_theme};
-        mDarkThemeBtn.setPosition({startX_custom + 40.f, startY_theme + 45.f});
-        mLightThemeBtn.setPosition({startX_custom + 130.f, startY_theme + 45.f});
+        // Anchor the custom Node Fill Colors to the bottom of the left panel controls
+        mColorSwatchesStartY = currentY; 
 
-        // --- Right Panel Layout Mathematics (Tabs & Code) ---
+        // --- Right Panel Layout Mathematics ---
         float rightBaseX = window.getSize().x - rightWidth;
         
         mInfoTabBtn.setPosition({rightBaseX + TAB_WIDTH + 15.f + 40.f, 40.f});
         mCodeTabBtn.setPosition({rightBaseX + TAB_WIDTH + 15.f + 130.f, 40.f});
 
-        if (mRightTabState == RightTabState::CODE) {
+        if (activeTab == SLLTabState::Code) {
             codePanel.setPosition({rightBaseX + TAB_WIDTH + 15.f, 80.f});
         } else {
-            mInfoTextDisplay.setPosition({rightBaseX + TAB_WIDTH + 15.f, 80.f});
+            float startX = rightBaseX + TAB_WIDTH + 15.f;
+            float textY = 80.f;
+            for (auto& text : mInfoTexts) {
+                text.setPosition({startX, textY});
+                textY += text.getCharacterSize() + (text.getString().isEmpty() ? 5.f : 8.f);
+            }
         }
         
+        // Maintain theme relative position at bottom of the right panel
+        float startY_theme = window.getSize().y - 120.f;
+        mDarkThemeBtn.setPosition({rightBaseX + TAB_WIDTH + 15.f + 40.f, startY_theme + 45.f});
+        mLightThemeBtn.setPosition({rightBaseX + TAB_WIDTH + 15.f + 130.f, startY_theme + 45.f});
+
         // --- Timeline Slider stays at bottom, scales dynamically ---
         slider.setPosition({leftWidth + 20.f, window.getSize().y - 50.f}, window.getSize().x - leftWidth - rightWidth - 40.f);
 
@@ -585,9 +607,9 @@ public:
         for (auto& btn : buttons) btn.update(mPos); 
         mDarkThemeBtn.update(mPos);
         mLightThemeBtn.update(mPos);
+        menuBtn.update(mPos);
         mInfoTabBtn.update(mPos);
         mCodeTabBtn.update(mPos);
-        menuBtn.update(mPos);
 
         if (isAutoPlaying) {
             if (animationClock.getElapsedTime().asSeconds() >= timeInterval) {
@@ -610,6 +632,7 @@ public:
             for (const auto& rec : timeline[currentFrame].nodes) {
                 if (rec.UID == node.UID) { animHighlight = rec.isHighlighted; break; }
             }
+            
             bool panelHighlight = (nodePanel.isVisible && nodePanel.targetUID == node.UID);
             node.isHighlighted = (animHighlight || panelHighlight);
             node.update(window, deltaTime);
@@ -638,6 +661,7 @@ public:
             sf::Color blend = mCurrentNodeColor;
             blend.a = static_cast<sf::Uint8>(node.currentAlpha);
             node.m_graphic.setFillColor(blend);
+            
             node.draw(window);
         }
 
@@ -668,14 +692,21 @@ public:
         lIcon.setFillColor(UITheme::Color::NodeOutlineColor);
         window.draw(lIcon);
 
-        // --- Customization Properties on Left Panel ---
+        // --- Customization Settings on Left Panel ---
         if (leftWidth > 180.f) {
+            float startX = leftWidth - LEFT_PANEL_WIDTH + 30.f; 
+            float startY_color = mColorSwatchesStartY;
+            
             sf::Text cLabel("Node Fill Color", *fontPtr, 14);
             cLabel.setFillColor(mIsDarkMode ? sf::Color(200, 200, 210) : sf::Color(50, 50, 60));
-            cLabel.setPosition(mColorLabelPos);
+            cLabel.setPosition({startX, startY_color});
             window.draw(cLabel);
 
             for (size_t i = 0; i < mColorSwatches.size(); ++i) {
+                float x = startX + (i % 3) * 35.f;
+                float y = startY_color + 25.f + (i / 3) * 35.f;
+                mColorSwatches[i].setPosition({x, y});
+
                 if (mThemeColors[i] == mCurrentNodeColor) {
                     mColorSwatches[i].setOutlineColor(sf::Color::Yellow);
                     mColorSwatches[i].setOutlineThickness(2.5f);
@@ -685,14 +716,6 @@ public:
                 }
                 window.draw(mColorSwatches[i]);
             }
-
-            sf::Text tLabel("UI Theme", *fontPtr, 14);
-            tLabel.setFillColor(mIsDarkMode ? sf::Color(200, 200, 210) : sf::Color(50, 50, 60));
-            tLabel.setPosition(mThemeLabelPos);
-            window.draw(tLabel);
-
-            window.draw(mDarkThemeBtn);
-            window.draw(mLightThemeBtn);
         }
 
         // 4. Draw Right Panel Architecture
@@ -713,9 +736,13 @@ public:
         rIcon.setPosition(winW - rightWidth + TAB_WIDTH/2.f, window.getSize().y / 2.f - 2.f);
         rIcon.setFillColor(UITheme::Color::NodeHighlightColor);
         window.draw(rIcon);
-        
-        // --- Tabs Content on Right Panel ---
+
+        // --- Tabs and Theme Content on Right Panel ---
         if (rightWidth > 180.f) {
+            float rightBaseX = winW - rightWidth;
+            float startX = rightBaseX + TAB_WIDTH + 15.f; 
+            
+            // Draw Interactive Tabs
             window.draw(mInfoTabBtn);
             window.draw(mCodeTabBtn);
 
@@ -723,27 +750,35 @@ public:
             sf::RectangleShape underline({80.f, 2.f});
             underline.setFillColor(sf::Color::Cyan);
             underline.setOrigin(40.f, 1.f);
-            if (mRightTabState == RightTabState::INFO) {
+            if (activeTab == SLLTabState::Info) {
                 underline.setPosition({mInfoTabBtn.getPosition().x, mInfoTabBtn.getPosition().y + 18.f});
             } else {
                 underline.setPosition({mCodeTabBtn.getPosition().x, mCodeTabBtn.getPosition().y + 18.f});
             }
             window.draw(underline);
 
-            if (mRightTabState == RightTabState::INFO) {
-                window.draw(mInfoTextDisplay);
+            if (activeTab == SLLTabState::Code) {
+                codePanel.draw(window);
+            } else {
+                for (const auto& text : mInfoTexts) {
+                    window.draw(text);
+                }
             }
+
+            // Kept Relative UI Theme Layout at Bottom of Right Panel
+            float startY_theme = window.getSize().y - 120.f;
+            sf::Text tLabel("UI Theme", *fontPtr, 14);
+            tLabel.setFillColor(mIsDarkMode ? sf::Color(200, 200, 210) : sf::Color(50, 50, 60));
+            tLabel.setPosition({startX, startY_theme});
+            window.draw(tLabel);
+
+            window.draw(mDarkThemeBtn);
+            window.draw(mLightThemeBtn);
         }
 
         // 5. Draw Content over Panels
         for (auto& box : boxes) box.draw(window); 
         for (auto& btn : buttons) window.draw(btn); 
-        
-        // Only draw codePanel if Right Panel holds CODE tab active
-        if (mRightTabState == RightTabState::CODE && rightWidth > 180.f) {
-            codePanel.draw(window); 
-        }
-
         speedCtrl.draw(window); 
         window.draw(menuBtn);
     }
