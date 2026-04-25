@@ -7,7 +7,6 @@
 #include <fstream>
 #include <sstream>
 
-const float NODE_RADIUS = 25.f;
 const float LEFT_PANEL_WIDTH = 250.f;
 const float RIGHT_PANEL_WIDTH = 300.f;
 const float TAB_WIDTH = 35.f;
@@ -56,7 +55,6 @@ int DijkstraScreen::run(sf::RenderWindow &window, sf::Font &font) {
     }
     button[8] = std::make_unique<ModernButton>("<< PREV", font, sf::Vector2f(100.f, 40.f), 5.f);
     button[9] = std::make_unique<ModernButton>("NEXT >>", font, sf::Vector2f(100.f, 40.f), 5.f);
-
 
     sf::Clock deltaClock;
     while (window.isOpen()) {
@@ -158,6 +156,31 @@ void DijkstraScreen::initialization() {
 
     currentLine = 0;
     activeTab = TabState::Info;
+
+    mNodeRadius = 25.f;
+    mCurrentNodeColor = sf::Color(50, 50, 50);
+    mIsDraggingSizeSlider = false;
+
+    // Thiết lập bảng màu
+    mThemeColors = {
+        sf::Color(50, 50, 50), sf::Color(181, 58, 199), sf::Color(52, 152, 219),
+        sf::Color(231, 76, 60), sf::Color(241, 196, 15), sf::Color(46, 204, 113)
+    };
+
+    mColorSwatches.clear();
+    for (const auto& color : mThemeColors) {
+        sf::RectangleShape swatch({25.f, 25.f});
+        swatch.setFillColor(color);
+        swatch.setOutlineThickness(1.5f);
+        mColorSwatches.push_back(swatch);
+    }
+
+    // Khởi tạo Slider
+    mSizeSliderTrack.setSize({180.f, 4.f});
+    mSizeSliderTrack.setFillColor(sf::Color(80, 80, 100));
+    mSizeSliderKnob.setRadius(8.f);
+    mSizeSliderKnob.setOrigin(8.f, 8.f);
+    mSizeSliderKnob.setFillColor(sf::Color::Cyan);
 }
 
 void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf::Vector2i mPos) {
@@ -191,6 +214,8 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
                         edges[editingEdge].weight = inputBuffer.empty() ? 1 : std::stoi(inputBuffer);
                     } catch (...) { edges[editingEdge].weight = 1; }
                 }
+                m_edit[currentIndex - 1].m_nodes = nodes;
+                m_edit[currentIndex - 1].m_edges = edges;
                 editingNode = -1;
                 editingEdge = -1;
                 inputBuffer = "";
@@ -225,6 +250,7 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
         isDraggingSpeed = false;
         isDragging = false;
         draggingNode = -1;
+        mIsDraggingSizeSlider = false;
     }
 
     if ((editingNode != -1 || editingEdge != -1) && event.type == sf::Event::MouseButtonPressed) {
@@ -246,7 +272,7 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
             isDragging = true;
             isInputActive = false;
         }
-        
+
         //  --- LEFT TAB ---
         bool mouseInLeftIcon = (mPos.x >= leftWidth - TAB_WIDTH && mPos.x <= leftWidth &&
                                 mPos.y >= centerY - TAB_HEIGHT / 2.f && mPos.y <= centerY + TAB_HEIGHT / 2.f);
@@ -269,6 +295,20 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
                 isInputActive = true;
             else
                 isInputActive = false;
+            for (size_t i = 0; i < mColorSwatches.size(); ++i) {
+                if (mColorSwatches[i].getGlobalBounds().contains(worldPos)) {
+                    mCurrentNodeColor = mThemeColors[i]; // Cập nhật màu
+                    return;
+                }
+                if (mPos.y >= 555.f - 20.f && mPos.y <= 555.f + 20.f && 
+                    mPos.x >= 25.f - 10.f && mPos.x <= 25.f + (leftWidth - 85.f) + 10.f) {
+                    mIsDraggingSizeSlider = true;
+                    float relativeX = std::max(0.f, std::min((float)mPos.x - 25.f, leftWidth - 85.f));
+                    float t = relativeX / (leftWidth - 85.f);
+                    mNodeRadius = 15.f + t * 20.f;
+                    return;
+                }
+            }
             if (button[0]->isClicked(worldPos, true)) { // MODE
                 selectNode = -1;
                 isEditMode = !isEditMode;
@@ -456,7 +496,7 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
 
     int hoveredNode = -1;
     for (int i = 0; i < (int)nodes.size(); ++i) {
-        if (std::hypot(nodes[i].x - worldPos.x, nodes[i].y - worldPos.y) < NODE_RADIUS) {
+        if (std::hypot(nodes[i].x - worldPos.x, nodes[i].y - worldPos.y) < mNodeRadius) {
             hoveredNode = i;
             break;
         }
@@ -620,7 +660,7 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
                 float dx = nodes[draggingNode].x - nodes[i].x;
                 float dy = nodes[draggingNode].y - nodes[i].y;
                 float dist = std::hypot(dx, dy);
-                float minSafe = NODE_RADIUS * 2.5f;
+                float minSafe = mNodeRadius * 2.5f;
 
                 if (dist < minSafe && dist > 0.01f) {
                     float overlap = minSafe - dist;
@@ -629,8 +669,8 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
                 }
             }
 
-            if (nodes[draggingNode].x < leftWidth + NODE_RADIUS) {
-                nodes[draggingNode].x = leftWidth + NODE_RADIUS;
+            if (nodes[draggingNode].x < leftWidth + mNodeRadius) {
+                nodes[draggingNode].x = leftWidth + mNodeRadius;
             }
 
             m_edit[currentIndex - 1].m_nodes = nodes;
@@ -644,6 +684,13 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
             float ratio = relativeX / slideW;
             delayTime = 2.0f - ratio * (2.0f - 0.1f);
         }
+        if (mIsDraggingSizeSlider) {
+            float sliderX = 25.f;
+            float sliderW = leftWidth - 85.f;
+            float relativeX = std::max(0.f, std::min((float)mPos.x - sliderX, sliderW));
+            float t = relativeX / sliderW;
+            mNodeRadius = 15.f + t * 20.f;
+        }
     }
 }
 
@@ -656,13 +703,13 @@ bool DijkstraScreen::isSegmentHovering(sf::Vector2f pos, sf::Vector2f A, sf::Vec
 }
 
 bool DijkstraScreen::isPosValid(sf::Vector2f pos, float winW, float winH, int ignoreNode) {
-    if (pos.x < leftWidth + NODE_RADIUS) return false;
-    if (pos.x > winW - rightWidth - NODE_RADIUS) return false;
-    if (pos.y > winH - 120.f - NODE_RADIUS) return false;
+    if (pos.x < leftWidth + mNodeRadius) return false;
+    if (pos.x > winW - rightWidth - mNodeRadius) return false;
+    if (pos.y > winH - 120.f - mNodeRadius) return false;
     for (int i = 0; i < (int)nodes.size(); ++i) {
         if (i == ignoreNode) continue;
         float d = std::hypot(nodes[i].x - pos.x, nodes[i].y - pos.y);
-        if (d < NODE_RADIUS * 2.5f) return false;
+        if (d < mNodeRadius * 2.5f) return false;
     }
     return true;
 }
@@ -852,7 +899,7 @@ void DijkstraScreen::drawGraph(sf::RenderWindow &window, sf::Font &font) {
 
     int hoveredNode = -1;
     for (size_t i = 0; i < nodes.size(); ++i) {
-        if (std::hypot(nodes[i].x - worldPos.x, nodes[i].y - worldPos.y) < NODE_RADIUS) {
+        if (std::hypot(nodes[i].x - worldPos.x, nodes[i].y - worldPos.y) < mNodeRadius) {
             hoveredNode = i;
             break;
         }
@@ -885,7 +932,7 @@ void DijkstraScreen::drawGraph(sf::RenderWindow &window, sf::Font &font) {
             arrow.setPoint(0, sf::Vector2f(0, 0));
             arrow.setPoint(1, sf::Vector2f(-arrowSize, -arrowSize / 1.8f));
             arrow.setPoint(2, sf::Vector2f(-arrowSize, arrowSize / 1.8f));
-            sf::Vector2f arrowPos = B - unitDir * NODE_RADIUS;
+            sf::Vector2f arrowPos = B - unitDir * mNodeRadius;
             arrow.setPosition(arrowPos);
             arrow.setRotation(angle);
 
@@ -959,10 +1006,10 @@ void DijkstraScreen::drawGraph(sf::RenderWindow &window, sf::Font &font) {
 
     //  --- DRAW NODES ---
     for (size_t i = 0; i < nodes.size(); ++i) {
-        sf::CircleShape shape(NODE_RADIUS);
-        shape.setOrigin(NODE_RADIUS, NODE_RADIUS);
+        sf::CircleShape shape(mNodeRadius);
+        shape.setOrigin(mNodeRadius, mNodeRadius);
+        shape.setFillColor(mCurrentNodeColor);
         shape.setPosition(nodes[i].x, nodes[i].y);
-        shape.setFillColor(sf::Color(50, 50, 50)); 
         shape.setOutlineThickness(-3.f);
 
         shape.setOutlineColor(getNodeColor(window, i));
@@ -1004,10 +1051,10 @@ void DijkstraScreen::drawGraph(sf::RenderWindow &window, sf::Font &font) {
         for (int i = 1; i < currentIndex; ++i) {
             if (path[i] == selectNode)
                 continue;
-            sf::CircleShape shape(NODE_RADIUS);
-            shape.setOrigin(NODE_RADIUS, NODE_RADIUS);
-            shape.setPosition(nodes[path[i]].x, nodes[path[i]].y); 
+            sf::CircleShape shape(mNodeRadius);
+            shape.setOrigin(mNodeRadius, mNodeRadius);
             shape.setFillColor(sf::Color::Transparent);
+            shape.setPosition(nodes[path[i]].x, nodes[path[i]].y); 
             shape.setOutlineThickness(-3.f);
             shape.setOutlineColor(sf::Color::Yellow);
             window.draw(shape);
@@ -1055,7 +1102,6 @@ void DijkstraScreen::drawUI(sf::RenderWindow &window, sf::Font &font, sf::Vector
         float sliderW = leftWidth - 85.f;
 
         int speedPercent = static_cast<int>((2.0f - delayTime) / (2.0f - 0.1f) * 100.f);
-        
         sf::Text speedText("Speed: " + std::to_string(speedPercent) + "%", font, 16);
         speedText.setPosition(sliderX, sliderY - 30.f);
         window.draw(speedText);
@@ -1072,6 +1118,25 @@ void DijkstraScreen::drawUI(sf::RenderWindow &window, sf::Font &font, sf::Vector
         thumb.setFillColor(sf::Color::White);
         window.draw(thumb);
 
+        float sizeY = 555.f; 
+        
+        sf::Text sizeLabel("Node Size: " + std::to_string((int)mNodeRadius), font, 14);
+        sizeLabel.setPosition(sliderX, sizeY - 25.f);
+        sizeLabel.setFillColor(sf::Color::Yellow);
+        window.draw(sizeLabel);
+
+        mSizeSliderTrack.setSize(sf::Vector2f(sliderW, 4.f));
+        mSizeSliderTrack.setPosition(sliderX, sizeY);
+        mSizeSliderTrack.setFillColor(sf::Color(100, 100, 100));
+        window.draw(mSizeSliderTrack);
+
+        float t = (mNodeRadius - 15.f) / 20.f; 
+        if (t < 0.f) t = 0.f; if (t > 1.f) t = 1.f;
+
+        mSizeSliderKnob.setOrigin(8.f, 8.f);
+        mSizeSliderKnob.setPosition(sliderX + (t * sliderW), sizeY + 2.f);
+        window.draw(mSizeSliderKnob);
+
         float inputY = 600.f;
         float inputX = 25.f;
         float inputW = leftWidth - 50.f;
@@ -1084,7 +1149,7 @@ void DijkstraScreen::drawUI(sf::RenderWindow &window, sf::Font &font, sf::Vector
         inputRect.setOutlineColor(isInputActive ? sf::Color::Cyan : sf::Color(100, 100, 100));
         window.draw(inputRect);
 
-        sf::Text inputText(isInputActive ? inputBuffer +  "_" : "Enter here...",font, 18);
+        sf::Text inputText(isInputActive ? inputBuffer + "_" : "Enter here...", font, 18);
         inputText.setPosition(inputX + 10.f, inputY + 8.f);
         inputText.setFillColor(isInputActive ? sf::Color::White : sf::Color(100, 100, 100));
         window.draw(inputText);
@@ -1093,6 +1158,27 @@ void DijkstraScreen::drawUI(sf::RenderWindow &window, sf::Font &font, sf::Vector
         hint.setPosition(inputX, inputY + inputH + 5.f);
         hint.setFillColor(sf::Color(150, 150, 150));
         window.draw(hint);
+
+        float colorLabelY = 710.f;
+        sf::Text colorLabel("Node Fill Color", font, 14);
+        colorLabel.setPosition(20.f, colorLabelY);
+        colorLabel.setFillColor(sf::Color::Yellow);
+        window.draw(colorLabel);
+
+        for (size_t i = 0; i < mColorSwatches.size(); ++i) {
+            float x = 30.f + (i % 3) * 35.f;
+            float y = colorLabelY + 30.f + (i / 3) * 35.f;
+            mColorSwatches[i].setPosition(x, y);
+
+            if (mThemeColors[i] == mCurrentNodeColor) {
+                mColorSwatches[i].setOutlineColor(sf::Color::Cyan);
+                mColorSwatches[i].setOutlineThickness(2.0f);
+            } else {
+                mColorSwatches[i].setOutlineColor(sf::Color(100, 100, 100));
+                mColorSwatches[i].setOutlineThickness(1.5f);
+            }
+            window.draw(mColorSwatches[i]);
+        }
     }
 
     //  ----- RIGHT PANEL -----
@@ -1215,6 +1301,7 @@ path from Source to all nodes.
                 label.setFillColor(sf::Color(180, 180, 180));
                 window.draw(label);
             }
+
         }
         else if (activeTab == TabState::Dist) {
             sf::Text title("DIAGNOSTICS", font, 16);
