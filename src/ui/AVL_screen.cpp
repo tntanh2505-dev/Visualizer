@@ -172,12 +172,14 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
     mInputBox.setSize({220.f, 40.f});
     mInputBox.setOutlineThickness(1.5f);
 
-    mCurrentNodeColor = sf::Color(245, 249, 255); 
+    
     mThemeColors = {
-        sf::Color(245, 249, 255), sf::Color(181, 58, 199),
+        sf::Color(45, 45, 55), sf::Color(181, 58, 199),
         sf::Color(52, 152, 219), sf::Color(231, 76, 60),
         sf::Color(241, 196, 15), sf::Color(46, 204, 113)
     };
+
+    mCurrentNodeColor = mThemeColors[0];
 
     mColorSwatches.clear();
     for (const auto& color : mThemeColors) {
