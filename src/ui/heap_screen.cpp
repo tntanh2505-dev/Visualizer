@@ -58,16 +58,16 @@ HeapVisualizer::HeapVisualizer(const sf::Font& font)
     , mCodeTabBtn("CODE", font, {80.f, 30.f})
 {
     // Right Panel Tabs Setup
-    mRightTabState = HeapRightTabState::CODE;
+    mRightTabState = HeapRightTabState::INFO;
     
     // Parse the provided HEAP.txt structured information
     std::vector<std::string> infoLines = {
         "HEAP",
         "[WHAT IS IT]",
-        "It's a chain of node where each node hold it's",
-        "value and a pointer to the next node.",
-        "We maintain the root as a pointer to the first",
-        "node of the chain for processing.",
+        "It's complete binary tree in a container",
+        "which usually an array.",
+        "We demonstrate both its array form",
+        "and binary tree form.",
         "",
         "[FUNCTION TIME COMPLEXITY]",
         "Insert/Delete       O(logN)",

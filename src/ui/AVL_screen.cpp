@@ -111,7 +111,7 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
     mCodePanel.update("insert", -1);
     
     // Right Panel Tabs Setup
-    mRightTabState = AVLRightTabState::CODE;
+    mRightTabState = AVLRightTabState::INFO;
 
     // Parse the provided AVL.txt structured information
     mInfoTexts.clear();

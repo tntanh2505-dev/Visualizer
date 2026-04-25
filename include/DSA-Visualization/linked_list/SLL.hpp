@@ -288,7 +288,7 @@ public:
         rightWidth = TAB_WIDTH;
         leftExpanded = true;
         rightExpanded = true;
-        activeTab = SLLTabState::Code;
+        activeTab = SLLTabState::Info;
         mColorSwatchesStartY = 0.f;
 
         // Theme Initialization
