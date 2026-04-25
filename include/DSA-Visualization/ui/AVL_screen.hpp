@@ -15,6 +15,9 @@ struct Operation {
     int oldValue = -1; // only used for Update
 };
 
+// Define the Tab State for the Right Panel
+enum class AVLRightTabState { INFO, CODE };
+
 class AVLScreen : public Screen {
 public:
     AVLScreen();
@@ -83,9 +86,23 @@ private:
     static const std::vector<std::string> DELETE_CODE;
     static const std::vector<std::string> SEARCH_CODE;
 
-    //Additional feature: light mode
-    // Add inside private:
-    std::optional<ModernButton> mThemeToggleBtn;
+    // --- Resizing & Workspace Properties ---
+    float mBaseWidth = 1280.f;
+    float mBaseHeight = 720.f;
+    sf::RectangleShape mWorkspaceBg;
+    sf::RectangleShape mInputBox; 
+
+    // --- Tab and Customization Properties ---
+    AVLRightTabState mRightTabState = AVLRightTabState::CODE;
+    std::optional<ModernButton> mInfoTabBtn;
+    std::optional<ModernButton> mCodeTabBtn;
+    sf::Text mInfoTextDisplay;
+
+    sf::Vector2f mColorLabelPos;
+    sf::Vector2f mThemeLabelPos;
+
+    std::optional<ModernButton> mDarkThemeBtn;
+    std::optional<ModernButton> mLightThemeBtn;
     bool m_isLightMode = false;
-    void applyTheme(sf::Font& font); // Helper to swap colors and rebuild buttons
+    void applyTheme(sf::Font& font); 
 };

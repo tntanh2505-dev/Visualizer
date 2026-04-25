@@ -88,7 +88,7 @@ HeapVisualizer::HeapVisualizer(const sf::Font& font)
     // Customization Init
     mCurrentNodeColor = sf::Color(245, 249, 255); 
     mThemeColors = {
-        sf::Color(245, 249, 255), sf::Color(181, 58, 199),
+        sf::Color(45, 45, 55), sf::Color(181, 58, 199),
         sf::Color(52, 152, 219), sf::Color(231, 76, 60),
         sf::Color(241, 196, 15), sf::Color(46, 204, 113)
     };

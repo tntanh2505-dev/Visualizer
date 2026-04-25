@@ -298,14 +298,13 @@ public:
         mCurrentNodeColor = UITheme::Color::GlobalNodeFill;
         
         mThemeColors = {
-            sf::Color(245, 249, 255), // White
+            sf::Color(45, 45, 55), // Gray
             sf::Color(181, 58, 199),  // Accent Purple
             sf::Color(52, 152, 219),  // Blue
             sf::Color(231, 76, 60),   // Red
             sf::Color(241, 196, 15),  // Yellow
             sf::Color(46, 204, 113)   // Green
         };
-
         for (const auto& color : mThemeColors) {
             sf::RectangleShape swatch(sf::Vector2f(25.f, 25.f));
             swatch.setFillColor(color);
