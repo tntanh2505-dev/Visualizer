@@ -292,13 +292,25 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
                     m_selectedNodeValue = -1;
                 }
 
-                if (mDeleteBtn->isClicked(mouseRaw, true) && !mInputString.empty()) {
-                    int val = std::stoi(mInputString);
-                    if (mHistoryIndex < (int)mHistory.size()) mHistory.erase(mHistory.begin() + mHistoryIndex, mHistory.end());
-                    Operation op{OpType::Delete, val};
-                    mHistory.push_back(op); mHistoryIndex++;
-                    buildSteps(op); mInputString.clear();
-                    m_selectedNodeValue = -1;
+                if (mDeleteBtn->isClicked(mouseRaw, true) && (!mInputString.empty() || m_selectedNodeValue != -1)) {
+                    if (!mInputString.empty()){
+                        int val = std::stoi(mInputString);
+                        if (mHistoryIndex < (int)mHistory.size()) mHistory.erase(mHistory.begin() + mHistoryIndex, mHistory.end());
+                        Operation op{OpType::Delete, val};
+                        mHistory.push_back(op); mHistoryIndex++;
+                        buildSteps(op); mInputString.clear();
+                        m_selectedNodeValue = -1;
+                    } else
+                    //added clause for extra clarity
+                    if (m_selectedNodeValue != -1){
+                        if (mHistoryIndex < (int)mHistory.size()) mHistory.erase(mHistory.begin() + mHistoryIndex, mHistory.end());
+                        int val = m_selectedNodeValue;
+
+                        Operation op{OpType::Delete,val};
+                        mHistory.push_back(op);mHistoryIndex++;
+                        buildSteps(op);
+                        m_selectedNodeValue = -1;
+                    }
                 }
 
                 if (mSearchBtn->isClicked(mouseRaw, true) && !mInputString.empty()) {
