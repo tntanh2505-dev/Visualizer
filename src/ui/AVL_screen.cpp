@@ -808,35 +808,15 @@ void AVLScreen::drawDescription(sf::RenderWindow& window, const sf::Font& font, 
         return;
     }
 
-    float boxH = 70.f;
-    float boxW = 700.f; 
-    float boxX = 640.f + shiftX - boxW/2.f; 
-    float boxY = mBaseHeight - 140.f; 
-
-    sf::RectangleShape shadow({boxW, boxH});
-    shadow.setPosition(boxX + 4.f, boxY + 4.f);
-    shadow.setFillColor(sf::Color(0, 0, 0, 90));
-    window.draw(shadow);
-
-    sf::RectangleShape bar({boxW, boxH});
-    bar.setPosition(boxX, boxY);
-    bar.setFillColor(UITheme::Color::AVLPanelBg);
-    bar.setOutlineThickness(1.5f);
-    bar.setOutlineColor(m_selectedNodeValue != -1 ? UITheme::Color::AVLAccent : UITheme::Color::AVLGlowStrong);
-    window.draw(bar);
-
-    sf::RectangleShape accent({4.f, boxH});
-    accent.setPosition(boxX, boxY);
-    accent.setFillColor(UITheme::Color::AVLAccent);
-    window.draw(accent);
-
     sf::Text desc;
     desc.setFont(font);
     desc.setString(descText);
-    desc.setCharacterSize(24);
-    desc.setLetterSpacing(1.1f);
-    desc.setFillColor(m_isLightMode ? sf::Color(30, 30, 35) : sf::Color(240, 245, 255));
-    desc.setPosition(boxX + 18.f, boxY + 20.f);
+    desc.setCharacterSize(25);
+    desc.setFillColor(sf::Color(251, 209, 101));
+    
+    float workspaceCenterX = m_leftWidth + (mBaseWidth - m_leftWidth - m_rightWidth) / 2.f;
+    desc.setPosition(sf::Vector2f(workspaceCenterX - desc.getLocalBounds().width / 2.f, mBaseHeight - 130.f));
+    
     window.draw(desc);
 }
 
