@@ -70,7 +70,7 @@ data-structure-visualizer/
 | Ly Trai Thai | Linked List | [@LyTranThai](https://github.com/LyTranThai) |
 | Tran Dang Khoa | Dijkstra's Algorithm | [@trankhoa8581](https://github.com/trankhoa8581) |
 | Tran Duc Toan | Heap | [@Toan-Tran-lab](https://github.com/Toan-Tran-lab) |
-| Tuan Anh | AVL Tree | [@IrrationalRacoon2025](https://github.com/IrrationalRacoon2025) · [@tntanh2505-dev](https://github.com/tntanh2505-dev) |
+| Tran Ngoc Tuan Anh | AVL Tree | [@IrrationalRacoon2025](https://github.com/IrrationalRacoon2025) · [@tntanh2505-dev](https://github.com/tntanh2505-dev) |
 
 > **Note:** Tuan Anh uses two GitHub accounts due to a Git Bash authenticator issue.
 
