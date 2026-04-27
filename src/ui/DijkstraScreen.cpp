@@ -55,6 +55,9 @@ int DijkstraScreen::run(sf::RenderWindow &window, sf::Font &font) {
     }
     button[8] = std::make_unique<ModernButton>("<< PREV", font, sf::Vector2f(100.f, 40.f), 5.f);
     button[9] = std::make_unique<ModernButton>("NEXT >>", font, sf::Vector2f(100.f, 40.f), 5.f);
+    button[10] = std::make_unique<ModernButton>("INFO", font, sf::Vector2f(80.f, 30.f), 5.f);
+    button[11] = std::make_unique<ModernButton>("DIST", font, sf::Vector2f(80.f, 30.f), 5.f);
+    button[12] = std::make_unique<ModernButton>("CODE", font, sf::Vector2f(80.f, 30.f), 5.f);
 
     sf::Clock deltaClock;
     while (window.isOpen()) {
@@ -260,7 +263,7 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
         return;
     }
 
-    for (int i = 0; i < 10; ++i)
+    for (int i = 0; i < 13; ++i)
         button[i]->update(worldPos);
 
     //  --- UI PANEL ---
@@ -463,7 +466,7 @@ void DijkstraScreen::handleInput(sf::RenderWindow &window, sf::Event &event, sf:
             float tabW = tabAreaWidth / 3.f;
 
             for (int i = 0; i < 3; ++i) {
-                if (mPos.x >= panelStart + i * tabW && mPos.x <= panelStart + (i+1) * tabW) {
+                if (button[10 + i]->isClicked(worldPos, true)) {
                     activeTab = static_cast<TabState>(i);
                     return;
                 }
@@ -1210,96 +1213,82 @@ void DijkstraScreen::drawUI(sf::RenderWindow &window, sf::Font &font, sf::Vector
         float tabW = tabAreaWidth / 3.f;
 
         for (int i = 0; i < 3; ++i) {
-            TabState state = static_cast<TabState>(i);
-            sf::RectangleShape tRect(sf::Vector2f(tabW - 4.f, 30.f));
-            tRect.setPosition(panelStart + i * tabW, 10.f);
-            tRect.setFillColor(activeTab == state ? sf::Color(70, 70, 80) : sf::Color(40, 40, 45));
-            tRect.setOutlineThickness(activeTab == state ? 1.f : 0.f);
-            tRect.setOutlineColor(sf::Color::Yellow);
-            window.draw(tRect);
-
-            sf::Text tText(labels[i], font, 14);
-            sf::FloatRect tb = tText.getLocalBounds();
-            tText.setOrigin(tb.left + tb.width/2.f, tb.top + tb.height / 2.f);
-            tText.setPosition(panelStart + i * tabW + tabW / 2.f, 25.f);
-            tText.setFillColor(activeTab == state ? sf::Color::White : sf::Color(150, 150, 150));
-            window.draw(tText);
+            button[10 + i]->setPosition(20.f + panelStart + i * tabW, 20.f);
+            window.draw(*button[10 + i]);
         }
 
         //  --- CONTENT ---
         float contentY = 60.f;
         if (activeTab == TabState::Info) {
-            sf::Text title("DIJKSTRA'S ALGORITHM", font, 16);
-            title.setStyle(sf::Text::Bold);
-            title.setFillColor(sf::Color::Yellow);
-            title.setPosition(panelStart + 10, contentY);
-            window.draw(title);
-
-            sf::Text info(R"(
-[ ALGORITHM ]
-Dijkstra finds the shortest
-path from Source to all nodes.
-- Weights: Non-negative only
-- Complexity: O(V*V + E)
-
-[ MODE: EDIT ]
-- [L-Click]: Create Node/Edge
-- [R-Click]: Edit Weight/Label
-
-[ MODE: RUN ]
-- Step 1: Select Source Node
-- Step 2: Observe Expansion
-- Step 3: Select Target Node
-- Step 4: Observe Final Path
-(All actions via Left-Click)
-
-[ KEYBOARD ]
-  Input format
-
-  * In [ MODE: EDIT ]
-  - A     : create node
-  - A B   : create edge (A-B)
-  - A B C : create edge (A-B)
-        with weight C (integer)
-
-  * In [ MODE: RUN ]
-  - X   : select source or
-        target if source existed
-  - X Y : select source X and
-        target node Y
-        
-)", font, 16);
-            info.setPosition(panelStart + 10, contentY + 25.f);
-            info.setFillColor(sf::Color(220, 220, 220));
-            window.draw(info);
-
-            float legendStartY = contentY + 700.f;
-            float circleRadius = 6.f;
-            float itemSpacing = 22.f;
-
-            std::vector<std::pair<sf::Color, std::string>> legends = {
-                {sf::Color::White,         "Hovering"},
-                {sf::Color::Magenta,       "Selecting"},
-                {sf::Color::Green,         "Source Node"},
-                {sf::Color::Red,           "Best Node"},
-                {sf::Color::Yellow,        "Visiting"},
-                {sf::Color::Blue,          "Processed"}
+            float currentY = contentY;
+            
+            auto drawInfoLine = [&](const std::string& text, sf::Color color, int size, bool bold = false, float spacing = 25.f) {
+                sf::Text t(text, font, size);
+                t.setFillColor(color);
+                if (bold) t.setStyle(sf::Text::Bold);
+                t.setPosition(panelStart + 10.f, currentY);
+                window.draw(t);
+                currentY += spacing;
             };
 
-            for (int i = 0; i < legends.size(); ++i) {
-                float yPos = legendStartY + (i * itemSpacing);
+            drawInfoLine("DIJKSTRA'S ALGORITHM", sf::Color::Yellow, 16, true, 30.f);
 
-                sf::CircleShape circle(circleRadius);
-                circle.setFillColor(legends[i].first);
-                circle.setOutlineThickness(1.f);
-                circle.setOutlineColor(sf::Color(255, 255, 255, 50));
-                circle.setPosition(panelStart + 15.f, yPos + 3.f);
-                window.draw(circle);
+            drawInfoLine("[ ALGORITHM ]", sf::Color::Yellow, 15, true);
+            drawInfoLine("Dijkstra finds the shortest", sf::Color(220, 220, 220), 14);
+            drawInfoLine("path from Source to all nodes.", sf::Color(220, 220, 220), 14);
+            drawInfoLine("- Weights: Non-negative only", sf::Color(220, 220, 220), 14);
+            drawInfoLine("- Complexity: O(V*V + E)\n", sf::Color(220, 220, 220), 14);
 
-                sf::Text label(legends[i].second, font, 12);
-                label.setPosition(panelStart + 15.f + circleRadius * 2 + 10.f, yPos);
-                label.setFillColor(sf::Color(180, 180, 180));
-                window.draw(label);
+            drawInfoLine("[ MODE: EDIT ]", sf::Color::Yellow, 15, true);
+            drawInfoLine("L-Click", sf::Color::Cyan, 14, true, 20.f);
+            drawInfoLine("  Create Node/Edge", sf::Color(200, 200, 200), 14);
+            drawInfoLine("R-Click", sf::Color::Cyan, 14, true, 20.f);
+            drawInfoLine("  Edit Weight/Label\n", sf::Color(200, 200, 200), 14, false, 30.f);
+
+            // --- PHẦN CHẾ ĐỘ CHẠY (Gốc: [ MODE: RUN ]) ---
+            drawInfoLine("[ MODE: RUN ]", sf::Color::Yellow, 15, true);
+            drawInfoLine("  Step 1: Select Source Node", sf::Color(200, 200, 200), 14);
+            drawInfoLine("  Step 2: Observe Expansion", sf::Color(200, 200, 200), 14);
+            drawInfoLine("  Step 3: Select Target Node", sf::Color(200, 200, 200), 14);
+            drawInfoLine("  Step 4: Observe Final Path", sf::Color(200, 200, 200), 14);
+            drawInfoLine("(All actions via Left-Click)\n", sf::Color::Cyan, 13);
+
+            // --- PHẦN BÀN PHÍM (GỐC: [ KEYBOARD ]) ---
+            drawInfoLine("[ KEYBOARD ]", sf::Color::Yellow, 15, true);
+            drawInfoLine("Input format:", sf::Color::White, 13);
+            drawInfoLine("* In [ MODE: EDIT ]", sf::Color::Cyan, 13, true);
+            drawInfoLine("  A     : create node", sf::Color(200, 200, 200), 13);
+            drawInfoLine("  A B   : create edge (A-B)", sf::Color(200, 200, 200), 13);
+            drawInfoLine("  A B C : create edge with weight C", sf::Color(200, 200, 200), 13, false, 25.f);
+
+            drawInfoLine("* In [ MODE: RUN ]", sf::Color::Cyan, 13, true);
+            drawInfoLine("  X     : select source/target", sf::Color(200, 200, 200), 13);
+            drawInfoLine("  X Y   : select source X & target Y", sf::Color(200, 200, 200), 13, false, 35.f);
+
+            // --- CHÚ THÍCH MÀU SẮC (LEGEND) ---
+            // Đặt ở cuối bảng điều khiển
+            currentY = winH - 200.f; 
+            drawInfoLine("LEGEND:", sf::Color::White, 14, true, 25.f);
+
+            std::vector<std::pair<sf::Color, std::string>> legends = {
+                {sf::Color::Green,   "Source"},
+                {sf::Color::Red,     "Processing"},
+                {sf::Color::Yellow,  "Visiting"},
+                {sf::Color::Cyan,    "Processed"},
+                {sf::Color::Magenta, "Selected"}
+            };
+
+            for (auto& leg : legends) {
+                sf::CircleShape dot(5.f);
+                dot.setFillColor(leg.first);
+                dot.setPosition(panelStart + 15.f, currentY + 4.f);
+                window.draw(dot);
+
+                sf::Text legTxt(leg.second, font, 13);
+                legTxt.setFillColor(sf::Color(180, 180, 180));
+                legTxt.setPosition(panelStart + 35.f, currentY);
+                window.draw(legTxt);
+                currentY += 22.f;
             }
 
         }
