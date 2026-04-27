@@ -10,6 +10,7 @@ public:
 
     void setFillColor(const sf::Color& color);
     void setOutlineColor(const sf::Color& color);
+    void setText(const std::string& str);
     void setTextColor(const sf::Color& color);
     
     void setHovered(bool hovered);

@@ -4,7 +4,6 @@
 #include <SFML/Window/Clipboard.hpp>
 #include <string>
 #include <cmath>
-#include <math.h>
 #include <vector>
 #include <fstream>
 #include <sstream>
@@ -12,7 +11,12 @@
 #include <ctime>
 #include <map>
 #include <algorithm>
+
 #include "DSA-Visualization/ui/UI_Theme.hpp"
+#include "DSA-Visualization/ui/components/graphic_node.hpp"
+#include "DSA-Visualization/ui/components/NodeArrow.hpp"
+#include "DSA-Visualization/ui/button.hpp"
+#include "DSA-Visualization/ui/codepanel.hpp"
 
 namespace SLL {
 inline int UniqueID = 0;
@@ -22,8 +26,7 @@ inline int UniqueID = 0;
 class VisualNode {
 public:
     int value;
-    sf::CircleShape shape;
-    sf::Text text;
+    GraphicNode m_graphic;
     float radius = 30.f;
     int UID;
     
@@ -34,47 +37,35 @@ public:
     float currentAlpha = 0.f;      
     bool isVisible = false;        
     bool isHighlighted = false;    
-    sf::Color defaultOutlineColor = UITheme::Color::NodeOutlineColor; 
-    sf::Color highlightColor = UITheme::Color::NodeHighlightColor; 
     
     int index = -1;
     sf::Text indexText; 
 
-    VisualNode(int value, sf::Font& font, sf::Vector2f startPos) {
+    VisualNode(int value, sf::Font& font, sf::Vector2f startPos) 
+        : m_graphic(30.f, std::to_string(value), font) 
+    {
         this->value = value;
         UID = UniqueID++;
-        shape.setRadius(radius);
-        shape.setFillColor(UITheme::Color::NodeFillColor);
-        shape.setOutlineThickness(UITheme::Size::NodeOutlineThickness);
-        shape.setOutlineColor(defaultOutlineColor); 
-        shape.setOrigin(radius, radius); 
-        shape.setPosition(startPos);
+        
+        m_graphic.setPosition(startPos);
         targetPos = startPos; 
-
-        text.setFont(font);
-        text.setString(std::to_string(value));
-        text.setCharacterSize(UITheme::Size::FontLarge);
-        text.setFillColor(UITheme::Color::TextWhite);
-        centerText();
 
         indexText.setFont(font);
         indexText.setCharacterSize(UITheme::Size::FontSmall);
         indexText.setFillColor(UITheme::Color::TextMuted); 
     }
 
-    void centerText() {
-        sf::FloatRect bounds = text.getLocalBounds();
-        text.setOrigin(bounds.left + bounds.width / 2.0f, bounds.top + bounds.height / 2.0f);
-        text.setPosition(shape.getPosition().x, shape.getPosition().y);
+    void setValue(int val) {
+        value = val;
+        m_graphic.setText(std::to_string(val));
     }
 
     void updateTextPos() {
-        text.setPosition(shape.getPosition());
         if (index >= 0) {
             indexText.setString(std::to_string(index));
             sf::FloatRect b = indexText.getLocalBounds();
             indexText.setOrigin(b.left + b.width / 2.0f, b.top + b.height / 2.0f);
-            indexText.setPosition(shape.getPosition().x, shape.getPosition().y - radius - 15.f);
+            indexText.setPosition(m_graphic.getPosition().x, m_graphic.getPosition().y - radius - 15.f);
         }
     }
 
@@ -83,7 +74,7 @@ public:
         if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
             if (contains(mousePos)) {
                 isDragging = true;
-                dragOffset = shape.getPosition() - mousePos; 
+                dragOffset = m_graphic.getPosition() - mousePos; 
             }
         }
         if (event.type == sf::Event::MouseButtonReleased && event.mouseButton.button == sf::Mouse::Left) {
@@ -94,18 +85,18 @@ public:
     void update(const sf::RenderWindow& window, float dt) {
         if (isDragging) {
             sf::Vector2f mousePos = window.mapPixelToCoords(sf::Mouse::getPosition(window));
-            shape.setPosition(mousePos + dragOffset);
-            targetPos = shape.getPosition(); 
+            m_graphic.setPosition(mousePos + dragOffset);
+            targetPos = m_graphic.getPosition(); 
         } else {
-            sf::Vector2f currentPos = shape.getPosition();
+            sf::Vector2f currentPos = m_graphic.getPosition();
             sf::Vector2f diff = targetPos - currentPos;
             if (std::abs(diff.x) > 0.5f || std::abs(diff.y) > 0.5f) {
                 float glideSpeed = 10.0f; 
                 currentPos.x += diff.x * glideSpeed * dt;
                 currentPos.y += diff.y * glideSpeed * dt;
-                shape.setPosition(currentPos);
+                m_graphic.setPosition(currentPos);
             } else {
-                shape.setPosition(targetPos); 
+                m_graphic.setPosition(targetPos); 
             }
         }
         updateTextPos();
@@ -118,55 +109,52 @@ public:
             if (currentAlpha < 0.f) currentAlpha = 0.f;
         }
 
-        sf::Color baseOutlineColor = isHighlighted ? highlightColor : defaultOutlineColor;
-        baseOutlineColor.a = static_cast<sf::Uint8>(currentAlpha);
-        shape.setOutlineColor(baseOutlineColor);
+        m_graphic.setSelected(isHighlighted);
 
-        sf::Color fillColor = shape.getFillColor();
-        fillColor.a = static_cast<sf::Uint8>(currentAlpha);
-        shape.setFillColor(fillColor);
+        sf::Color fill = UITheme::Color::NodeFillColor;
+        fill.a = static_cast<sf::Uint8>(currentAlpha);
+        m_graphic.setFillColor(fill);
 
-        sf::Color txtColor = text.getFillColor();
+        sf::Color outline = isHighlighted ? UITheme::Color::NodeHighlightColor : UITheme::Color::NodeOutlineColor;
+        outline.a = static_cast<sf::Uint8>(currentAlpha);
+        m_graphic.setOutlineColor(outline);
+
+        sf::Color txtColor = UITheme::Color::TextWhite;
         txtColor.a = static_cast<sf::Uint8>(currentAlpha);
-        text.setFillColor(txtColor);
+        m_graphic.setTextColor(txtColor);
     }
 
-    bool contains(sf::Vector2f mousePos) { return shape.getGlobalBounds().contains(mousePos); }
+    bool contains(sf::Vector2f mousePos) { 
+        sf::Vector2f center = m_graphic.getPosition();
+        float dist = std::sqrt(std::pow(mousePos.x - center.x, 2) + std::pow(mousePos.y - center.y, 2));
+        return dist <= radius;
+    }
+
     void draw(sf::RenderWindow& window) {
-        window.draw(shape);
-        window.draw(text);
-        if (index >= 0 && isVisible) window.draw(indexText);
+        // Only draw the node if it's not fully faded out
+        if (currentAlpha > 0.f) {
+            window.draw(m_graphic);
+            if (index >= 0 && isVisible) window.draw(indexText);
+        }
     }
 };
 
 class Connector {
 public:
-    sf::VertexArray line;
-    sf::ConvexShape head;
+    NodeArrow m_arrow;
     int start_UID;
     int end_UID;
     float currentAlpha = 0.f;   
     bool isVisible = false;
 
     Connector(VisualNode& p1, VisualNode& p2) {
-        if (line.getVertexCount() < 2) {
-            line.setPrimitiveType(sf::Lines);
-            line.resize(2);
-        }
-        head.setPointCount(3);
-        head.setPoint(0, sf::Vector2f(0, 0));          
-        head.setPoint(1, sf::Vector2f(-15, -7));      
-        head.setPoint(2, sf::Vector2f(-15, 7));       
-        line[0].color = UITheme::Color::ConnectorBase;
-        line[1].color = UITheme::Color::ConnectorBase;
-        head.setFillColor(UITheme::Color::ConnectorBase);
         start_UID = p1.UID;
         end_UID = p2.UID;
     }
 
     void update(VisualNode& startNode, VisualNode& endNode, float dt) {
-        sf::Vector2f start = startNode.shape.getPosition();
-        sf::Vector2f end = endNode.shape.getPosition();
+        sf::Vector2f start = startNode.m_graphic.getPosition();
+        sf::Vector2f end = endNode.m_graphic.getPosition();
         sf::Vector2f dir = end - start;
         float dist = std::sqrt(dir.x * dir.x + dir.y * dir.y);
         
@@ -174,34 +162,26 @@ public:
             sf::Vector2f unitDir = dir / dist;
             float startDist = std::min(startNode.radius, dist / 2.f);
             float endDist = std::min(endNode.radius, dist / 2.f);
-            line[0].position = start + (unitDir * startDist);
-            line[1].position = end - (unitDir * endDist);
-            head.setPosition(line[1].position);
-            float angle = std::atan2(dir.y, dir.x) * 180.f / 3.14159f;
-            head.setRotation(angle);
+            m_arrow.setPoints(start + unitDir * startDist, end - unitDir * endDist);
         }
 
         if (this->isVisible && startNode.isVisible && endNode.isVisible && currentAlpha < 255.f) {
             currentAlpha += 500.f * dt;
             if (currentAlpha > 255.f) currentAlpha = 255.f;
-            line[0].color.a = static_cast<sf::Uint8>(currentAlpha);
-            line[1].color.a = static_cast<sf::Uint8>(currentAlpha);
-            sf::Color headColor = head.getFillColor();
-            headColor.a = static_cast<sf::Uint8>(currentAlpha);
-            head.setFillColor(headColor);
         } else if ((!this->isVisible || !startNode.isVisible || !endNode.isVisible) && currentAlpha > 0.f) {
-            currentAlpha = 0.f;
-            line[0].color.a = 0;
-            line[1].color.a = 0;
-            sf::Color headColor = head.getFillColor();
-            headColor.a = 0;
-            head.setFillColor(headColor);
+            currentAlpha -= 500.f * dt;
+            if (currentAlpha < 0.f) currentAlpha = 0.f;
         }
+
+        sf::Color color = UITheme::Color::ConnectorBase;
+        color.a = static_cast<sf::Uint8>(currentAlpha);
+        m_arrow.setColor(color);
     }
 
     void draw(sf::RenderWindow& window) {
-        window.draw(line);
-        window.draw(head);
+        if (currentAlpha > 0.f) {
+            window.draw(m_arrow);
+        }
     }
 };
 
@@ -223,7 +203,7 @@ inline void ResolveCollisions(std::vector<VisualNode>& nodes, const sf::RenderWi
     auto isReadyForPhysics = [](const VisualNode& n) {
         if (!n.isVisible || n.currentAlpha < 255.f) return false;
         if (!n.isDragging) {
-            sf::Vector2f diff = n.targetPos - n.shape.getPosition();
+            sf::Vector2f diff = n.targetPos - n.m_graphic.getPosition();
             if (std::abs(diff.x) > 0.5f || std::abs(diff.y) > 0.5f) return false;
         }
         return true;
@@ -231,7 +211,7 @@ inline void ResolveCollisions(std::vector<VisualNode>& nodes, const sf::RenderWi
 
     for (auto& node : nodes) {
         if (!isReadyForPhysics(node)) continue;
-        sf::Vector2f pos = node.shape.getPosition();
+        sf::Vector2f pos = node.m_graphic.getPosition();
         float r = node.radius;
 
         float rightLimit = rightBound - r - padding; 
@@ -242,7 +222,7 @@ inline void ResolveCollisions(std::vector<VisualNode>& nodes, const sf::RenderWi
         if (pos.y - r < 0) pos.y = r + padding;
         if (pos.y + r > bottomLimit) pos.y = bottomLimit - r - padding; 
 
-        node.shape.setPosition(pos);
+        node.m_graphic.setPosition(pos);
         node.updateTextPos();
     }
 
@@ -251,8 +231,8 @@ inline void ResolveCollisions(std::vector<VisualNode>& nodes, const sf::RenderWi
             if (!isReadyForPhysics(nodes[i])) continue;
             for (size_t j = i + 1; j < nodes.size(); ++j) {
                 if (!isReadyForPhysics(nodes[j])) continue;
-                sf::Vector2f p1 = nodes[i].shape.getPosition();
-                sf::Vector2f p2 = nodes[j].shape.getPosition();
+                sf::Vector2f p1 = nodes[i].m_graphic.getPosition();
+                sf::Vector2f p2 = nodes[j].m_graphic.getPosition();
                 
                 float dx = p2.x - p1.x;
                 float dy = p2.y - p1.y;
@@ -273,7 +253,7 @@ inline void ResolveCollisions(std::vector<VisualNode>& nodes, const sf::RenderWi
                         p1.x -= nx * (overlap / 2.0f); p1.y -= ny * (overlap / 2.0f);
                         p2.x += nx * (overlap / 2.0f); p2.y += ny * (overlap / 2.0f);
                     }
-                    nodes[i].shape.setPosition(p1); nodes[j].shape.setPosition(p2);
+                    nodes[i].m_graphic.setPosition(p1); nodes[j].m_graphic.setPosition(p2);
                     nodes[i].updateTextPos(); nodes[j].updateTextPos();
                 }
             }
@@ -282,105 +262,6 @@ inline void ResolveCollisions(std::vector<VisualNode>& nodes, const sf::RenderWi
 }
 
 // --- Basic UI Components ---
-
-class Button : public sf::Transformable {
-public:
-    sf::VertexArray bg;
-    sf::VertexArray border;
-    sf::Text label;
-    float l, w;
-    bool isHovered = false; 
-
-    Button(std::string txt, sf::Font& font, sf::Vector2f pos, int length = 100, int width = 40) {
-        l = length; w = width;
-        
-        // Centered Origin
-        setOrigin(l / 2.f, w / 2.f);
-        sf::Transformable::setPosition(pos.x + l / 2.f, pos.y + w / 2.f);
-
-        bg.setPrimitiveType(sf::Quads);
-        bg.resize(4);
-        bg[0].position = {0.f, 0.f}; bg[1].position = {l, 0.f};
-        bg[2].position = {l, w}; bg[3].position = {0.f, w};
-
-        border.setPrimitiveType(sf::LineStrip);
-        border.resize(5);
-        for(int i=0; i<4; ++i) border[i].position = bg[i].position;
-        border[4].position = bg[0].position;
-
-        label.setFont(font);
-        label.setString(txt);
-        label.setCharacterSize(14); 
-        label.setFillColor(UITheme::Color::TextWhite);
-        
-        sf::FloatRect b = label.getLocalBounds();
-        label.setOrigin(b.left + b.width/2.f, b.top + b.height/2.f);
-        label.setPosition(l / 2.f, w / 2.f - 2.f); 
-
-        setHighlight(false); 
-    }
-
-    void setPosition(sf::Vector2f pos) {
-        sf::Transformable::setPosition(pos.x + l / 2.f, pos.y + w / 2.f);
-    }   
-    
-    void setHighlight(bool hover) {
-        isHovered = hover; 
-        
-        sf::Color topC = hover ? UITheme::Color::ModernBtnHoverT : UITheme::Color::ModernBtnTop;
-        sf::Color botC = hover ? UITheme::Color::ModernBtnHoverB : UITheme::Color::ModernBtnBottom;
-        sf::Color borderC = hover ? UITheme::Color::ButtonHoverBorder : UITheme::Color::ModernBtnBorder;
-
-        bg[0].color = topC; bg[1].color = topC;
-        bg[2].color = botC; bg[3].color = botC;
-        for(int i=0; i<5; ++i) border[i].color = borderC;
-        
-        if (hover) setScale(1.02f, 1.02f);
-        else setScale(1.0f, 1.0f);
-    }
-    
-    void handleHover(sf::Vector2f mPos) {
-        sf::FloatRect bounds = getTransform().transformRect({0.f, 0.f, l, w});
-        setHighlight(bounds.contains(mPos));
-    }
-
-    void setText(std::string s) { 
-        label.setString(s); 
-        sf::FloatRect b = label.getLocalBounds();
-        label.setOrigin(b.left + b.width/2.f, b.top + b.height/2.f);
-    }
-    
-    bool isClicked(sf::Vector2f mPos) { 
-        sf::FloatRect bounds = getTransform().transformRect({0.f, 0.f, l, w});
-        if(bounds.contains(mPos)) {
-            setScale(0.98f, 0.98f);
-            return true;
-        }
-        return false;
-    }
-    
-    void draw(sf::RenderWindow& window) { 
-        sf::RenderStates states;
-        states.transform = getTransform();
-
-        sf::RectangleShape shadow({l, w});
-        shadow.setFillColor(UITheme::Color::ButtonShadow);
-        shadow.setPosition(4.f, 4.f);
-        window.draw(shadow, states);
-
-        if (isHovered) {
-            sf::RectangleShape glow({l, w});
-            glow.setFillColor(sf::Color::Transparent);
-            glow.setOutlineThickness(4.f);
-            glow.setOutlineColor(UITheme::Color::AVLGlowStrong);
-            window.draw(glow, states);
-        }
-        
-        window.draw(bg, states); 
-        window.draw(border, states);
-        window.draw(label, states); 
-    }
-};
 
 class TextBox {
 public:
@@ -458,9 +339,7 @@ inline void SyncToFrame(const Snapshot& currentSnap, std::vector<VisualNode>& no
             existingNode->isVisible = true; 
             existingNode->isHighlighted = record.isHighlighted; 
             if (existingNode->value != record.value) {
-                existingNode->value = record.value;
-                existingNode->text.setString(std::to_string(record.value));
-                existingNode->centerText();
+                existingNode->setValue(record.value);
             }
             if (record.targetX != 0.f || record.targetY != 0.f) {
                 existingNode->targetPos = sf::Vector2f(record.targetX, record.targetY);
@@ -496,24 +375,25 @@ inline void SyncToFrame(const Snapshot& currentSnap, std::vector<VisualNode>& no
 
 enum class PanelAction { NONE, CHANGE_VALUE, DELETE_NODE, CLOSE };
 struct PanelResult { PanelAction action = PanelAction::NONE; int targetUID = INT_MIN; int newValue = 0; };
-
 class NodePanel {
 public:
     sf::RectangleShape bg; sf::Text infoText; TextBox inputField;
-    Button changeBtn; Button deleteBtn; Button closeBtn;
+    ModernButton changeBtn; ModernButton deleteBtn; ModernButton closeBtn;
     bool isVisible = false; int targetUID = INT_MIN; sf::Font* fontPtr;
 
     NodePanel(sf::Font& font, float x = 1120, float y = 690)
         : inputField(font, {1140, 800}),  
-          changeBtn("CHANGE", font, {1290, 800}, 90, 40), 
-          deleteBtn("DELETE", font, {1390, 800}, 85, 40), 
-          closeBtn("X", font, {1440, 710}, 30, 30) 
+          changeBtn("CHANGE", font, {90.f, 40.f}), 
+          deleteBtn("DELETE", font, {85.f, 40.f}), 
+          closeBtn("X", font, {30.f, 30.f}) 
     {
         fontPtr = &font;
         bg.setSize(UITheme::Size::PanelDefault); 
         bg.setPosition(x, y); 
         bg.setFillColor(UITheme::Color::PanelBg);
-        bg.setOutlineThickness(UITheme::Size::BoxOutlineThickness); 
+        
+        // INCREASED BORDER THICKNESS
+        bg.setOutlineThickness(UITheme::Size::PanelOutlineThickness); 
         bg.setOutlineColor(UITheme::Color::PanelBorder);
 
         infoText.setFont(font); infoText.setCharacterSize(UITheme::Size::FontNormal);
@@ -521,27 +401,31 @@ public:
     }
 
     void setPosition(sf::Vector2f pos) {
-        bg.setPosition(pos); infoText.setPosition(pos.x + 20, pos.y + 20);
-        inputField.setPosition({pos.x + 20, pos.y + 110});
-        changeBtn.setPosition({pos.x + 170, pos.y + 110});
-        deleteBtn.setPosition({pos.x + 270, pos.y + 110});
-        closeBtn.setPosition({pos.x + 320, pos.y + 20});
+        bg.setPosition(pos); 
+        infoText.setPosition(pos.x + 20, pos.y + 20);
+        inputField.setPosition({pos.x + 20, pos.y + 80 + 10});
+        
+        changeBtn.setPosition({pos.x + 200 + 15, pos.y + 100 + 10});
+        deleteBtn.setPosition({pos.x + 300 + 15, pos.y + 100 + 10});
+        closeBtn.setPosition({pos.x + bg.getSize().x - 20.f, pos.y + 20});
     }
 
     PanelResult HandleEvent(sf::Event& event, sf::RenderWindow& window) {
         PanelResult result;
         if (!isVisible) return result;
         inputField.HandleEvent_IB(event, window);
+        
+        sf::Vector2f mPos = window.mapPixelToCoords(sf::Mouse::getPosition(window));
+        changeBtn.update(mPos); deleteBtn.update(mPos); closeBtn.update(mPos);
 
         if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
-            sf::Vector2f mPos = window.mapPixelToCoords(sf::Mouse::getPosition(window));
-            if (closeBtn.isClicked(mPos)) { hide(); result.action = PanelAction::CLOSE; } 
-            else if (changeBtn.isClicked(mPos) && !inputField.input.empty()) {
+            if (closeBtn.isClicked(mPos, true)) { hide(); result.action = PanelAction::CLOSE; } 
+            else if (changeBtn.isClicked(mPos, true) && !inputField.input.empty()) {
                 result.action = PanelAction::CHANGE_VALUE;
                 result.targetUID = this->targetUID;
                 result.newValue = std::stoi(inputField.input);
             }
-            else if (deleteBtn.isClicked(mPos)) {
+            else if (deleteBtn.isClicked(mPos, true)) {
                 result.action = PanelAction::DELETE_NODE;
                 result.targetUID = this->targetUID;
                 hide();
@@ -559,7 +443,7 @@ public:
     void draw(sf::RenderWindow& window) {
         if (!isVisible) return;
         window.draw(bg); window.draw(infoText); inputField.draw(window);
-        changeBtn.draw(window); deleteBtn.draw(window); closeBtn.draw(window);
+        window.draw(changeBtn); window.draw(deleteBtn); window.draw(closeBtn);
     }
 };
 
@@ -576,7 +460,7 @@ public:
         handle.setPosition(trackX, trackY + trackHeight / 2.f); handle.setFillColor(sf::Color::White);
     }
 
-    void HandleEvent(const sf::Event& event, const sf::RenderWindow& window, int& currentFrame, int maxFrames, std::vector<Snapshot>& timeline, std::vector<VisualNode>& nodes, std::vector<Connector>& lines, sf::Font& font, bool& isAutoPlaying, Button& pauseBtn) {
+    void HandleEvent(const sf::Event& event, const sf::RenderWindow& window, int& currentFrame, int maxFrames, std::vector<Snapshot>& timeline, std::vector<VisualNode>& nodes, std::vector<Connector>& lines, sf::Font& font, bool& isAutoPlaying, ModernButton& pauseBtn) {
         sf::Vector2f mPos = window.mapPixelToCoords(sf::Mouse::getPosition(window));
         if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
             sf::FloatRect grabArea(trackX - 15, trackY - 15, trackWidth + 30, trackHeight + 30);
@@ -626,109 +510,6 @@ public:
     }
 };
 
-class CodePanel {
-public:
-    sf::RectangleShape bg; 
-    sf::RectangleShape highlight; 
-    sf::RectangleShape accent; 
-    std::map<std::string, std::vector<std::string>> codeSnippets;
-    std::vector<std::vector<sf::Text>> displayLines; // Replaced single Text with a 2D vector for inline words
-    sf::Font* fontPtr; bool isVisible = false;
-
-    CodePanel(sf::Font& font) {
-        fontPtr = &font; 
-        bg.setSize({380, 200}); 
-        
-        bg.setFillColor(UITheme::Color::CodePanelBg);
-        bg.setOutlineThickness(1.5f); 
-        bg.setOutlineColor(UITheme::Color::CodePanelBorder);
-        
-        highlight.setFillColor(UITheme::Color::CodeHighlight);
-        accent.setFillColor(UITheme::Color::CodeAccent);
-    }
-    void loadSnippets(const std::map<std::string, std::vector<std::string>>& newSnippets) { codeSnippets = newSnippets; }
-    void setPosition(sf::Vector2f pos) { bg.setPosition(pos); }
-    
-    void update(std::string algoName, int activeLine) {
-        if (algoName.empty()) { isVisible = false; return; }
-        isVisible = true; 
-        displayLines.clear(); highlight.setSize({0, 0}); accent.setSize({0, 0});
-
-        if (codeSnippets.find(algoName) != codeSnippets.end()) {
-            const std::vector<std::string>& lines = codeSnippets[algoName];
-            float startX = bg.getPosition().x + 15; 
-            float startY = bg.getPosition().y + 15;
-            
-            for (int i = 0; i < lines.size(); ++i) {
-                std::vector<sf::Text> lineTexts;
-                std::string rawLine = lines[i];
-                float currentX = startX;
-                
-                // Track indentation spaces
-                int indent = 0;
-                while (indent < rawLine.size() && rawLine[indent] == ' ') indent++;
-                
-                if (indent > 0) {
-                    sf::Text spaceTxt;
-                    spaceTxt.setFont(*fontPtr);
-                    spaceTxt.setString(std::string(indent, ' '));
-                    spaceTxt.setCharacterSize(14);
-                    spaceTxt.setPosition(currentX, startY + (i * 22));
-                    currentX += spaceTxt.getLocalBounds().width;
-                }
-                
-                std::stringstream ss(rawLine.substr(indent));
-                std::string token;
-                
-                // Dynamic Inline Syntax Highlighting!
-                while (ss >> token) {
-                    sf::Color color = UITheme::Color::CodeTextDefault;
-                    
-                    if (token.find("if") == 0 || token.find("else") == 0 || token.find("return") == 0 || token.find("while") == 0) {
-                        color = UITheme::Color::CodeKeyword;
-                    } else if (token.find("Node") != std::string::npos || token.find("NULL") != std::string::npos) {
-                        color = UITheme::Color::CodeType;
-                    } else if (token == "new" || token == "delete") {
-                        color = UITheme::Color::CodeFunction;
-                    }
-
-                    sf::Text word;
-                    word.setFont(*fontPtr);
-                    word.setString(token + " ");
-                    word.setCharacterSize(14); 
-                    word.setFillColor(color); 
-                    word.setPosition(currentX, startY + (i * 22)); 
-                    
-                    currentX += word.getLocalBounds().width;
-                    lineTexts.push_back(word);
-                }
-                displayLines.push_back(lineTexts);
-                
-                if (i == activeLine) {
-                    highlight.setPosition(bg.getPosition().x + 2, startY + (i * 22) - 2);
-                    highlight.setSize({bg.getSize().x - 4, 22});
-                    
-                    accent.setPosition(bg.getPosition().x + 2, startY + (i * 22) - 2);
-                    accent.setSize({4.f, 22.f});
-                }
-            }
-        }
-    }
-    void draw(sf::RenderWindow& window) {
-        if (!isVisible) return;
-        window.draw(bg); 
-        if (highlight.getSize().x > 0) {
-            window.draw(highlight);
-            window.draw(accent); 
-        }
-        for (const auto& lineTexts : displayLines) {
-            for (const auto& word : lineTexts) window.draw(word);
-        }
-    }
-};
-
-
-// --- UPDATED SLL SpeedSlider Component ---
 class SpeedController {
 public:
     sf::RectangleShape track; 
@@ -745,7 +526,7 @@ public:
         track.setSize({220.f, 6.f});
         track.setFillColor(UITheme::Color::SliderTrack);
         track.setOutlineThickness(1.f);
-        track.setOutlineColor(UITheme::Color::NodeOutlineColor); // SLL glow accent
+        track.setOutlineColor(UITheme::Color::NodeOutlineColor);
 
         handle.setRadius(10.f);
         handle.setOrigin(10.f, 10.f);
@@ -795,7 +576,6 @@ public:
     void setPosition(sf::Vector2f pos) {
         label.setPosition(pos.x, pos.y - 20); 
         track.setPosition(pos);
-        // Handle position updated dynamically in update()
     }
     
     void draw(sf::RenderWindow& window) { 
@@ -803,7 +583,7 @@ public:
         
         sf::RectangleShape filled({handle.getPosition().x - track.getPosition().x, 6.f});
         filled.setPosition(track.getPosition());
-        filled.setFillColor(UITheme::Color::NodeOutlineColor); // Cyan SLL Accent
+        filled.setFillColor(UITheme::Color::NodeOutlineColor);
 
         window.draw(track); 
         window.draw(filled);

@@ -8,9 +8,6 @@
 #include <fstream> 
 #include <sstream>
 
-const float fset = 40.f;//family offset #1
-const float fset2 = 40.f; //family offset #2
-
 const std::vector<std::string> AVLScreen::INSERT_CODE = {
     "insert(value):",
     "  if node == null: return new node",
@@ -44,7 +41,6 @@ const std::vector<std::string> AVLScreen::SEARCH_CODE = {
 };
 
 static const float NODE_RADIUS   = UITheme::Size::NodeRadius;
-static const float CANVAS_H      = 560.f; // Base height reference for description box
 
 AVLScreen::AVLScreen()
 : mInputActive(false)
@@ -54,9 +50,10 @@ AVLScreen::AVLScreen()
 , mHistoryIndex(0)
 , m_leftWidth(35.f)
 , m_rightWidth(35.f)
-, m_leftExpanded(false)
-, m_rightExpanded(false)
+, m_leftExpanded(true)
+, m_rightExpanded(true)
 , m_selectedNodeValue(-1)
+, m_isLightMode(false)
 {}
 
 void AVLScreen::buildSteps(Operation op) {
@@ -89,17 +86,22 @@ void AVLScreen::buildSteps(Operation op) {
 }
 
 int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
+    mBaseWidth = window.getSize().x;
+    mBaseHeight = window.getSize().y;
+
+    sf::View originalView = window.getView(); 
+    sf::View dynamicView(sf::FloatRect(0, 0, mBaseWidth, mBaseHeight));
+    window.setView(dynamicView);
+
+    mWorkspaceBg.setSize({mBaseWidth, mBaseHeight});
+
     if (!mBgTexture.loadFromFile("assets/textures/avl_background.png"))
         std::cerr << "Failed to load background.png\n";
-    sf::Vector2u sz = mBgTexture.getSize();
     mBgSprite.setTexture(mBgTexture);
-    mBgSprite.setScale(static_cast<float>(window.getSize().x) / sz.x, 
-                       static_cast<float>(window.getSize().y) / sz.y);
-    
+    mBgSprite.setScale(mBaseWidth / mBgTexture.getSize().x, mBaseHeight / mBgTexture.getSize().y);
     mBgSprite.setColor(UITheme::Color::AVLBackground);
 
-    // Initialize UI Components dynamically
-    mCodePanel = CodePanel(font, sf::Vector2f(0.f, 0.f), sf::Vector2f(330.f, 350.f));
+    mCodePanel = CodePanel(font, sf::Vector2f(0.f, 0.f), sf::Vector2f(380.f, 400.f));
     
     std::map<std::string, std::vector<std::string>> avlSnippets;
     avlSnippets["insert"] = INSERT_CODE;
@@ -108,21 +110,56 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
     mCodePanel.loadSnippets(avlSnippets);
     mCodePanel.update("insert", -1);
     
-    mInsertBtn.emplace("Insert",  font, sf::Vector2f(100.f, 40.f));
-    mDeleteBtn.emplace("Delete",  font, sf::Vector2f(100.f, 40.f));
-    mSearchBtn.emplace("Search",  font, sf::Vector2f(100.f, 40.f));
-    mUpdateBtn.emplace("Update",  font, sf::Vector2f(100.f,40.f));
+    // Right Panel Tabs Setup
+    mRightTabState = AVLRightTabState::INFO;
 
-    mRandomBtn.emplace("Random",  font, sf::Vector2f(100.f, 40.f));
-    mClearBtn .emplace("Clear",   font, sf::Vector2f(100.f, 40.f));
-    mLoadFileBtn.emplace("Load File", font, sf::Vector2f(210.f, 40.f));
+    // Parse the provided AVL.txt structured information
+    mInfoTexts.clear();
+    std::vector<std::string> infoLines = {
+        "AVL Tree",
+        "[WHAT IS IT]",
+        "A binary search tree that maintain it's balance by rotating",
+        "",
+        "[FUNCTION TIME COMPLEXITY]",
+        "Insert/Delete         O(logN)",
+        "Rotate for insertion  O(1)",
+        "Rotate for deletion   O(logN)",
+        "Search                O(logN)",
+        "CLEAR ALL             O(N)",
+        "",
+        "[CONTROL BUTTON]",
+        "Play/Pause: Auto-play animation",
+        "Prev/Next: Watch step by step",
+        "Skip: Watch run at once"
+    };
 
-    mPrevBtn  .emplace("< Prev",  font, sf::Vector2f(100.f,  40.f));
-    mNextBtn  .emplace("Next >",  font, sf::Vector2f(100.f,  40.f));
-    mSkipAnimationBtn.emplace("Skip Animation", font, sf::Vector2f(210.f, 40.f));
+    for (const auto& line : infoLines) {
+        sf::Text t(line, font, 14);
+        if (line == "AVL Tree") {
+            t.setCharacterSize(20);
+            t.setStyle(sf::Text::Bold);
+        } else if (!line.empty() && line.front() == '[' && line.back() == ']') {
+            t.setCharacterSize(16);
+            t.setStyle(sf::Text::Bold);
+        }
+        mInfoTexts.push_back(t);
+    }
 
-    mReturnBtn.emplace("Return",  font, sf::Vector2f(210.f, 40.f));
-    
+    // Initial Button Sizes (Preserving requested dimensions)
+    mInsertBtn.emplace("Insert",  font, sf::Vector2f(105.f, 40.f));
+    mDeleteBtn.emplace("Delete",  font, sf::Vector2f(105.f, 40.f));
+    mSearchBtn.emplace("Search",  font, sf::Vector2f(105.f, 40.f));
+    mUpdateBtn.emplace("Update",  font, sf::Vector2f(105.f,40.f));
+
+    mRandomBtn.emplace("Random",  font, sf::Vector2f(105.f, 40.f));
+    mClearBtn .emplace("Clear",   font, sf::Vector2f(105.f, 40.f));
+    mLoadFileBtn.emplace("Load File", font, sf::Vector2f(220.f, 40.f));
+
+    mPrevBtn  .emplace("< Prev",  font, sf::Vector2f(105.f,  40.f));
+    mNextBtn  .emplace("Next >",  font, sf::Vector2f(105.f,  40.f));
+    mSkipAnimationBtn.emplace("Skip Animation", font, sf::Vector2f(220.f, 40.f));
+    mReturnBtn.emplace("Return",  font, sf::Vector2f(80.f, 40.f));
+
     mSliderTrack = sf::RectangleShape({220.f, 6.f});
     mSliderTrack.setFillColor(UITheme::Color::SliderTrack);
     mSliderTrack.setOutlineThickness(1.f);
@@ -132,35 +169,38 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
     mSliderHandle.setOrigin(10.f, 10.f);
     mSliderHandle.setFillColor(UITheme::Color::SliderHandle); 
 
-    // --- Initialize Color Swatches ---
-    mCurrentNodeColor = UITheme::Color::GlobalNodeFill;
+    mInputBox.setSize({220.f, 40.f});
+    mInputBox.setOutlineThickness(1.5f);
+
+    
     mThemeColors = {
-        UITheme::Color::GlobalNodeFill,
-        UITheme::Color::AVLNodeCustom1,
-        UITheme::Color::AVLNodeCustom2,
-        UITheme::Color::AVLNodeCustom3,
-        UITheme::Color::AVLNodeCustom4,
-        UITheme::Color::AVLNodeCustom5
+        sf::Color(45, 45, 55), sf::Color(181, 58, 199),
+        sf::Color(52, 152, 219), sf::Color(231, 76, 60),
+        sf::Color(241, 196, 15), sf::Color(46, 204, 113)
     };
+
+    mCurrentNodeColor = mThemeColors[0];
 
     mColorSwatches.clear();
     for (const auto& color : mThemeColors) {
-        sf::RectangleShape swatch(sf::Vector2f(30.f, 30.f));
+        sf::RectangleShape swatch(sf::Vector2f(25.f, 25.f));
         swatch.setFillColor(color);
-        swatch.setOutlineThickness(2.f);
+        swatch.setOutlineThickness(1.5f);
         swatch.setOutlineColor(sf::Color(100, 100, 100));
         mColorSwatches.push_back(swatch);
     }
 
+    applyTheme(font);
+
     sf::VertexArray dotGrid(sf::Points);
-    for (int x = 0; x <= window.getSize().x; x += 30) {
-        for (int y = 0; y <= window.getSize().y; y += 30) {
+    for (int x = 0; x <= 3000; x += 30) {
+        for (int y = 0; y <= 3000; y += 30) {
             dotGrid.append(sf::Vertex(sf::Vector2f(x, y), UITheme::Color::AVLGlow));
         }
     }
 
-    const float LEFT_PANEL_WIDTH = 280.f;
-    const float RIGHT_PANEL_WIDTH = 380.f;
+    const float LEFT_PANEL_WIDTH = 300.f;
+    const float RIGHT_PANEL_WIDTH = 450.f;
     const float TAB_WIDTH = 35.f;
     const float TAB_HEIGHT = 50.f;
 
@@ -177,11 +217,21 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
                 return -1;
             }
 
+            if (event.type == sf::Event::Resized) {
+                mBaseWidth = event.size.width;
+                mBaseHeight = event.size.height;
+                sf::View resizedView(sf::FloatRect(0, 0, mBaseWidth, mBaseHeight));
+                window.setView(resizedView);
+                
+                mWorkspaceBg.setSize({mBaseWidth, mBaseHeight});
+                mBgSprite.setScale(mBaseWidth / mBgTexture.getSize().x, mBaseHeight / mBgTexture.getSize().y);
+            }
+
             bool leftPressed = (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left);
             
             if (leftPressed) {
-                float centerY = window.getSize().y / 2.f;
-                float winW = window.getSize().x;
+                float centerY = mBaseHeight / 2.f;
+                float winW = mBaseWidth;
                 
                 bool mouseInLeftTab = (mouseRaw.x >= m_leftWidth - TAB_WIDTH && mouseRaw.x <= m_leftWidth &&
                                        mouseRaw.y >= centerY - TAB_HEIGHT / 2.f && mouseRaw.y <= centerY + TAB_HEIGHT / 2.f);
@@ -192,13 +242,25 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
                 if (mouseInRightTab) { m_rightExpanded = !m_rightExpanded; continue; }
             }
 
-            bool isClickingOnPanel = (mouseRaw.x < m_leftWidth) || (mouseRaw.x > window.getSize().x - m_rightWidth);
+            bool isClickingOnPanel = (mouseRaw.x < m_leftWidth) || (mouseRaw.x > mBaseWidth - m_rightWidth);
 
             if (leftPressed && isClickingOnPanel) {
-                if (mReturnBtn->isClicked(mouseRaw, true)) return 0;
+                if (mReturnBtn->isClicked(mouseRaw, true)) {
+                    window.setView(originalView);
+                    return 0;
+                }
 
-                // --- Color Swatch Click Detection ---
-                if (mouseRaw.x > window.getSize().x - m_rightWidth) { 
+                // --- Right Panel Click Detection ---
+                if (mouseRaw.x > mBaseWidth - m_rightWidth) { 
+                    if (mInfoTabBtn->isClicked(mouseRaw, true)) mRightTabState = AVLRightTabState::INFO;
+                    if (mCodeTabBtn->isClicked(mouseRaw, true)) mRightTabState = AVLRightTabState::CODE;
+                }
+
+                // --- Left Panel Click Detection ---
+                if (mouseRaw.x < m_leftWidth) {
+                    if (mDarkThemeBtn->isClicked(mouseRaw, true)) { m_isLightMode = false; applyTheme(font); }
+                    if (mLightThemeBtn->isClicked(mouseRaw, true)) { m_isLightMode = true; applyTheme(font); }
+
                     for (size_t i = 0; i < mColorSwatches.size(); ++i) {
                         if (mColorSwatches[i].getGlobalBounds().contains(mouseRaw)) {
                             mCurrentNodeColor = mThemeColors[i];
@@ -206,58 +268,49 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
                     }
                 }
 
-                float leftBaseX = m_leftWidth - LEFT_PANEL_WIDTH;
-                sf::FloatRect inputBox(leftBaseX + 30.f, 30.f, 220.f, 42.f);
-                mInputActive = inputBox.contains(mouseRaw);
+                mInputActive = mInputBox.getGlobalBounds().contains(mouseRaw);
 
                 if (mSliderHandle.getGlobalBounds().contains(mouseRaw) || mSliderTrack.getGlobalBounds().contains(mouseRaw))
                     mSliderDragging = true;
 
                 if (mInsertBtn->isClicked(mouseRaw, true) && !mInputString.empty()) {
-                       if (mHistoryIndex < (int)mHistory.size()) {
-                            mHistory.erase(mHistory.begin() + mHistoryIndex, mHistory.end());
-                            }
-
-    // 2. Create a copy of the input and replace all commas with spaces
-                        std::string processedString = mInputString;
-                        std::replace(processedString.begin(), processedString.end(), ',', ' ');
-
-                        // 3. Use stringstream to extract tokens (it automatically skips consecutive spaces)
-                        std::stringstream ss(processedString);
-                        std::string token;
-
-                        // 4. Loop through every separated token in the string
-                        while (ss >> token) {
-                            try {
-                                int val = std::stoi(token);
-                                
-                                // Push each operation into history and build steps
-                                Operation op{OpType::Insert, val};
-                                mHistory.push_back(op); 
-                                mHistoryIndex++;
-                                buildSteps(op);
-                                
-                            } catch (const std::invalid_argument& e) {
-                                // Skips tokens that aren't numbers (e.g., if they typed "a")
-                                continue; 
-                            } catch (const std::out_of_range& e) {
-                                // Skips numbers that are too large for a standard integer
-                                continue; 
-                            }
-                        }
-
-                        // 5. Reset the UI states after the batch completes
-                        mInputString.clear();
-                        m_selectedNodeValue = -1;
-            }
-
-                if (mDeleteBtn->isClicked(mouseRaw, true) && !mInputString.empty()) {
-                    int val = std::stoi(mInputString);
                     if (mHistoryIndex < (int)mHistory.size()) mHistory.erase(mHistory.begin() + mHistoryIndex, mHistory.end());
-                    Operation op{OpType::Delete, val};
-                    mHistory.push_back(op); mHistoryIndex++;
-                    buildSteps(op); mInputString.clear();
+                    std::string processedString = mInputString;
+                    std::replace(processedString.begin(), processedString.end(), ',', ' ');
+                    std::stringstream ss(processedString);
+                    std::string token;
+                    while (ss >> token) {
+                        try {
+                            int val = std::stoi(token);
+                            Operation op{OpType::Insert, val};
+                            mHistory.push_back(op); 
+                            mHistoryIndex++;
+                            buildSteps(op);
+                        } catch (...) { continue; }
+                    }
+                    mInputString.clear();
                     m_selectedNodeValue = -1;
+                }
+
+                if (mDeleteBtn->isClicked(mouseRaw, true) && (!mInputString.empty() || m_selectedNodeValue != -1)) {
+                    if (!mInputString.empty()){
+                        int val = std::stoi(mInputString);
+                        if (mHistoryIndex < (int)mHistory.size()) mHistory.erase(mHistory.begin() + mHistoryIndex, mHistory.end());
+                        Operation op{OpType::Delete, val};
+                        mHistory.push_back(op); mHistoryIndex++;
+                        buildSteps(op); mInputString.clear();
+                        m_selectedNodeValue = -1;
+                    } else
+                    //added clause for extra clarity
+                    if (m_selectedNodeValue != -1){
+                        if (mHistoryIndex < (int)mHistory.size()) mHistory.erase(mHistory.begin() + mHistoryIndex, mHistory.end());
+                        int val = m_selectedNodeValue;
+
+                        Operation op{OpType::Delete,val};
+                        mHistory.push_back(op);mHistoryIndex++;
+                        buildSteps(op);
+                        m_selectedNodeValue = -1;
+                    }
                 }
 
                 if (mSearchBtn->isClicked(mouseRaw, true) && !mInputString.empty()) {
@@ -275,10 +328,8 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
                     if (mHistoryIndex < (int)mHistory.size()) mHistory.erase(mHistory.begin() + mHistoryIndex, mHistory.end());
                     Operation op{OpType::Update, newVal, oldVal};
                     mHistory.push_back(op); mHistoryIndex++;
-                    buildSteps(op);
-                    mController.skipToEnd();
-                    mInputString.clear();
-                    m_selectedNodeValue = -1;
+                    buildSteps(op); mController.skipToEnd();
+                    mInputString.clear(); m_selectedNodeValue = -1;
                 }
 
                 if (mClearBtn->isClicked(mouseRaw, true)) {
@@ -294,9 +345,7 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
                     mHistory.push_back({OpType::Clear, 0}); mHistoryIndex++;
                     
                     int count = 5 + (rand() % 6);
-                    for (int i = 0; i < count; ++i) {
-                        mHistory.push_back({OpType::Insert, rand() % 100}); mHistoryIndex++;
-                    }
+                    for (int i = 0; i < count; ++i) { mHistory.push_back({OpType::Insert, rand() % 100}); mHistoryIndex++; }
                     
                     mTree.clear(); mController.clear();
                     for(int i = 0; i < mHistoryIndex - 1; ++i) {
@@ -313,48 +362,33 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
                 if (mPrevBtn->isClicked(mouseRaw, true)) {
                     if (mController.currentIndex() > 0) {
                         mController.prev();
-                        mStepMode = true;
-                        mStepAnimatingPrev = true;
-                        mStepAnimatingNext = false;
+                        mStepMode = true; mStepAnimatingPrev = true; mStepAnimatingNext = false;
                     } else if (mHistoryIndex > 0) {
-                        mHistoryIndex--;
-                        mTree.clear(); mController.clear();
+                        mHistoryIndex--; mTree.clear(); mController.clear();
                         for(int i = 0; i < mHistoryIndex - 1; ++i) {
                             if (mHistory[i].type == OpType::Insert)       mTree.insert(mHistory[i].value, nullptr);
                             else if (mHistory[i].type == OpType::Delete)  mTree.remove(mHistory[i].value, nullptr);
                             else if (mHistory[i].type == OpType::Clear)   mTree.clear();
                             else if (mHistory[i].type == OpType::Update) { mTree.remove(mHistory[i].oldValue, nullptr); mTree.insert(mHistory[i].value, nullptr); }
                         }
-                        if (mHistoryIndex > 0) {
-                            buildSteps(mHistory[mHistoryIndex - 1]); mController.skipToEnd();
-                        }
-                        m_selectedNodeValue = -1;
-                        mStepMode = true; 
-                        mStepAnimatingPrev = false;
-                        mStepAnimatingNext = false;
+                        if (mHistoryIndex > 0) { buildSteps(mHistory[mHistoryIndex - 1]); mController.skipToEnd(); }
+                        m_selectedNodeValue = -1; mStepMode = true; mStepAnimatingPrev = false; mStepAnimatingNext = false;
                     }
                 }
                 
                 if (mNextBtn->isClicked(mouseRaw, true)) {
                     if (mController.currentIndex() < mController.totalSteps() - 1) {
                         mController.next();
-                        mStepMode = true;
-                        mStepAnimatingNext = true;
-                        mStepAnimatingPrev = false;
+                        mStepMode = true; mStepAnimatingNext = true; mStepAnimatingPrev = false;
                     } else if (mHistoryIndex < (int)mHistory.size()) {
                         Operation op = mHistory[mHistoryIndex]; mHistoryIndex++;
                         buildSteps(op);
-                        m_selectedNodeValue = -1;
-                        mStepMode = true;
-                        mStepAnimatingNext = true;
-                        mStepAnimatingPrev = false;
+                        m_selectedNodeValue = -1; mStepMode = true; mStepAnimatingNext = true; mStepAnimatingPrev = false;
                     }
                 }
 
                 if (mSkipAnimationBtn->isClicked(mouseRaw, true)){
-                    if (mHistoryIndex > 0) {
-                        buildSteps(mHistory[mHistoryIndex - 1]); mController.skipToEnd();
-                    }
+                    if (mHistoryIndex > 0) { buildSteps(mHistory[mHistoryIndex - 1]); mController.skipToEnd(); }
                 }
 
                 if (mLoadFileBtn->isClicked(mouseRaw, true)) {
@@ -372,18 +406,15 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
                             else if (mHistory[i].type == OpType::Clear)   mTree.clear();
                             else if (mHistory[i].type == OpType::Update) { mTree.remove(mHistory[i].oldValue, nullptr); mTree.insert(mHistory[i].value, nullptr); }
                         }
-                        if (mHistoryIndex > 0) {
-                            buildSteps(mHistory[mHistoryIndex - 1]); mController.skipToEnd();
-                        }
-                        mInputString.clear();
-                        m_selectedNodeValue = -1;
+                        if (mHistoryIndex > 0) { buildSteps(mHistory[mHistoryIndex - 1]); mController.skipToEnd(); }
+                        mInputString.clear(); m_selectedNodeValue = -1;
                     }
                 }
             }
 
             // --- Node click detection on the canvas ---
             if (leftPressed && !isClickingOnPanel && mController.hasSteps()) {
-                float canvasCenter = m_leftWidth + (window.getSize().x - m_leftWidth - m_rightWidth) / 2.f;
+                float canvasCenter = m_leftWidth + (mBaseWidth - m_leftWidth - m_rightWidth) / 2.f;
                 float hitShiftX = canvasCenter - 610.f;
                 float curT = mController.t();
                 const auto* step = mController.currentStep();
@@ -409,10 +440,8 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
                     mInputString.pop_back();
                 else 
                 if (((event.text.unicode >= '0' && event.text.unicode <= '9' || event.text.unicode == '-') || 
-               (event.text.unicode == ' ' || event.text.unicode == ','))
-                && mInputString.size() < 10)
+               (event.text.unicode == ' ' || event.text.unicode == ',')) && mInputString.size() < 10)
                 mInputString += static_cast<char>(event.text.unicode);
-               
             }
         }
         
@@ -424,26 +453,41 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
         m_rightWidth += (targetRight - m_rightWidth) * 12.f * dt;
 
         float leftBaseX = m_leftWidth - LEFT_PANEL_WIDTH;
-        float rightBaseX = window.getSize().x - m_rightWidth;
+        float rightBaseX = mBaseWidth - m_rightWidth;
 
-        // Sync UI positions dynamically 
-        mInsertBtn->setPosition(sf::Vector2f(leftBaseX + 85.f, 100.f));
-        mDeleteBtn->setPosition(sf::Vector2f(leftBaseX + 195.f, 100.f));
-        mSearchBtn->setPosition(sf::Vector2f(leftBaseX + 85.f, 150.f));
-        mUpdateBtn->setPosition(sf::Vector2f(leftBaseX + 195.f,150.f));
+        // Sync UI positions dynamically to parallel Linked List Logic
+        float currentY = 20.f;
+        mReturnBtn->setPosition(sf::Vector2f(leftBaseX + 30.f + 40.f, currentY + 20.f)); 
+        currentY += 50.f;
 
-        //family offset
-        mRandomBtn->setPosition(sf::Vector2f(leftBaseX + 85.f, 210.f + fset));
-        mClearBtn ->setPosition(sf::Vector2f(leftBaseX + 195.f, 210.f + fset));
-        mLoadFileBtn->setPosition(sf::Vector2f(leftBaseX + 140.f, 260.f + fset));
+        mInputBox.setPosition(sf::Vector2f(leftBaseX + 30.f, currentY)); 
+        mInputBox.setFillColor(UITheme::Color::CodePanelBg);
+        mInputBox.setOutlineColor(mInputActive ? UITheme::Color::AVLAccent : UITheme::Color::ModernBtnBorder);
+        currentY += 50.f;
 
-        mPrevBtn  ->setPosition(sf::Vector2f(leftBaseX + 85.f, 320.f + fset));
-        mNextBtn  ->setPosition(sf::Vector2f(leftBaseX + 195.f, 320.f + fset));
-        mSkipAnimationBtn->setPosition(sf::Vector2f(leftBaseX + 140.f, 370.f + fset));
+        mInsertBtn->setPosition(sf::Vector2f(leftBaseX + 30.f + 52.5f, currentY + 20.f));
+        mDeleteBtn->setPosition(sf::Vector2f(leftBaseX + 145.f + 52.5f, currentY + 20.f)); 
+        currentY += 50.f;
 
-        mSliderTrack.setPosition(leftBaseX + 30.f, 430.f + fset);
-        
-        // Slider Logic updates seamlessly during drag
+        mSearchBtn->setPosition(sf::Vector2f(leftBaseX + 30.f + 52.5f, currentY + 20.f));
+        mUpdateBtn->setPosition(sf::Vector2f(leftBaseX + 145.f + 52.5f, currentY + 20.f)); 
+        currentY += 50.f;
+
+        mRandomBtn->setPosition(sf::Vector2f(leftBaseX + 30.f + 52.5f, currentY + 20.f));
+        mClearBtn->setPosition(sf::Vector2f(leftBaseX + 145.f + 52.5f, currentY + 20.f)); 
+        currentY += 50.f;
+
+        mLoadFileBtn->setPosition(sf::Vector2f(leftBaseX + 30.f + 110.f, currentY + 20.f)); 
+        currentY += 50.f;
+
+        mPrevBtn->setPosition(sf::Vector2f(leftBaseX + 30.f + 52.5f, currentY + 20.f));
+        mNextBtn->setPosition(sf::Vector2f(leftBaseX + 145.f + 52.5f, currentY + 20.f)); 
+        currentY += 50.f;
+
+        mSkipAnimationBtn->setPosition(sf::Vector2f(leftBaseX + 30.f + 110.f, currentY + 20.f)); 
+        currentY += 70.f;
+
+        mSliderTrack.setPosition(leftBaseX + 30.f, currentY);
         if (mSliderDragging) {
             float trackLeft  = leftBaseX + 30.f;
             float trackRight = leftBaseX + 250.f;
@@ -453,18 +497,46 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
             mController.setSpeed(mSpeedValue);
         }
         float ratio = (mSpeedValue - 0.5f) / 7.5f;
-        mSliderHandle.setPosition(leftBaseX + 30.f + ratio * 220.f, 433.f + fset);
+        mSliderHandle.setPosition(leftBaseX + 30.f + ratio * 220.f, currentY + 3.f);
+        
+        currentY += 40.f;
+        
+        // --- Relocated Customization Properties to Left Panel Bottom ---
+        float startX_custom = leftBaseX + 30.f;
+        mColorLabelPos = {startX_custom, currentY};
+        for (size_t i = 0; i < mColorSwatches.size(); ++i) {
+            float x = startX_custom + (i % 3) * 35.f;
+            float y = currentY + 25.f + (i / 3) * 35.f;
+            mColorSwatches[i].setPosition({x, y});
+        }
+        
+        currentY += 100.f;
+        mThemeLabelPos = {startX_custom, currentY};
+        mDarkThemeBtn->setPosition({startX_custom + 40.f, currentY + 45.f});
+        mLightThemeBtn->setPosition({startX_custom + 130.f, currentY + 45.f});
 
-        mReturnBtn->setPosition(sf::Vector2f(leftBaseX + 140.f, window.getSize().y - 40.f));
-        mCodePanel.setPosition(sf::Vector2f(rightBaseX + TAB_WIDTH + 10.f, 20.f + fset));
+        // --- Right Panel Layout Mathematics (Tabs & Code) ---
+        mInfoTabBtn->setPosition({rightBaseX + TAB_WIDTH + 15.f + 40.f, 40.f});
+        mCodeTabBtn->setPosition({rightBaseX + TAB_WIDTH + 15.f + 130.f, 40.f});
+
+        if (mRightTabState == AVLRightTabState::CODE) {
+            mCodePanel.setPosition(sf::Vector2f(rightBaseX + TAB_WIDTH + 15.f, 80.f));
+        } else {
+            float startX = rightBaseX + TAB_WIDTH + 15.f;
+            float textY = 80.f;
+            for (auto& text : mInfoTexts) {
+                text.setPosition({startX, textY});
+                textY += text.getCharacterSize() + (text.getString().isEmpty() ? 5.f : 8.f);
+            }
+        }
 
         // Update hovers
         mInsertBtn->update(mouseRaw); mDeleteBtn->update(mouseRaw); mSearchBtn->update(mouseRaw);
-        mUpdateBtn->update(mouseRaw);
-
-        mRandomBtn->update(mouseRaw); mClearBtn->update(mouseRaw); mLoadFileBtn->update(mouseRaw);
-        mPrevBtn->update(mouseRaw); mNextBtn->update(mouseRaw); mSkipAnimationBtn->update(mouseRaw);
-        mReturnBtn->update(mouseRaw);
+        mUpdateBtn->update(mouseRaw); mRandomBtn->update(mouseRaw); mClearBtn->update(mouseRaw); 
+        mLoadFileBtn->update(mouseRaw); mPrevBtn->update(mouseRaw); mNextBtn->update(mouseRaw); 
+        mSkipAnimationBtn->update(mouseRaw); mReturnBtn->update(mouseRaw);
+        mDarkThemeBtn->update(mouseRaw); mLightThemeBtn->update(mouseRaw);
+        mInfoTabBtn->update(mouseRaw); mCodeTabBtn->update(mouseRaw);
 
         if (!mStepMode) {
             mController.update(dt);
@@ -479,12 +551,13 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
         }
 
         window.clear(UITheme::Color::AVLBackground);  
+        window.draw(mWorkspaceBg);
         window.draw(mBgSprite); 
         window.draw(dotGrid); 
 
         // Dynamic Tree Centering
-        float newCenter = m_leftWidth + (window.getSize().x - m_leftWidth - m_rightWidth) / 2.f;
-        float shiftX = newCenter - 610.f; // Base 610 represents center of old 760w layout
+        float newCenter = m_leftWidth + (mBaseWidth - m_leftWidth - m_rightWidth) / 2.f;
+        float shiftX = newCenter - 610.f; // Base 610 represents center of old layout
 
         drawTree(window, font, shiftX);
         drawDescription(window, font, shiftX);
@@ -494,15 +567,17 @@ int AVLScreen::run(sf::RenderWindow& window, sf::Font& font) {
         
         window.display();
     }
+    
+    window.setView(originalView);
     return -1;
 }
 
 void AVLScreen::drawLeftPanel(sf::RenderWindow& window, const sf::Font& font, float leftBaseX) {
-    sf::RectangleShape leftMenu(sf::Vector2f(m_leftWidth, window.getSize().y));
+    sf::RectangleShape leftMenu(sf::Vector2f(m_leftWidth, mBaseHeight));
     leftMenu.setFillColor(UITheme::Color::AVLPanelBg);
     window.draw(leftMenu);
 
-    float centerY = window.getSize().y / 2.f;
+    float centerY = mBaseHeight / 2.f;
     sf::RectangleShape leftTab(sf::Vector2f(35.f, 50.f));
     leftTab.setFillColor(UITheme::Color::GraphTabBg);
     leftTab.setPosition(m_leftWidth - 35.f, centerY - 25.f);
@@ -516,17 +591,12 @@ void AVLScreen::drawLeftPanel(sf::RenderWindow& window, const sf::Font& font, fl
     window.draw(lIcon);
 
     if (m_leftWidth > 50.f) {
-        // Dynamic Input Box inside panel
-        sf::RectangleShape box({220.f, 42.f});
-        box.setPosition(leftBaseX + 30.f, 30.f);
-        box.setFillColor(UITheme::Color::CodePanelBg);
-        box.setOutlineThickness(1.5f);
-        box.setOutlineColor(mInputActive ? UITheme::Color::AVLAccent : UITheme::Color::ModernBtnBorder);
-        window.draw(box);
+        window.draw(*mReturnBtn);
+        window.draw(mInputBox);
 
         if (mInputActive) {
-            sf::RectangleShape glowBox({220.f, 42.f});
-            glowBox.setPosition(leftBaseX + 30.f, 30.f);
+            sf::RectangleShape glowBox({220.f, 40.f});
+            glowBox.setPosition(mInputBox.getPosition());
             glowBox.setFillColor(sf::Color::Transparent);
             glowBox.setOutlineThickness(3.f);
             glowBox.setOutlineColor(UITheme::Color::AVLGlow);
@@ -538,8 +608,8 @@ void AVLScreen::drawLeftPanel(sf::RenderWindow& window, const sf::Font& font, fl
         inputText.setString(mInputString.empty() ? "value..." : mInputString + (mInputActive ? "|" : ""));
         inputText.setCharacterSize(16);
         inputText.setLetterSpacing(1.2f);
-        inputText.setFillColor(mInputString.empty() ? sf::Color(100, 110, 130) : sf::Color::White);
-        inputText.setPosition(leftBaseX + 40.f, 40.f);
+        inputText.setFillColor(mInputString.empty() ? sf::Color(100, 110, 130) : (m_isLightMode ? sf::Color::Black : sf::Color::White));
+        inputText.setPosition(mInputBox.getPosition().x + 10.f, mInputBox.getPosition().y + 10.f);
         window.draw(inputText);
 
         window.draw(*mInsertBtn);
@@ -554,15 +624,13 @@ void AVLScreen::drawLeftPanel(sf::RenderWindow& window, const sf::Font& font, fl
         window.draw(*mPrevBtn);
         window.draw(*mNextBtn);
         window.draw(*mSkipAnimationBtn);
-        
-        window.draw(*mReturnBtn);
 
         sf::Text speedLabel;
         speedLabel.setFont(font);
         speedLabel.setCharacterSize(13);
         speedLabel.setFillColor(UITheme::Color::AVLSpeedSliderText);
         speedLabel.setString("Speed: " + std::to_string((int)mSpeedValue) + "x");
-        speedLabel.setPosition(leftBaseX + 30.f, 405.f + fset);
+        speedLabel.setPosition(mSliderTrack.getPosition().x, mSliderTrack.getPosition().y - 20.f);
         window.draw(speedLabel);
 
         sf::RectangleShape filledTrack({mSliderHandle.getPosition().x - mSliderTrack.getPosition().x, 6.f});
@@ -572,29 +640,44 @@ void AVLScreen::drawLeftPanel(sf::RenderWindow& window, const sf::Font& font, fl
         window.draw(mSliderTrack);
         window.draw(filledTrack);
         window.draw(mSliderHandle);
+        
+        // --- Draw Color Customization UI on Left Panel ---
+        sf::Text colorLabel("Node Fill Color", font, 14);
+        colorLabel.setFillColor(m_isLightMode ? sf::Color(40, 40, 50) : sf::Color(200, 200, 210));
+        colorLabel.setPosition(mColorLabelPos);
+        window.draw(colorLabel);
 
-        sf::Text counter;
-        counter.setFont(font);
-        counter.setCharacterSize(13);
-        counter.setFillColor(sf::Color(180, 190, 200));
-        counter.setString(mController.hasSteps()
-            ? "Step: " + std::to_string(mController.currentIndex() + 1) + " / " + std::to_string(mController.totalSteps())
-            : "Step: 0 / 0");
-        counter.setPosition(leftBaseX + 30.f, 455.f + fset);
-        window.draw(counter);
+        for (size_t i = 0; i < mColorSwatches.size(); ++i) {
+            if (mThemeColors[i] == mCurrentNodeColor) {
+                mColorSwatches[i].setOutlineColor(sf::Color::Yellow);
+                mColorSwatches[i].setOutlineThickness(2.5f);
+            } else {
+                mColorSwatches[i].setOutlineColor(sf::Color(100, 100, 100));
+                mColorSwatches[i].setOutlineThickness(1.5f);
+            }
+            window.draw(mColorSwatches[i]);
+        }
+        
+        sf::Text tLabel("UI Theme", font, 14);
+        tLabel.setFillColor(m_isLightMode ? sf::Color(40, 40, 50) : sf::Color(200, 200, 210));
+        tLabel.setPosition(mThemeLabelPos);
+        window.draw(tLabel);
+
+        window.draw(*mDarkThemeBtn);
+        window.draw(*mLightThemeBtn);
     }
 }
 
 void AVLScreen::drawRightPanel(sf::RenderWindow& window, const sf::Font& font, float rightBaseX) {
-    float winW = window.getSize().x;
+    float winW = mBaseWidth;
     float TAB_WIDTH = 35.f;
     
-    sf::RectangleShape rightMenu(sf::Vector2f(m_rightWidth, window.getSize().y));
+    sf::RectangleShape rightMenu(sf::Vector2f(m_rightWidth, mBaseHeight));
     rightMenu.setFillColor(UITheme::Color::AVLPanelBg);
     rightMenu.setPosition(winW - m_rightWidth, 0);
     window.draw(rightMenu);
 
-    float centerY = window.getSize().y / 2.f;
+    float centerY = mBaseHeight / 2.f;
     sf::RectangleShape rightTab(sf::Vector2f(35.f, 50.f));
     rightTab.setFillColor(UITheme::Color::GraphTabBg);
     rightTab.setPosition(winW - m_rightWidth, centerY - 25.f);
@@ -607,30 +690,27 @@ void AVLScreen::drawRightPanel(sf::RenderWindow& window, const sf::Font& font, f
     rIcon.setFillColor(UITheme::Color::NodeHighlightColor);
     window.draw(rIcon);
 
-    mCodePanel.highlight(mController.hasSteps() ? mController.currentStep()->codeLineIndex : -1);
-    const_cast<CodePanel&>(mCodePanel).draw(window);
+    // --- Draw Interactive Tabs ---
+    if (m_rightWidth > 180.f) {
+        window.draw(*mInfoTabBtn);
+        window.draw(*mCodeTabBtn);
 
-    // --- Draw Color Customization UI ---
-    if (m_rightWidth > 50.f) { 
-        sf::Text colorLabel("Node Fill Color", font, 16);
-        colorLabel.setFillColor(sf::Color(200, 200, 210));
-        colorLabel.setPosition(rightBaseX + TAB_WIDTH + 15.f, 390.f + fset);
-        window.draw(colorLabel);
+        // Active Tab Underline Effect
+        sf::RectangleShape underline({80.f, 2.f});
+        underline.setFillColor(sf::Color::Cyan);
+        underline.setOrigin(40.f, 1.f);
 
-        float swatchX = rightBaseX + TAB_WIDTH + 15.f;
-        float swatchY = 420.f + fset;
-
-        for (size_t i = 0; i < mColorSwatches.size(); ++i) {
-            mColorSwatches[i].setPosition(swatchX + (i * 42.f), swatchY);
-            
-            if (mThemeColors[i] == mCurrentNodeColor) {
-                mColorSwatches[i].setOutlineColor(UITheme::Color::AVLAccent);
-                mColorSwatches[i].setOutlineThickness(3.f);
-            } else {
-                mColorSwatches[i].setOutlineColor(sf::Color(100, 100, 100));
-                mColorSwatches[i].setOutlineThickness(1.5f);
+        if (mRightTabState == AVLRightTabState::INFO) {
+            underline.setPosition({mInfoTabBtn->getPosition().x, mInfoTabBtn->getPosition().y + 18.f});
+            window.draw(underline);
+            for (const auto& text : mInfoTexts) {
+                window.draw(text);
             }
-            window.draw(mColorSwatches[i]);
+        } else {
+            underline.setPosition({mCodeTabBtn->getPosition().x, mCodeTabBtn->getPosition().y + 18.f});
+            window.draw(underline);
+            mCodePanel.highlight(mController.hasSteps() ? mController.currentStep()->codeLineIndex : -1);
+            const_cast<CodePanel&>(mCodePanel).draw(window);
         }
     }
 }
@@ -728,36 +808,89 @@ void AVLScreen::drawDescription(sf::RenderWindow& window, const sf::Font& font, 
         return;
     }
 
-    float boxH = 70.f;
-    float go_up = 70.f;
-
-    float boxW = 700.f; 
-    float boxX = 640.f + shiftX - boxW/2.f; 
-    float boxY = CANVAS_H + 64.f - go_up;
-
-    sf::RectangleShape shadow({boxW, boxH});
-    shadow.setPosition(boxX + 4.f, boxY + 4.f);
-    shadow.setFillColor(sf::Color(0, 0, 0, 90));
-    window.draw(shadow);
-
-    sf::RectangleShape bar({boxW, boxH});
-    bar.setPosition(boxX, boxY);
-    bar.setFillColor(UITheme::Color::AVLPanelBg);
-    bar.setOutlineThickness(1.5f);
-    bar.setOutlineColor(m_selectedNodeValue != -1 ? UITheme::Color::AVLAccent : UITheme::Color::AVLGlowStrong);
-    window.draw(bar);
-
-    sf::RectangleShape accent({4.f, boxH});
-    accent.setPosition(boxX, boxY);
-    accent.setFillColor(UITheme::Color::AVLAccent);
-    window.draw(accent);
-
     sf::Text desc;
     desc.setFont(font);
     desc.setString(descText);
-    desc.setCharacterSize(24);
-    desc.setLetterSpacing(1.1f);
-    desc.setFillColor(sf::Color(240, 245, 255));
-    desc.setPosition(boxX + 18.f, boxY + 20.f);
+    desc.setCharacterSize(25);
+    desc.setFillColor(sf::Color(251, 209, 101));
+    
+    float workspaceCenterX = m_leftWidth + (mBaseWidth - m_leftWidth - m_rightWidth) / 2.f;
+    desc.setPosition(sf::Vector2f(workspaceCenterX - desc.getLocalBounds().width / 2.f, mBaseHeight - 130.f));
+    
     window.draw(desc);
+}
+
+void AVLScreen::applyTheme(sf::Font& font) {
+    if (m_isLightMode) {
+        // Pleasant, soft light mode palette
+        UITheme::Color::AVLBackground        = sf::Color(245, 246, 250); 
+        UITheme::Color::AVLPanelBg           = sf::Color(230, 232, 240, 240);
+        UITheme::Color::AVLSpeedSliderText   = sf::Color(40, 40, 50);
+        
+        // Soft white buttons with subtle contrast
+        UITheme::Color::ModernBtnTop         = sf::Color(250, 250, 255);
+        UITheme::Color::ModernBtnBottom      = sf::Color(235, 235, 240);
+        UITheme::Color::ModernBtnHoverT      = sf::Color(240, 240, 245);
+        UITheme::Color::ModernBtnHoverB      = sf::Color(220, 220, 230);
+        UITheme::Color::ModernBtnBorder      = sf::Color(180, 180, 195);
+        
+        mBgSprite.setColor(sf::Color(255, 255, 255, 180)); // Lighten background grid
+    } else {
+        // Restore Amethyst Dark Mode palette
+        UITheme::Color::AVLBackground        = UITheme::Color::GlobalBg;
+        UITheme::Color::AVLPanelBg           = UITheme::Color::GlobalPanelBg;
+        UITheme::Color::AVLSpeedSliderText   = UITheme::Color::GlobalTextPrimary;
+        
+        UITheme::Color::ModernBtnTop         = UITheme::Color::GlobalButtonFill;
+        UITheme::Color::ModernBtnBottom      = sf::Color(20, 16, 27);
+        UITheme::Color::ModernBtnHoverT      = UITheme::Color::GlobalButtonHover;
+        UITheme::Color::ModernBtnHoverB      = sf::Color(37, 24, 56);
+        UITheme::Color::ModernBtnBorder      = UITheme::Color::GlobalButtonBorder;
+
+        mBgSprite.setColor(UITheme::Color::AVLBackground);
+    }
+
+    mInsertBtn.emplace("Insert",  font, sf::Vector2f(105.f, 40.f));
+    mDeleteBtn.emplace("Delete",  font, sf::Vector2f(105.f, 40.f));
+    mSearchBtn.emplace("Search",  font, sf::Vector2f(105.f, 40.f));
+    mUpdateBtn.emplace("Update",  font, sf::Vector2f(105.f, 40.f));
+    mRandomBtn.emplace("Random",  font, sf::Vector2f(105.f, 40.f));
+    mClearBtn .emplace("Clear",   font, sf::Vector2f(105.f, 40.f));
+    mLoadFileBtn.emplace("Load File", font, sf::Vector2f(220.f, 40.f));
+    mPrevBtn  .emplace("< Prev",  font, sf::Vector2f(105.f,  40.f));
+    mNextBtn  .emplace("Next >",  font, sf::Vector2f(105.f,  40.f));
+    mSkipAnimationBtn.emplace("Skip Animation", font, sf::Vector2f(220.f, 40.f));
+    mReturnBtn.emplace("Return",  font, sf::Vector2f(80.f, 40.f));
+    
+    // Tab and Customization buttons
+    mDarkThemeBtn.emplace("Dark", font, sf::Vector2f(80.f, 30.f));
+    mLightThemeBtn.emplace("Light", font, sf::Vector2f(80.f, 30.f));
+    mInfoTabBtn.emplace("INFO", font, sf::Vector2f(80.f, 30.f));
+    mCodeTabBtn.emplace("CODE", font, sf::Vector2f(80.f, 30.f));
+
+    if(m_isLightMode) {
+        mDarkThemeBtn->setColors(UITheme::Color::GlobalButtonFill, UITheme::Color::GlobalButtonBot, UITheme::Color::ButtonInactiveBorder, UITheme::Color::GlobalTextPrimary);
+        mLightThemeBtn->setColors(UITheme::Color::ModernBtnTop, UITheme::Color::ModernBtnBottom, sf::Color::Cyan, sf::Color(40,40,50));
+        
+        mInfoTabBtn->setColors(UITheme::Color::ModernBtnTop, UITheme::Color::ModernBtnBottom, UITheme::Color::ModernBtnBorder, sf::Color(40,40,50));
+        mCodeTabBtn->setColors(UITheme::Color::ModernBtnTop, UITheme::Color::ModernBtnBottom, UITheme::Color::ModernBtnBorder, sf::Color(40,40,50));
+    } else {
+        mDarkThemeBtn->setColors(UITheme::Color::ModernBtnTop, UITheme::Color::ModernBtnBottom, sf::Color::Cyan, sf::Color::White);
+        mLightThemeBtn->setColors(UITheme::Color::LightButtonFill, UITheme::Color::LightButtonBot, UITheme::Color::ButtonInactiveBorder, UITheme::Color::LightTextPrimary);
+
+        mInfoTabBtn->setColors(UITheme::Color::ModernBtnTop, UITheme::Color::ModernBtnBottom, UITheme::Color::ModernBtnBorder, sf::Color::White);
+        mCodeTabBtn->setColors(UITheme::Color::ModernBtnTop, UITheme::Color::ModernBtnBottom, UITheme::Color::ModernBtnBorder, sf::Color::White);
+    }
+    
+    // Update Info Texts Color safely
+    for (auto& text : mInfoTexts) {
+        std::string s = text.getString();
+        if (s == "AVL Tree") {
+            text.setFillColor(m_isLightMode ? sf::Color(200, 150, 0) : sf::Color(251, 209, 101));
+        } else if (!s.empty() && s.front() == '[' && s.back() == ']') {
+            text.setFillColor(m_isLightMode ? sf::Color(0, 150, 200) : sf::Color(110, 247, 242));
+        } else {
+            text.setFillColor(m_isLightMode ? sf::Color::Black : sf::Color(245, 245, 250));
+        }
+    }
 }

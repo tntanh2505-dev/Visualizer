@@ -25,7 +25,7 @@ void MenuScreen::buildButtons(const sf::Font& font) {
 }
 
 int MenuScreen::run(sf::RenderWindow& window, sf::Font& font) {
-    if (!mBgTexture.loadFromFile("assets/textures/background.png"))
+    if (!mBgTexture.loadFromFile("assets/textures/main_menu.jpg"))
         std::cerr << "Failed to load background.png\n";
 
     sf::Vector2u size = mBgTexture.getSize();
@@ -35,6 +35,9 @@ int MenuScreen::run(sf::RenderWindow& window, sf::Font& font) {
                        
 
     buildButtons(font);
+    sf::Font nFont;
+    if (!nFont.loadFromFile("assets/fonts/Tera.ttf"))
+        std::cerr << "FAILED TO LOAD FONT" << std::endl;
 
     while (window.isOpen()) {
         sf::Vector2f mouseRaw = window.mapPixelToCoords(sf::Mouse::getPosition(window));
@@ -62,12 +65,12 @@ int MenuScreen::run(sf::RenderWindow& window, sf::Font& font) {
 
         // Dynamic Title Render
         sf::Text title;
-        title.setFont(font);
-        title.setString("ALGORITHM VISUALIZER");
-        title.setCharacterSize(64);
+        title.setFont(nFont);
+        title.setString("VISUALIZER");
+        title.setCharacterSize(80);
         title.setLetterSpacing(1.2f);
         title.setFillColor(sf::Color::White);
-        title.setPosition(200.f, 60.f); 
+        title.setPosition(400.f, 50.f); 
         
         sf::Text titleShadow = title;
         titleShadow.setFillColor(sf::Color(0, 0, 0, 180));

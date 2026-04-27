@@ -95,6 +95,12 @@ void GraphicNode::draw(sf::RenderTarget& target, sf::RenderStates states) const 
     target.draw(m_text, states);
 }
 
+void GraphicNode:: setText(const std::string& str) {
+    m_text.setString(str);
+    centerText();
+}
+
+
 void GraphicNode::centerText() {
     sf::FloatRect textRect = m_text.getLocalBounds();
     m_text.setOrigin(textRect.left + textRect.width / 2.0f,

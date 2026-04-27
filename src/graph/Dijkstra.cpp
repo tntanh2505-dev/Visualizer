@@ -1,6 +1,7 @@
-#include "DSA-Visualization/shortest_path/dijkstra.hpp"
+#include "DSA-Visualization/graph/Dijkstra.hpp"
+#include <algorithm>
 
-void Dijkstra::init(std::vector<Node> &nodes, std::vector<Edge> &edges, int source) {
+void Dijkstra::init(std::vector<Node> &nodes, std::vector<Edge> &edges, bool isDirected, int source) {
     for (Node &v : nodes) {
         v.dist = INF;
         v.parent = -1;
@@ -8,9 +9,12 @@ void Dijkstra::init(std::vector<Node> &nodes, std::vector<Edge> &edges, int sour
     }
 
     adjacent.clear();
-    adjacent.resize(nodes.size());
-    for (auto &[from, to, weight] : edges)
+    adjacent.resize(nodes.size() + 1);
+    for (auto &[from, to, weight] : edges) {
         adjacent[from].emplace_back(to, weight);
+        if (!isDirected)
+            adjacent[to].emplace_back(from, weight);
+    }
 
     if (source != -1)
         nodes[source].dist = 0;
@@ -47,6 +51,8 @@ std::vector<int> Dijkstra::getShortestPath(std::vector<Node> &nodes, int target)
         path.emplace_back(target);
         target = nodes[target].parent;
     }
+    std::reverse(path.begin(), path.end());
+
     return path;
 }
 
