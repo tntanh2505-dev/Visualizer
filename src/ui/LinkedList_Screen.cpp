@@ -34,7 +34,7 @@ int LL_screen::run(sf::RenderWindow &window, sf::Font &font) {
 
         scene.Update(dt, window);
 
-        // --- Used UITheme PanelBg instead of sf::Color(20, 20, 20) ---
+        // --- Used UITheme ---
         window.clear(UITheme::Color::PanelBg); 
         scene.Draw(window);
         window.display();

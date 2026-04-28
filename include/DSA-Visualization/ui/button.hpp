@@ -9,22 +9,16 @@ public:
 
     // Update state based on mouse position
     void update(sf::Vector2f mousePos);
-
     // Check if the button was clicked
     bool isClicked(sf::Vector2f mousePos, bool mousePressed);
-
     // Get button boundary coordinates
     sf::FloatRect getGlobalBounds() const;
-
     //Set Color
     void setColors(sf::Color top, sf::Color bottom, sf::Color border, sf::Color textColor = sf::Color::White);
-
     void setText(const std::string &str);
-
 protected:
     // Standard SFML draw override
     virtual void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
-
 private:
     void buildGeometry();
     void updateColors();
